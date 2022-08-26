@@ -18,6 +18,13 @@ defmodule BudgetWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+
+    live "/accounts", AccountLive.Index, :index
+    live "/accounts/new", AccountLive.Index, :new
+    live "/accounts/:id/edit", AccountLive.Index, :edit
+
+    live "/accounts/:id", AccountLive.Show, :show
+    live "/accounts/:id/show/edit", AccountLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.
