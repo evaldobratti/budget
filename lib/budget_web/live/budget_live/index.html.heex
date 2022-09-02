@@ -1,0 +1,37 @@
+<%= if @modal_account_action do %>
+  <.modal close_event="close_account_modal">
+    <.live_component
+      module={BudgetWeb.AccountLive.FormComponent}
+      id={@account.id || :new}
+      action={@modal_account_action}
+      account={@account}
+    />
+  </.modal>
+<% end %>
+
+<div class="row">
+  <div class="col-4">
+    <div class="row">
+      <div class="col-1">
+        <h4>Accounts</h4>
+      </div>
+      <div class="col-auto ms-auto">
+        <a href="#" phx-click="account_new">New Account</a>
+      </div>
+    </div>
+    <%= for account <- @accounts do %>
+      <div class="row">
+        <div class="col-auto">
+          <%= account.name %>
+        </div>
+        <div class="col-auto ms-auto">
+          <a href="#" phx-click="account_edit" phx-value-account-id={account.id}>
+            Edit
+          </a>
+        </div>
+      </div>
+    <% end %>
+
+
+  </div>
+</div>

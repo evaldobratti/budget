@@ -27,7 +27,7 @@ defmodule Budget.Entries do
       %Account{}
 
   """
-  def get_account!(id), do: raise "TODO"
+  def get_account!(id), do: Repo.get!(Account, id)
 
   @doc """
   Creates a account.
@@ -42,7 +42,9 @@ defmodule Budget.Entries do
 
   """
   def create_account(attrs \\ %{}) do
-    raise "TODO"
+    %Account{}
+    |> Account.changeset(attrs)
+    |> Repo.insert()
   end
 
   @doc """
@@ -58,7 +60,9 @@ defmodule Budget.Entries do
 
   """
   def update_account(%Account{} = account, attrs) do
-    raise "TODO"
+    account
+    |> Account.changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

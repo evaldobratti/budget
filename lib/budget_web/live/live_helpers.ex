@@ -25,6 +25,7 @@ defmodule BudgetWeb.LiveHelpers do
   """
   def modal(assigns) do
     assigns = assign_new(assigns, :return_to, fn -> nil end)
+    assigns = assign_new(assigns, :close_event, fn -> nil end)
 
     ~H"""
     <div id="modal" class="phx-modal fade-in" phx-remove={hide_modal()}>
@@ -35,16 +36,7 @@ defmodule BudgetWeb.LiveHelpers do
         phx-window-keydown={JS.dispatch("click", to: "#close")}
         phx-key="escape"
       >
-        <%= if @return_to do %>
-          <%= live_patch "✖",
-            to: @return_to,
-            id: "close",
-            class: "phx-modal-close",
-            phx_click: hide_modal()
-          %>
-        <% else %>
-          <a id="close" href="#" class="phx-modal-close" phx-click={hide_modal()}>✖</a>
-        <% end %>
+        <a id="close" href="#" class="phx-modal-close" phx-click={assigns.close_event}>✖</a>
 
         <%= render_slot(@inner_block) %>
       </div>
@@ -52,9 +44,9 @@ defmodule BudgetWeb.LiveHelpers do
     """
   end
 
-  defp hide_modal(js \\ %JS{}) do
-    js
+  defp hide_modal do
+    %JS{}
     |> JS.hide(to: "#modal", transition: "fade-out")
     |> JS.hide(to: "#modal-content", transition: "fade-out-scale")
-  end
+end
 end

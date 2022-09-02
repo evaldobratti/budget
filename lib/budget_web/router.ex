@@ -17,7 +17,7 @@ defmodule BudgetWeb.Router do
   scope "/", BudgetWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    live "/", BudgetLive.Index, :index
 
     live "/accounts", AccountLive.Index, :index
     live "/accounts/new", AccountLive.Index, :new
