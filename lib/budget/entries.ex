@@ -1,7 +1,12 @@
 defmodule Budget.Entries do
   alias Budget.Repo
 
-  alias Budget.Entries.Account
+  import Ecto.Query
+
+  alias Budget.Entries.{
+    Account,
+    Entry
+  }
 
   @doc """
   Returns the list of accounts.
@@ -13,7 +18,7 @@ defmodule Budget.Entries do
 
   """
   def list_accounts do
-    Repo.all(Account)
+    Repo.all(from p in Account, order_by: p.name)
   end
 
   @doc """
@@ -93,4 +98,46 @@ defmodule Budget.Entries do
   def change_account(%Account{} = account, attrs \\ %{}) do
     Account.changeset(account, attrs)
   end
+
+
+  def change_entry(%Entry{} = entry, attrs \\ %{}) do
+    Entry.changeset(entry, attrs)
+  end
+
+  def update_entry(%Entry{} = entry, attrs) do
+    entry
+    |> Entry.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def create_entry(attrs \\ %{}) do
+    %Entry{}
+    |> Entry.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def list_entriess_from_accounts(accounts_ids, start_date, end_date) do
+    query = 
+      from(
+        e in Entry,
+        where: e.date >= ^start_date and e.date <= ^end_date,
+        left_join: a in assoc(e, :account),
+        preload: [account: a],
+        order_by: [e.date, e.description]
+      )
+
+    query = 
+      if length(accounts_ids) == 0 do
+        query
+      else
+        where(query, [e], e.account_id in ^accounts_ids)
+      end
+
+    Repo.all(query)
+  end
+
+  def get_entry!(id) do
+    Repo.get(Entry, id)
+  end
+
 end

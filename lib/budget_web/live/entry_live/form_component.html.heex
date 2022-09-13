@@ -1,0 +1,43 @@
+<div>
+  <.form
+    let={f}
+    for={@changeset}
+    id="entry-form"
+    phx-target={@myself}
+    phx-change="validate"
+    phx-submit="save"
+  >
+    <div class="pt-4">
+      <%= label f, :date, class: "form-label" %>
+      <%= date_input f, :date, class: "form-control form-control-sm", phx_hook: "BSInputError" %>
+      <%= error_tag f, :date %>
+    </div>
+  
+    <div class="pt-4">
+      <%= label f, :description, class: "form-label" %>
+      <%= text_input f, :description, class: "form-control form-control-sm", phx_hook: "BSInputError" %>
+      <%= error_tag f, :description %>
+    </div>
+
+    <div class="pt-4">
+      <%= label f, :account_id, class: "form-label" %>
+      <%= select f, :account_id, Enum.map(@accounts, &{&1.name, &1.id}), class: "form-select form-select-sm", phx_hook: "BSInputError" %>
+      <%= error_tag f, :account_id %>
+    </div>
+
+    <div class="pt-4">
+      <%= label f, :value, class: "form-label" %>
+      <%= number_input f, :value, class: "form-control form-control-sm", phx_hook: "BSInputError" %>
+      <%= error_tag f, :value %>
+    </div>
+
+    <div class="pt-4">
+      <%= checkbox f, :is_carried_out, phx_hook: "BSInputError" %>
+      <%= error_tag f, :is_carried_out %>
+    </div>
+  
+    <div class="pt-4">
+      <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary btn-sm" %>
+    </div>
+  </.form>
+</div>

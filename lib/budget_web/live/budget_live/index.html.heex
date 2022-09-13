@@ -9,19 +9,20 @@
   </.modal>
 <% end %>
 
-<div class="row">
-  <div class="col-4">
+<div class="row pt-4">
+  <div class="col-3">
     <div class="row">
       <div class="col-1">
         <h4>Accounts</h4>
       </div>
       <div class="col-auto ms-auto">
-        <a href="#" phx-click="account_new">New Account</a>
+        <button class="btn btn-sm btn-primary" phx-click="account_new">New Account</button>
       </div>
     </div>
     <%= for account <- @accounts do %>
       <div class="row">
         <div class="col-auto">
+          <input type="checkbox" phx-click="toggle-account" phx-value-account-id={account.id} checked={account.id in @accounts_selected_ids} />
           <%= account.name %>
         </div>
         <div class="col-auto ms-auto">
@@ -31,7 +32,70 @@
         </div>
       </div>
     <% end %>
+  </div>
+  <div class="col">
+    <div class="row">
+      <div class="col">
+        <.form
+          for={:dates}
+          phx-change="update-dates"
+        >
+          <div class="row">
+            <div class="col-auto">
+              From
+              <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
+            </div>
+            <div class="col-auto">
+              To
+              <input name="date-end" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")} />
+            </div>
+          </div>
+        </.form>
+      </div>
+      <div class="ms-auto col-auto d-flex align-items-end">
+        <button class="btn btn-sm btn-primary" phx-click="modal-new-entry">New Entry</button>
+        <%= if @modal_new_entry do %>
+          <.modal close_event="close_new_entry_modal">
+            <.live_component
+              module={BudgetWeb.EntryLive.FormComponent}
+              id={:new}
+              action={:new}
+              entry={%Budget.Entries.Entry{}}
+            />
+          </.modal>
+        <% end %>
+      </div>
+    </div>
+
+    <%= if @modal_edit_entry do %>
+      <.modal close_event="close_edit_entry_modal">
+        <.live_component
+          module={BudgetWeb.EntryLive.FormComponent}
+          id={@modal_edit_entry.id}
+          action={:edit}
+          entry={@modal_edit_entry}
+        />
+      </.modal>
+    <% end %>
 
 
+    <div class="">
+      <%= for entry <- @entries do %>
+        <div class="row">
+          <div class="col-auto">
+            <%= Timex.format!(entry.date, "{0D}/{0M}/{YYYY}") %> 
+          </div>
+          <div class="col">
+            <a href="#" phx-click="entry-edit" phx-value-entry-id={entry.id}><%= entry.description %></a>
+          </div>
+          <div class="col">
+            <%= entry.account.name %>
+          </div>
+          <div class="col text-end">
+            <%= Number.Currency.number_to_currency(entry.value) %>
+          </div>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
