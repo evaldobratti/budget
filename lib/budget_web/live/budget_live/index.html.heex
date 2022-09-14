@@ -35,7 +35,7 @@
   </div>
   <div class="col">
     <div class="row">
-      <div class="col">
+      <div class="col-auto">
         <.form
           for={:dates}
           phx-change="update-dates"
@@ -52,7 +52,7 @@
           </div>
         </.form>
       </div>
-      <div class="ms-auto col-auto d-flex align-items-end">
+      <div class="col-auto d-flex align-items-end">
         <button class="btn btn-sm btn-primary" phx-click="modal-new-entry">New Entry</button>
         <%= if @modal_new_entry do %>
           <.modal close_event="close_new_entry_modal">
@@ -80,10 +80,25 @@
 
 
     <div class="">
+
+      <div class="row">
+        <div class="col-auto">
+          <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %> 
+        </div>
+        <div class="col">
+          Previous balance
+        </div>
+        <div class="col">
+        </div>
+        <div class="col text-end">
+          <%= Number.Currency.number_to_currency(Enum.at(@balances, 0)) %>
+        </div>
+      </div>
+
       <%= for entry <- @entries do %>
         <div class="row">
           <div class="col-auto">
-            <%= Timex.format!(entry.date, "{0D}/{0M}/{YYYY}") %> 
+            <%= format_date(entry.date) %> 
           </div>
           <div class="col">
             <a href="#" phx-click="entry-edit" phx-value-entry-id={entry.id}><%= entry.description %></a>
@@ -96,6 +111,21 @@
           </div>
         </div>
       <% end %>
+
+
+      <div class="row">
+        <div class="col-auto">
+          <%= format_date(Enum.at(@dates, 1)) %> 
+        </div>
+        <div class="col">
+          Next balance
+        </div>
+        <div class="col">
+        </div>
+        <div class="col text-end">
+          <%= Number.Currency.number_to_currency(Enum.at(@balances, 1)) %>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -140,4 +140,34 @@ defmodule Budget.Entries do
     Repo.get(Entry, id)
   end
 
+  def balance_at(accounts_ids, date) do
+    query = 
+      from(
+        e in Entry,
+        where: e.date < ^date,
+        select: coalesce(sum(e.value), 0)
+      )
+
+    query = 
+      if length(accounts_ids) == 0 do
+        query
+      else
+        where(query, [e], e.account_id in ^accounts_ids)
+      end
+
+    initials = 
+      from(
+        a in Account, 
+        select: coalesce(sum(a.initial_balance), 0)
+      )
+
+    initials = 
+      if length(accounts_ids) == 0 do
+        initials
+      else
+        where(initials, [a], a.id in ^accounts_ids)
+      end
+
+    Decimal.add(Repo.one(query), Repo.one(initials))
+  end
 end

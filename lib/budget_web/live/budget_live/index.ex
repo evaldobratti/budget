@@ -12,9 +12,10 @@ defmodule BudgetWeb.BudgetLive.Index do
       |> assign(modal_account_action: nil)
       |> assign(accounts_selected_ids: [])
       |> assign(dates: [Timex.beginning_of_month(Timex.today()), Timex.end_of_month(Timex.today)])
-      |> reload_entries()
       |> assign(modal_new_entry: false)
       |> assign(modal_edit_entry: nil)
+      |> assign(balances: [0, 0])
+      |> reload_entries()
     }
   end
 
@@ -109,10 +110,15 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   defp reload_entries(socket) do
+    accounts_ids = socket.assigns.accounts_selected_ids
     [start_date, end_date] = socket.assigns.dates
 
+    previous_balance = Entries.balance_at(accounts_ids, start_date)
+    next_balance = Entries.balance_at(accounts_ids, Timex.shift(end_date, days: 1))
+
     socket
-    |> assign(entries: Entries.list_entriess_from_accounts(socket.assigns.accounts_selected_ids, start_date, end_date))
+    |> assign(entries: Entries.list_entriess_from_accounts(accounts_ids, start_date, end_date))
+    |> assign(balances: [previous_balance, next_balance])
   end
 
   @impl true

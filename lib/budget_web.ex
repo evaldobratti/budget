@@ -99,6 +99,8 @@ defmodule BudgetWeb do
       import BudgetWeb.ErrorHelpers
       import BudgetWeb.Gettext
       alias BudgetWeb.Router.Helpers, as: Routes
+
+      import BudgetWeb.ViewHelpers
     end
   end
 
