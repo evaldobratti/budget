@@ -5,7 +5,8 @@ defmodule Budget.Entries do
 
   alias Budget.Entries.{
     Account,
-    Entry
+    Entry,
+    Recurrency
   }
 
   @doc """
@@ -169,5 +170,14 @@ defmodule Budget.Entries do
       end
 
     Decimal.add(Repo.one(query), Repo.one(initials))
+  end
+
+  def change_recurrency(recurrency, attrs) do
+    Recurrency.changeset(recurrency, attrs)
+  end
+
+
+  def recurrency_entries(recurrency, until_date) do
+    Recurrency.entries(recurrency, until_date)
   end
 end
