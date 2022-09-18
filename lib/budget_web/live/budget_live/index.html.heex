@@ -41,6 +41,9 @@
           phx-change="update-dates"
         >
           <div class="row">
+            <div class="col-auto d-flex align-items-end">
+              <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
+            </div>
             <div class="col-auto">
               From
               <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
@@ -49,15 +52,18 @@
               To
               <input name="date-end" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")} />
             </div>
+            <div class="col-auto d-flex align-items-end">
+              <button class="btn btn-sm btn-primary" phx-click="month-next" type="button"><%= ">>" %></button>
+            </div>
           </div>
         </.form>
       </div>
-      <div class="col-auto d-flex align-items-end">
-        <button class="btn btn-sm btn-primary" phx-click="modal-new-entry">New Entry</button>
+      <div class="col-auto ms-auto d-flex align-items-end">
+        <button class="btn btn-sm btn-primary" phx-click="modal-new-entry" type="button">New Entry</button>
         <%= if @modal_new_entry do %>
           <.modal close_event="close_new_entry_modal">
             <.live_component
-              module={BudgetWeb.EntryLive.FormComponent}
+              module={BudgetWeb.CompoundLive.FormComponent}
               id={:new}
               action={:new}
               entry={%Budget.Entries.Entry{}}

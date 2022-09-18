@@ -56,6 +56,55 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
+  def handle_event("close_edit_entry_modal", _params, socket) do
+    {
+      :noreply,
+      assign(socket, modal_edit_entry: nil)
+    }
+  end
+
+  def handle_event("month-previous", _params, socket) do
+    [date_start | _] = socket.assigns.dates
+
+    date_start = 
+      date_start
+      |> Timex.shift(months: -1)
+      |> Timex.beginning_of_month()
+
+    dates = [
+      date_start, 
+      Timex.end_of_month(date_start)
+    ]
+
+    {
+      :noreply,
+      socket
+      |> assign(dates: dates)
+      |> reload_entries()
+    }
+  end
+
+  def handle_event("month-next", _params, socket) do
+    [date_start | _] = socket.assigns.dates
+
+    date_start = 
+      date_start
+      |> Timex.shift(months: 1)
+      |> Timex.beginning_of_month()
+
+    dates = [
+      date_start, 
+      Timex.end_of_month(date_start)
+    ]
+
+    {
+      :noreply,
+      socket
+      |> assign(dates: dates)
+      |> reload_entries()
+    }
+  end
+
   def handle_event("toggle-account", %{"account-id" => account_id}, socket) do
     {account_id, _} = Integer.parse(account_id)
 
@@ -128,6 +177,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       socket
       |> assign(accounts: Entries.list_accounts())
       |> assign(modal_account_action: nil)
+      |> reload_entries()
     }
   end
 

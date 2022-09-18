@@ -2,10 +2,6 @@ defmodule Budget.Entries.Recurrency do
   use Ecto.Schema
   import Ecto.Changeset
 
-  require IEx
-
-  
-
   schema "recurrencies" do
     field :date_end, :date
     field :date_start, :date

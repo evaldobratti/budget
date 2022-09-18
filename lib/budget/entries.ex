@@ -172,7 +172,7 @@ defmodule Budget.Entries do
     Decimal.add(Repo.one(query), Repo.one(initials))
   end
 
-  def change_recurrency(recurrency, attrs) do
+  def change_recurrency(%Recurrency{} = recurrency, attrs \\ %{}) do
     Recurrency.changeset(recurrency, attrs)
   end
 
@@ -180,4 +180,17 @@ defmodule Budget.Entries do
   def recurrency_entries(recurrency, until_date) do
     Recurrency.entries(recurrency, until_date)
   end
+
+  def update_recurrency(%Recurrency{} = recurrency, attrs) do
+    recurrency
+    |> Recurrency.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def create_recurrency(attrs \\ %{}) do
+    %Recurrency{}
+    |> Recurrency.changeset(attrs)
+    |> Repo.insert()
+  end
+
 end
