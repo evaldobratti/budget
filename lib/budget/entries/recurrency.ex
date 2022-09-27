@@ -2,6 +2,8 @@ defmodule Budget.Entries.Recurrency do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Budget.Entries.Entry
+
   schema "recurrencies" do
     field :date_end, :date
     field :date_start, :date
@@ -13,6 +15,7 @@ defmodule Budget.Entries.Recurrency do
     field :parcel_start, :integer
     field :value, :decimal
     field :account_id, :id
+    belongs_to :entry_origin, Entry
 
     timestamps()
   end
@@ -21,7 +24,7 @@ defmodule Budget.Entries.Recurrency do
   def changeset(recurrency, attrs) do
     changeset = 
       recurrency
-      |> cast(attrs, [:frequency, :is_parcel, :is_forever, :value, :frequency, :date_start, :date_end, :description, :parcel_start, :parcel_end, :is_parcel, :account_id])
+      |> cast(attrs, [:frequency, :is_parcel, :is_forever, :value, :frequency, :date_start, :date_end, :description, :parcel_start, :parcel_end, :is_parcel, :account_id, :entry_origin_id])
       |> validate_required([:date_start, :description, :value, :account_id, :is_forever, :is_parcel, :frequency])
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
