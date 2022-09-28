@@ -38,7 +38,6 @@ defmodule BudgetWeb.CompoundLive.FormComponent do
     {:noreply, assign(socket, :changeset, changeset)}
   end
 
-
   def handle_event("save", %{"compound_entry" => compound_entry}, socket) do
     save_entry(socket, socket.assigns.action, compound_entry)
   end

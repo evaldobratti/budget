@@ -160,13 +160,15 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   defp reload_entries(socket) do
     accounts_ids = socket.assigns.accounts_selected_ids
-    [start_date, end_date] = socket.assigns.dates
+    [date_start, date_end] = socket.assigns.dates
 
-    previous_balance = Entries.balance_at(accounts_ids, start_date)
-    next_balance = Entries.balance_at(accounts_ids, Timex.shift(end_date, days: 1))
+    previous_balance = Entries.balance_at(accounts_ids, date_start)
+    next_balance = Entries.balance_at(accounts_ids, Timex.shift(date_end, days: 1))
+
+    entries = Entries.entries_in_period(accounts_ids, date_start, date_end)
 
     socket
-    |> assign(entries: Entries.list_entriess_from_accounts(accounts_ids, start_date, end_date))
+    |> assign(entries: Enum.sort(entries, &Timex.before?(&1.date, &2.date)))
     |> assign(balances: [previous_balance, next_balance])
   end
 

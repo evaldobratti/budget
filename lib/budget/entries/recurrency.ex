@@ -2,7 +2,8 @@ defmodule Budget.Entries.Recurrency do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Budget.Entries.Entry
+  alias Budget.Entries.Account
+  alias Budget.Entries.RecurrencyEntry
 
   schema "recurrencies" do
     field :date_end, :date
@@ -14,8 +15,10 @@ defmodule Budget.Entries.Recurrency do
     field :parcel_end, :integer
     field :parcel_start, :integer
     field :value, :decimal
-    field :account_id, :id
-    belongs_to :entry_origin, Entry
+
+    belongs_to :account, Account
+
+    has_many :recurrency_entries, RecurrencyEntry
 
     timestamps()
   end
@@ -24,8 +27,9 @@ defmodule Budget.Entries.Recurrency do
   def changeset(recurrency, attrs) do
     changeset = 
       recurrency
-      |> cast(attrs, [:frequency, :is_parcel, :is_forever, :value, :frequency, :date_start, :date_end, :description, :parcel_start, :parcel_end, :is_parcel, :account_id, :entry_origin_id])
+      |> cast(attrs, [:frequency, :is_parcel, :is_forever, :value, :frequency, :date_start, :date_end, :description, :parcel_start, :parcel_end, :is_parcel, :account_id])
       |> validate_required([:date_start, :description, :value, :account_id, :is_forever, :is_parcel, :frequency])
+      |> cast_assoc(:recurrency_entries)
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
       add_error(changeset, :is_forever, "Recurrency can't be infinite parcel")
@@ -44,15 +48,23 @@ defmodule Budget.Entries.Recurrency do
 
   def entries(%__MODULE__{} = recurrency, until_date) do
     first_end = 
-      [recurrency.date_end, until_date]
+      if recurrency.is_forever do
+        [until_date]
+      else
+        [recurrency.date_end, until_date]
+      end
       |> Enum.sort(&Timex.before?/2)
       |> Enum.at(0)
 
     dates = dates(recurrency.frequency, recurrency.date_start, first_end)
 
-    Enum.map(dates, & %{
+    dates
+    |> Enum.filter(& !Enum.any?(recurrency.recurrency_entries, fn re -> re.original_date == &1 end))
+    |> Enum.map(& %{
       date: &1,
       description: recurrency.description,
+      account: recurrency.account,
+      account_id: recurrency.account_id,
       value: recurrency.value
     })
   end
