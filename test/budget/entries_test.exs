@@ -6,20 +6,26 @@ defmodule Budget.EntriesTest do
   alias Budget.Entries.Entry
 
   def create_account(_) do
-    {:ok, account} = 
+    {:ok, account1} = 
       Entries.create_account(%{
         name: "Account name",
-        initial_balance: 0
+        initial_balance: -10
       })
 
-    {:ok, account: account}
+    {:ok, account2} = 
+      Entries.create_account(%{
+        name: "Account name",
+        initial_balance: 50
+      })
+
+    {:ok, account1: account1, account2: account2}
   end
 
-  describe "change_recurrency" do
+  describe "change_recurrency/2" do
 
     setup :create_account
 
-    test "finite recurrency", %{account: account} do
+    test "finite recurrency", %{account1: account} do
       changeset =
         Entries.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
@@ -50,7 +56,7 @@ defmodule Budget.EntriesTest do
       assert errors_on(changeset).date_end == ["can't be blank"]
     end
 
-    test "infinite recurrency", %{account: account} do
+    test "infinite recurrency", %{account1: account} do
       changeset = 
         Entries.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
@@ -67,7 +73,7 @@ defmodule Budget.EntriesTest do
       assert Map.get(changes, :date_end) == nil
     end
 
-    test "infinite parcel", %{account: account} do
+    test "infinite parcel", %{account1: account} do
       changeset = 
         Entries.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
@@ -84,7 +90,7 @@ defmodule Budget.EntriesTest do
       assert errors_on(changeset).is_forever == ["Recurrency can't be infinite parcel"]
     end
 
-    test "parcel", %{account: account} do
+    test "parcel", %{account1: account} do
       changeset = 
         Entries.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
@@ -176,11 +182,11 @@ defmodule Budget.EntriesTest do
     end
   end
 
-  describe "entries_in_period" do
+  describe "entries_in_period/3" do
 
     setup :create_account
 
-    test "retrieve regular entries", %{account: account} do
+    test "retrieve regular entries", %{account1: account} do
       {:ok, _} = Entries.create_entry(%{
         date: ~D[2020-02-01],
         description: "Description1",
@@ -218,7 +224,7 @@ defmodule Budget.EntriesTest do
       assert length(entries) == 2
     end
 
-    test "retrieve recurrency entries", %{account: account} do
+    test "retrieve recurrency entries", %{account1: account} do
       {:ok, entry} = Entries.create_entry(%{
         date: ~D[2020-02-01],
         description: "Description1",
@@ -263,6 +269,60 @@ defmodule Budget.EntriesTest do
           value: ^value
         }, 
       ] = entries
+    end
+  end
+
+  describe "balance_at/2" do
+
+    setup :create_account
+
+    test "balance with only initial balance", %{account1: account1, account2: account2} do
+      balance = Entries.balance_at([account1.id, account2.id], ~D[2020-01-01])
+
+      assert balance == Decimal.new(40)
+    end
+
+    test "balance with entries", %{account1: account1, account2: account2} do
+      {:ok, _} = 
+        Entries.create_entry(%{
+          date: ~D[2020-01-05],
+          description: "Description", 
+          account_id: account1.id,
+          value: 200
+
+        })
+
+      assert Entries.balance_at([account1.id, account2.id], ~D[2020-01-04]) == Decimal.new(40)
+      assert Entries.balance_at([account1.id, account2.id], ~D[2020-01-05]) == Decimal.new(240)
+    end
+
+    test "balance with recurrencies", %{account1: account} do
+      {:ok, entry} = Entries.create_entry(%{
+        date: ~D[2020-02-01],
+        description: "Description1",
+        account_id: account.id,
+        value: 200
+      })
+
+      {:ok, _} = Entries.create_recurrency(%{
+        date_start: ~D[2020-02-01],
+        date_end: ~D[2021-02-01],
+        description: "something",
+        frequency: :monthly,
+        is_forever: false,
+        value: 200,
+        account_id: account.id,
+        recurrency_entries: [
+          %{
+            entry_id: entry.id,
+            original_date: ~D[2020-02-01]
+          }
+        ]
+      })
+
+      balance = Entries.balance_at([], ~D[2020-06-01])
+
+      assert balance == Decimal.new(1040)
     end
   end
   

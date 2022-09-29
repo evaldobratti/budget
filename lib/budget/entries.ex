@@ -123,34 +123,34 @@ defmodule Budget.Entries do
   end
 
   def balance_at(accounts_ids, date) do
-    query = 
+    entries = 
       from(
         e in Entry,
-        where: e.date < ^date,
+        join: a in assoc(e, :account), as: :account,
+        where: e.date <= ^date,
         select: coalesce(sum(e.value), 0)
       )
-
-    query = 
-      if length(accounts_ids) == 0 do
-        query
-      else
-        where(query, [e], e.account_id in ^accounts_ids)
-      end
+      |> where_account_in(accounts_ids)
+      |> Repo.one()
 
     initials = 
       from(
-        a in Account, 
+        a in Account, as: :account,
         select: coalesce(sum(a.initial_balance), 0)
       )
+      |> where_account_in(accounts_ids)
+      |> Repo.one()
 
-    initials = 
-      if length(accounts_ids) == 0 do
-        initials
-      else
-        where(initials, [a], a.id in ^accounts_ids)
-      end
+    recurrencies = 
+      find_recurrencies(accounts_ids)
+      |> Enum.map(& recurrency_entries(&1, date))
+      |> List.flatten()
+      |> Enum.map(& &1.value)
+      |> Enum.reduce(Decimal.new(0), & Decimal.add(&1, &2))
 
-    Decimal.add(Repo.one(query), Repo.one(initials))
+    entries
+    |> Decimal.add( initials)
+    |> Decimal.add(recurrencies)
   end
 
   def change_recurrency(%Recurrency{} = recurrency, attrs \\ %{}) do
