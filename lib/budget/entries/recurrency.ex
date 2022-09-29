@@ -29,7 +29,7 @@ defmodule Budget.Entries.Recurrency do
       recurrency
       |> cast(attrs, [:frequency, :is_parcel, :is_forever, :value, :frequency, :date_start, :date_end, :description, :parcel_start, :parcel_end, :is_parcel, :account_id])
       |> validate_required([:date_start, :description, :value, :account_id, :is_forever, :is_parcel, :frequency])
-      |> cast_assoc(:recurrency_entries)
+      |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
       add_error(changeset, :is_forever, "Recurrency can't be infinite parcel")

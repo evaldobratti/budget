@@ -13,9 +13,15 @@ defmodule Budget.Entries.RecurrencyEntry do
     timestamps()
   end
 
-  def changeset(recurrency_entry, attrs) do
+  def changeset_from_recurrency(recurrency_entry, attrs) do
     recurrency_entry
     |> cast(attrs, [:original_date, :recurrency_id, :entry_id])
     |> validate_required([:original_date, :entry_id])
+  end
+
+  def changeset_from_entry(recurrency_entry, attrs) do
+    recurrency_entry
+    |> cast(attrs, [:original_date, :recurrency_id, :entry_id])
+    |> validate_required([:original_date, :recurrency_id])
   end
 end

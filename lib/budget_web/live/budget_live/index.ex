@@ -162,8 +162,8 @@ defmodule BudgetWeb.BudgetLive.Index do
     accounts_ids = socket.assigns.accounts_selected_ids
     [date_start, date_end] = socket.assigns.dates
 
-    previous_balance = Entries.balance_at(accounts_ids, date_start)
-    next_balance = Entries.balance_at(accounts_ids, Timex.shift(date_end, days: 1))
+    previous_balance = Entries.balance_at(accounts_ids, Timex.shift(date_start, days: -1))
+    next_balance = Entries.balance_at(accounts_ids, date_end)
 
     entries = Entries.entries_in_period(accounts_ids, date_start, date_end)
 

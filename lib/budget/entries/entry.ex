@@ -3,6 +3,7 @@ defmodule Budget.Entries.Entry do
   import Ecto.Changeset
 
   alias Budget.Entries.Account
+  alias Budget.Entries.RecurrencyEntry
 
   schema "entries" do
     field :date, :date
@@ -10,6 +11,7 @@ defmodule Budget.Entries.Entry do
     field :is_carried_out, :boolean, default: false
     field :value, :decimal
     belongs_to :account, Account
+    has_one :recurrency_entry, RecurrencyEntry
 
     timestamps()
   end
@@ -19,5 +21,6 @@ defmodule Budget.Entries.Entry do
     entry
     |> cast(attrs, [:date, :description, :is_carried_out, :value, :account_id])
     |> validate_required([:date, :description, :is_carried_out, :value, :account_id])
+    |> cast_assoc(:recurrency_entry, with: &RecurrencyEntry.changeset_from_entry/2)
   end
 end

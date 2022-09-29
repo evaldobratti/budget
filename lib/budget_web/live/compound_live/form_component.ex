@@ -50,19 +50,30 @@ defmodule BudgetWeb.CompoundLive.FormComponent do
 
     case action do
       {:ok, %{recurrency: nil, entry: entry}} ->
-        Entries.create_entry(Map.from_struct(entry))
+        entry_attrs = 
+          entry
+          |> Map.from_struct() 
+          |> Map.put(:recurrency_entry, nil)
+
+        {:ok, _} = Entries.create_entry(entry_attrs)
 
         send(self(), entry_created: entry)
 
         {:noreply, socket}
 
       {:ok, %{recurrency: recurrency, entry: entry}} ->
-        {:ok, entry} = Entries.create_entry(Map.from_struct(entry))
+        entry_attrs = 
+          entry
+          |> Map.from_struct() 
+          |> Map.put(:recurrency_entry, nil)
+
+        {:ok, entry} = Entries.create_entry(entry_attrs)
+
         {:ok, _recurrency} = 
           Entries.create_recurrency(
             recurrency
             |> Map.from_struct()
-            |> Map.put(:entry_origin_id, entry.id)
+            |> Map.put(:recurrency_entries, [%{entry_id: entry.id, original_date: recurrency.date_start}])
           )
 
         send(self(), entry_created: entry)
