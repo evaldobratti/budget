@@ -169,4 +169,65 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#next-balance") |> render =~ "1.020,50"
     end
   end
+
+  describe "recurrencies" do
+
+    setup :create_account
+
+    test "create entry with recurrency", %{conn: conn, account: account} do
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+      live
+      |> element("button", "New Entry")
+      |> render_click()
+
+      live
+      |> form("#coumpound-form", compound_entry: %{
+        entry: %{
+          date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
+          description: "a description",
+          account_id: account.id,
+          value: "200"
+        },
+        is_recurrency: true,
+      })
+      |> render_change()
+
+      live
+      |> form("#coumpound-form", compound_entry: %{
+        entry: %{
+          date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
+          description: "a description",
+          account_id: account.id,
+          value: "200"
+        },
+        is_recurrency: true,
+        recurrency: %{
+          is_forever: true,
+          frequency: :monthly,
+        }
+      })
+      |> render_submit()
+
+      refute live |> element("#coumpound-form") |> has_element?
+      
+      entry = Repo.one(Budget.Entries.Entry)
+
+      assert live |> element("#previous-balance") |> render =~ "120,50"
+      assert live |> element("#entry-#{entry.id}") |> render =~ "200,00"
+      assert live |> element("#next-balance") |> render =~ "320,50"
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      recurrency = Repo.one(Budget.Entries.Recurrency)
+
+      next_month_entry = Timex.today |> Timex.shift(months: 1) |> Date.to_iso8601()
+
+      assert live |> element("#previous-balance") |> render =~ "320,50"
+      assert live |> element("#entry-recurrency-#{recurrency.id}-#{next_month_entry}") |> render =~ "200,00"
+      assert live |> element("#next-balance") |> render =~ "520,50"
+    end
+  end
 end

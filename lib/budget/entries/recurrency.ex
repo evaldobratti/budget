@@ -61,6 +61,7 @@ defmodule Budget.Entries.Recurrency do
     dates
     |> Enum.filter(& !Enum.any?(recurrency.recurrency_entries, fn re -> re.original_date == &1 end))
     |> Enum.map(& %{
+      id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(&1)}",
       date: &1,
       description: recurrency.description,
       account: recurrency.account,
