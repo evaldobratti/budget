@@ -37,6 +37,7 @@
     <div class="row">
       <div class="col-auto">
         <.form
+          id="dates-switch"
           for={:dates}
           phx-change="update-dates"
         >
@@ -86,7 +87,7 @@
 
     <div class="">
 
-      <div class="row">
+      <div class="row" id="previous-balance">
         <div class="col-auto">
           <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %> 
         </div>
@@ -101,7 +102,7 @@
       </div>
 
       <%= for entry <- @entries do %>
-        <div class="row">
+        <div class="row" id={"entry-#{entry.id}"}>
           <div class="col-auto">
             <%= format_date(entry.date) %> 
           </div>
@@ -118,7 +119,7 @@
       <% end %>
 
 
-      <div class="row">
+      <div class="row" id="next-balance">
         <div class="col-auto">
           <%= format_date(Enum.at(@dates, 1)) %> 
         </div>
