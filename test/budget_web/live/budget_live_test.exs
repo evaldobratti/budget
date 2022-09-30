@@ -1,4 +1,4 @@
-defmodule BudgetWeb.AccountLiveTest do
+defmodule BudgetWeb.BudgetLiveTest do
   use BudgetWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -26,8 +26,8 @@ defmodule BudgetWeb.AccountLiveTest do
       assert html =~ account.name
     end
 
-    test "create new account", %{conn: conn, account: account} do
-      {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+    test "create new account", %{conn: conn} do
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
       |> element("button", "New Account")
@@ -51,7 +51,7 @@ defmodule BudgetWeb.AccountLiveTest do
     setup :create_account
 
     test "create new entry", %{conn: conn, account: account} do
-      {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
       |> element("button", "New Entry")
@@ -67,8 +67,6 @@ defmodule BudgetWeb.AccountLiveTest do
         }
       })
       |> render_submit()
-
-      html = render(live)
 
       refute live |> element("#coumpound-form") |> has_element?
 
@@ -94,7 +92,7 @@ defmodule BudgetWeb.AccountLiveTest do
         account_id: account.id
       )
 
-      {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       assert live |> element("#previous-balance") |> render =~ "420,50"
       assert live |> element("#entry-#{today.id}") |> render =~ "200,00"
@@ -144,7 +142,7 @@ defmodule BudgetWeb.AccountLiveTest do
         account_id: account.id
       )
 
-      {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       assert live |> element("#previous-balance") |> render =~ "420,50"
       assert live |> element("#entry-#{today.id}") |> render =~ "200,00"
