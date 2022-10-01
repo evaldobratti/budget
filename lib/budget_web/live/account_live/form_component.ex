@@ -27,7 +27,7 @@ defmodule BudgetWeb.AccountLive.FormComponent do
     save_account(socket, socket.assigns.action, account_params)
   end
 
-  defp save_account(socket, :edit, account_params) do
+  defp save_account(socket, :edit_account, account_params) do
     case Entries.update_account(socket.assigns.account, account_params) do
       {:ok, account} ->
         send(self(), account_updated: account)
@@ -43,15 +43,14 @@ defmodule BudgetWeb.AccountLive.FormComponent do
     end
   end
 
-  defp save_account(socket, :new, account_params) do
+  defp save_account(socket, :new_account, account_params) do
     case Entries.create_account(account_params) do
-      {:ok, account} ->
-        send(self(), account_created: account)
-
+      {:ok, _account} ->
         {
           :noreply,
           socket
           |> put_flash(:info, "Account created successfully")
+          |> push_patch(to: socket.assigns.return_to)
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->

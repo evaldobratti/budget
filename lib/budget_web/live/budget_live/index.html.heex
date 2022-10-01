@@ -1,10 +1,11 @@
-<%= if @modal_account_action do %>
-  <.modal close_event="close_account_modal">
+<%= if @live_action in [:new_account, :edit_account] do %>
+  <.modal return_to={Routes.budget_index_path(@socket, :index)}>
     <.live_component
       module={BudgetWeb.AccountLive.FormComponent}
       id={@account.id || :new}
-      action={@modal_account_action}
+      action={@live_action}
       account={@account}
+      return_to={Routes.budget_index_path(@socket, :index, from: "account")}
     />
   </.modal>
 <% end %>
@@ -16,6 +17,7 @@
         <h4>Accounts</h4>
       </div>
       <div class="col-auto ms-auto">
+        <%= live_patch "New Account", to: Routes.budget_index_path(@socket, :new_account) %>
         <button class="btn btn-sm btn-primary" phx-click="account_new">New Account</button>
       </div>
     </div>
