@@ -23,7 +23,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> apply_action(socket.assigns.live_action, params)
-      |> apply_from(Map.get(params, "from", ""))
+      |> apply_return_from(Map.get(params, "from", ""))
     }
   end
 
@@ -32,44 +32,20 @@ defmodule BudgetWeb.BudgetLive.Index do
     |> assign(account: %Entries.Account{})
   end
 
-  def apply_action(socket, :index, _params) do
+  def apply_action(socket, :edit_account, %{"id" => id}) do
+    socket
+    |> assign(account: Entries.get_account!(id))
+  end
+
+  def apply_action(socket, _, _) do
     socket
   end
 
-  def apply_from(socket, ""), do: socket
-
-  def apply_from(socket, "account"), do: reload_entries(socket)
-
-  @impl true
-  def handle_event("account_edit", %{"account-id" => account_id}, socket) do
-    {
-      :noreply,
-      socket
-      |> assign(modal_account_action: :edit)
-      |> assign(account: Entries.get_account!(account_id))
-    }
+  def apply_return_from(socket, from) when from in ["account", "entry"] do 
+    reload_entries(socket)
   end
 
-  def handle_event("close_account_modal", _params, socket) do
-    {
-      :noreply,
-      assign(socket, modal_account_action: nil)
-    }
-  end
-
-  def handle_event("close_new_entry_modal", _params, socket) do
-    {
-      :noreply,
-      assign(socket, modal_new_entry: false)
-    }
-  end
-
-  def handle_event("close_edit_entry_modal", _params, socket) do
-    {
-      :noreply,
-      assign(socket, modal_edit_entry: nil)
-    }
-  end
+  def apply_return_from(socket, _), do: socket
 
   def handle_event("month-previous", _params, socket) do
     [date_start | _] = socket.assigns.dates
@@ -151,22 +127,6 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
-  def handle_event("modal-new-entry", _, socket) do
-    {
-      :noreply, 
-      socket
-      |> assign(modal_new_entry: true)
-    }
-  end
-
-  def handle_event("entry-edit", %{"entry-id" => entry_id}, socket) do
-    {
-      :noreply,
-      socket
-      |> assign(modal_edit_entry: Entries.get_entry!(entry_id))
-    }
-  end
-
   defp reload_entries(socket) do
     accounts_ids = socket.assigns.accounts_selected_ids
     [date_start, date_end] = socket.assigns.dates
@@ -180,28 +140,6 @@ defmodule BudgetWeb.BudgetLive.Index do
     |> assign(accounts: Entries.list_accounts())
     |> assign(entries: Enum.sort(entries, &Timex.before?(&1.date, &2.date)))
     |> assign(balances: [previous_balance, next_balance])
-  end
-
-  @impl true
-  def handle_info([{action, _account}], socket) when action in [:account_created, :account_updated] do
-    {
-      :noreply, 
-      socket
-      |> assign(accounts: Entries.list_accounts())
-      |> assign(modal_account_action: nil)
-      |> reload_entries()
-    }
-  end
-
-  @impl true
-  def handle_info([{action, _account}], socket) when action in [:entry_created, :entry_updated] do
-    {
-      :noreply, 
-      socket
-      |> assign(modal_new_entry: false)
-      |> assign(modal_edit_entry: nil)
-      |> reload_entries()
-    }
   end
 
   def accounts_selected(accounts_ids, accounts) when is_list(accounts_ids) do

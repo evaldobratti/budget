@@ -226,7 +226,7 @@ defmodule Budget.Entries do
       [Recurrency.entries(r, date_end) | acc]
     end)
     |> List.flatten()
-    |> Enum.filter(& Timex.between?(&1.date, date_start, date_end))
+    |> Enum.filter(& Timex.between?(&1.date, date_start, date_end, inclusive: true))
   end
 
   defp where_account_in(query, account_ids) do

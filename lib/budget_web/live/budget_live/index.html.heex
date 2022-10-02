@@ -10,15 +10,14 @@
   </.modal>
 <% end %>
 
-<div class="row pt-4">
+<div class="row">
   <div class="col-3">
     <div class="row">
       <div class="col-1">
         <h4>Accounts</h4>
       </div>
       <div class="col-auto ms-auto">
-        <%= live_patch "New Account", to: Routes.budget_index_path(@socket, :new_account) %>
-        <button class="btn btn-sm btn-primary" phx-click="account_new">New Account</button>
+        <%= live_patch "New Account", to: Routes.budget_index_path(@socket, :new_account), class: "btn btn-sm btn-primary" %>
       </div>
     </div>
     <%= for account <- @accounts do %>
@@ -28,9 +27,7 @@
           <%= account.name %>
         </div>
         <div class="col-auto ms-auto">
-          <a href="#" phx-click="account_edit" phx-value-account-id={account.id}>
-            Edit
-          </a>
+          <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_account, account.id) %>
         </div>
       </div>
     <% end %>
@@ -62,13 +59,14 @@
         </.form>
       </div>
       <div class="col-auto ms-auto d-flex align-items-end">
-        <button class="btn btn-sm btn-primary" phx-click="modal-new-entry" type="button">New Entry</button>
-        <%= if @modal_new_entry do %>
-          <.modal close_event="close_new_entry_modal">
+        <%= live_patch "New Entry", to: Routes.budget_index_path(@socket, :new_entry), class: "btn btn-sm btn-primary" %>
+        <%= if @live_action == :new_entry do %>
+          <.modal return_to={Routes.budget_index_path(@socket, :index)}>
             <.live_component
               module={BudgetWeb.CompoundLive.FormComponent}
               id={:new}
-              action={:new}
+              action={@live_action}
+              return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
             />
           </.modal>
         <% end %>

@@ -7,9 +7,9 @@ defmodule BudgetWeb.CompoundLive.FormComponent do
 
 
   @impl true
-  def update(%{action: action}, socket) do
+  def update(%{action: action} = assigns, socket) do
     changeset = 
-      if action == :new do
+      if action == :new_entry do
         CompoundEntry.changeset(%CompoundEntry{
           entry: %Entries.Entry{date: Timex.today()}, 
           is_recurrency: false,
@@ -22,9 +22,9 @@ defmodule BudgetWeb.CompoundLive.FormComponent do
     {
       :ok, 
       socket
+      |> assign(assigns)
       |> assign(compound_entry: changeset.data)
       |> assign(changeset: changeset)
-      |> assign(action: action)
       |> assign(:accounts, Entries.list_accounts())
     }
   end
@@ -42,7 +42,7 @@ defmodule BudgetWeb.CompoundLive.FormComponent do
     save_entry(socket, socket.assigns.action, compound_entry)
   end
 
-  def save_entry(socket, :new, compound_entry_params) do
+  def save_entry(socket, :new_entry, compound_entry_params) do
     action = 
       socket
       |> mount_changeset(compound_entry_params)
@@ -57,9 +57,12 @@ defmodule BudgetWeb.CompoundLive.FormComponent do
 
         {:ok, _} = Entries.create_entry(entry_attrs)
 
-        send(self(), entry_created: entry)
-
-        {:noreply, socket}
+        {
+          :noreply, 
+          socket
+          |> put_flash(:info, "Entry created successfully")
+          |> push_patch(to: socket.assigns.return_to)
+        }
 
       {:ok, %{recurrency: recurrency, entry: entry}} ->
         entry_attrs = 
@@ -76,17 +79,11 @@ defmodule BudgetWeb.CompoundLive.FormComponent do
             |> Map.put(:recurrency_entries, [%{entry_id: entry.id, original_date: recurrency.date_start}])
           )
 
-        send(self(), entry_created: entry)
-
         {
           :noreply,
           socket
           |> put_flash(:info, "Entry created successfully")
-          |> assign(changeset: CompoundEntry.changeset(%CompoundEntry{
-            entry: %Entries.Entry{}, 
-            is_recurrency: false,
-            recurrency: nil
-          }))
+          |> push_patch(to: socket.assigns.return_to)
         }
         
       {:error, %Ecto.Changeset{} = changeset} ->

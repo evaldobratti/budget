@@ -30,7 +30,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("button", "New Account")
+      |> element("a", "New Account")
       |> render_click()
 
       live
@@ -54,7 +54,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("button", "New Entry")
+      |> element("a", "New Entry")
       |> render_click()
 
       live
@@ -178,7 +178,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("button", "New Entry")
+      |> element("a", "New Entry")
       |> render_click()
 
       live
