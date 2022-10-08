@@ -58,17 +58,15 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       live
-      |> form("#coumpound-form", compound_entry: %{
-        entry: %{
-          date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          description: "a description",
-          account_id: account.id,
-          value: "200"
-        }
+      |> form("#entry-form", entry: %{
+        date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
+        description: "a description",
+        account_id: account.id,
+        value: "200"
       })
       |> render_submit()
 
-      refute live |> element("#coumpound-form") |> has_element?
+      refute live |> element("#entry-form") |> has_element?
 
       entry = Repo.one(Budget.Entries.Entry)
 
@@ -182,34 +180,32 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       live
-      |> form("#coumpound-form", compound_entry: %{
-        entry: %{
-          date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          description: "a description",
-          account_id: account.id,
-          value: "200"
-        },
+      |> form("#entry-form", entry: %{
+        date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
+        description: "a description",
+        account_id: account.id,
+        value: "200",
         is_recurrency: true,
       })
       |> render_change()
 
       live
-      |> form("#coumpound-form", compound_entry: %{
-        entry: %{
-          date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          description: "a description",
-          account_id: account.id,
-          value: "200"
-        },
+      |> form("#entry-form", entry: %{
+        date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
+        description: "a description",
+        account_id: account.id,
+        value: "200",
         is_recurrency: true,
-        recurrency: %{
-          is_forever: true,
-          frequency: :monthly,
+        recurrency_entry: %{
+          recurrency: %{
+            is_forever: true,
+            frequency: :monthly,
+          }
         }
       })
       |> render_submit()
 
-      refute live |> element("#coumpound-form") |> has_element?
+      refute live |> element("#entry-form") |> has_element?
       
       entry = Repo.one(Budget.Entries.Entry)
 
