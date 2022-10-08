@@ -2,6 +2,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   use BudgetWeb, :live_view
 
   alias Budget.Entries
+  alias Budget.Entries.Entry
 
   @impl true
   def mount(_params, _session, socket) do
@@ -37,6 +38,13 @@ defmodule BudgetWeb.BudgetLive.Index do
     |> assign(account: Entries.get_account!(id))
   end
 
+  def apply_action(socket, :edit_entry, %{"id" => id}) do
+    entry = Enum.find(socket.assigns.entries, & to_string(&1.id) === id)
+
+    socket
+    |> assign(edit_entry: entry)
+  end
+
   def apply_action(socket, _, _) do
     socket
   end
@@ -47,6 +55,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def apply_return_from(socket, _), do: socket
 
+  @impl true
   def handle_event("month-previous", _params, socket) do
     [date_start | _] = socket.assigns.dates
 
@@ -64,7 +73,6 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> assign(dates: dates)
-      |> put_flash(:info, Date.to_iso8601(date_start))
       |> reload_entries()
     }
   end

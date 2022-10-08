@@ -13,8 +13,8 @@
 <div class="row">
   <div class="col-3">
     <div class="row">
-      <div class="col-1">
-        <h4>Accounts</h4>
+      <div class="col align-items-center">
+        <span class="h5">Accounts</span>
       </div>
       <div class="col-auto ms-auto">
         <%= live_patch "New Account", to: Routes.budget_index_path(@socket, :new_account), class: "btn btn-sm btn-primary" %>
@@ -34,22 +34,27 @@
   </div>
   <div class="col">
     <div class="row">
-      <div class="col-auto">
+      <div class="col-auto align-items-center">
+        <span class="h5">Entries</span>
+      </div>
+      <div class="col-auto mx-auto">
         <.form
           id="dates-switch"
           for={:dates}
           phx-change="update-dates"
         >
           <div class="row">
-            <div class="col-auto d-flex align-items-end">
+            <div class="col-auto">
               <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
             </div>
             <div class="col-auto">
-              From
               <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
             </div>
+
+            <div class="col-auto d-flex align-items-center">
+              until
+            </div>
             <div class="col-auto">
-              To
               <input name="date-end" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")} />
             </div>
             <div class="col-auto d-flex align-items-end">
@@ -58,14 +63,15 @@
           </div>
         </.form>
       </div>
-      <div class="col-auto ms-auto d-flex align-items-end">
+      <div class="col-auto d-flex align-items-end">
         <%= live_patch "New Entry", to: Routes.budget_index_path(@socket, :new_entry), class: "btn btn-sm btn-primary" %>
         <%= if @live_action == :new_entry do %>
           <.modal return_to={Routes.budget_index_path(@socket, :index)}>
             <.live_component
               module={BudgetWeb.CompoundLive.FormComponent}
-              id={:new}
               action={@live_action}
+              id={:new}
+              entry={%Entry{date: Timex.today()}}
               return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
             />
           </.modal>
@@ -73,13 +79,14 @@
       </div>
     </div>
 
-    <%= if @modal_edit_entry do %>
-      <.modal close_event="close_edit_entry_modal">
+    <%= if @live_action == :edit_entry do %>
+      <.modal return_to={Routes.budget_index_path(@socket, :index)}>
         <.live_component
-          module={BudgetWeb.EntryLive.FormComponent}
-          id={@modal_edit_entry.id}
-          action={:edit}
-          entry={@modal_edit_entry}
+          id={@edit_entry.id}
+          module={BudgetWeb.CompoundLive.FormComponent}
+          action={@live_action}
+          entry={@edit_entry}
+          return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
         />
       </.modal>
     <% end %>
@@ -107,7 +114,7 @@
             <%= format_date(entry.date) %> 
           </div>
           <div class="col">
-            <a href="#"><%= entry.description %></a>
+            <%= live_patch entry.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
           </div>
           <div class="col">
             <%= entry.account.name %>

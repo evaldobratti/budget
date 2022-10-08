@@ -21,6 +21,7 @@ defmodule BudgetWeb.Router do
     live "/accounts/new", BudgetLive.Index, :new_account
     live "/accounts/:id/edit", BudgetLive.Index, :edit_account
     live "/entries/new", BudgetLive.Index, :new_entry
+    live "/entries/:id/edit", BudgetLive.Index, :edit_entry
 
     live "/accounts", AccountLive.Index, :index
     # live "/accounts/new", AccountLive.Index, :new

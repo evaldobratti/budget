@@ -15,6 +15,7 @@ defmodule BudgetWeb.CompoundLive.CompoundEntry do
   end
 
   def changeset(compound, params \\ %{}) do
+  IO.inspect(params)
     changeset = 
       compound
       |> cast(params, [:is_recurrency])

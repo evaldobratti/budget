@@ -209,7 +209,7 @@ defmodule Budget.Entries do
         e in Entry,
         where: e.date >= ^date_start and e.date <= ^date_end,
         join: a in assoc(e, :account), as: :account,
-        preload: [account: a],
+        preload: [account: a, recurrency_entry: :recurrency],
         order_by: [e.date, e.description]
       )
       |> where_account_in(account_ids)
