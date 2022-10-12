@@ -1,9 +1,11 @@
 defmodule BudgetWeb.BudgetLiveTest do
   use BudgetWeb.ConnCase
 
+  
   import Phoenix.LiveViewTest
   import Budget.EntriesFixtures
   alias Budget.Repo
+  alias Budget.Entries
 
   defp create_account(_) do
     account = account_fixture()
@@ -73,6 +75,28 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#previous-balance") |> render =~ "120,50"
       assert live |> element("#entry-#{entry.id}") |> render =~ "200,00"
       assert live |> element("#next-balance") |> render =~ "320,50"
+    end
+
+    test "editing entry", %{conn: conn, account: account} do
+      entry = entry_fixture(account_id: account.id)
+
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+      live
+      |> element("a", "Entry description")
+      |> render_click()
+
+      live
+      |> form("#entry-form", entry: %{
+        description: "a new description",
+        value: "400"
+      })
+      |> render_submit()
+
+      updated = Entries.get_entry!(entry.id)
+
+      assert updated.value == Decimal.new(400)
+      assert updated.description == "a new description"
     end
 
     test "navigating through months via form", %{conn: conn, account: account} do

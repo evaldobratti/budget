@@ -37,31 +37,19 @@ defmodule BudgetWeb.EntryLive.FormComponent do
     save_entry(socket, socket.assigns.action, entry_params)
   end
 
-  def save_entry(socket, :edit_entry, _entry_params) do
-    action = 
-      socket.assigns.changeset
-      |> Ecto.Changeset.apply_action(:update)
-
-    case action do
-      {:ok, %{recurrency: nil, entry: entry}} ->
-        entry_attrs = 
-          entry
-          |> Map.from_struct()
-          |> Map.put(:recurrency_entry, nil)
-
-        {:ok, _} = Entries.update_entry(socket.assigns.entry, entry_attrs)
-
+  def save_entry(socket, :edit_entry, entry_params) do
+    case Entries.update_entry(socket.assigns.entry, entry_params) do
+      {:ok, _entry} ->
         {
           :noreply, 
           socket
-          |> put_flash(:info, "Entry updated successfully")
+          |> put_flash(:info, "Entry udpated successfully!")
           |> push_patch(to: socket.assigns.return_to)
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
     end
-
   end
 
   def save_entry(socket, :new_entry, entry_params) do
@@ -74,7 +62,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
         {
           :noreply, 
           socket
-          |> put_flash(:info, "Entry created successfully")
+          |> put_flash(:info, "Entry created successfully!")
           |> push_patch(to: socket.assigns.return_to)
         }
 

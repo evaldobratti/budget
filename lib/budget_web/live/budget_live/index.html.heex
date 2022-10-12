@@ -79,20 +79,17 @@
       </div>
     </div>
 
-<!--
     <%= if @live_action == :edit_entry do %>
       <.modal return_to={Routes.budget_index_path(@socket, :index)}>
         <.live_component
-          id={@edit_entry.id}
-          module={BudgetWeb.CompoundLive.FormComponent}
+          module={BudgetWeb.EntryLive.FormComponent}
           action={@live_action}
+          id={@edit_entry.id}
           entry={@edit_entry}
           return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
         />
       </.modal>
     <% end %>
-
--->
 
     <div class="">
 

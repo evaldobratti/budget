@@ -86,7 +86,7 @@
           <%= submit "Delete entry TODO", phx_disable_with: "Saving...", class: "btn btn-danger btn-sm" %>
         </div>
       </div>
-      <%= if @changeset.data.recurrency do %>
+      <%= if Map.get(@changeset.data, :recurrency_entry) do %>
         <div class="col-auto">
           <div class="pt-4">
             <%= submit "Delete entry and recurrency TODO", phx_disable_with: "Saving...", class: "btn btn-danger btn-sm" %>
