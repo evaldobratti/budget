@@ -249,5 +249,60 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#entry-recurrency-#{recurrency.id}-#{next_month_entry}") |> render =~ "200,00"
       assert live |> element("#next-balance") |> render =~ "520,50"
     end
+    
+    test "edit existing entry from recurrency", %{conn: conn, account: account} do
+      recurrency = recurrency_fixture()
+
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+      live
+      |> element("a", "Entry description")
+      |> render_click()
+
+      live
+      |> form("#entry-form", entry: %{
+        description: "a new description",
+        value: "420"
+      })
+      |> render_submit()
+
+      updated = Budget.Repo.one(Budget.Entries.Entry)
+
+      assert updated.value == Decimal.new(420)
+      assert updated.description == "a new description"
+    end
+
+    test "edit transient entry from recurrency", %{conn: conn, account: account} do
+      recurrency = recurrency_fixture()
+
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      live
+      |> element("a", "Entry description")
+      |> render_click()
+
+      live
+      |> form("#entry-form", entry: %{
+        date: ~D[2020-06-13],
+        description: "a new description",
+        value: "420"
+      })
+      |> render_submit()
+
+      recurrency = Entries.get_recurrency!(recurrency.id)
+
+      assert length(recurrency.recurrency_entries) == 2
+
+      recurrency_entry = Enum.find(recurrency.recurrency_entries, & &1.entry.value == Decimal.new(420))
+      entry = recurrency_entry.entry
+
+      assert entry.description == "a new description"
+      assert recurrency_entry.original_date == Timex.today() |> Timex.shift(months: 1)
+      assert entry.date == ~D[2020-06-13]
+    end
   end
 end

@@ -105,11 +105,24 @@ defmodule Budget.Entries do
     Entry.changeset(entry, attrs)
   end
 
+
+  def change_transient_entry(%Entry{} = entry, attrs \\ %{}) do
+    Entry.changeset_transient(entry, attrs)
+  end
+
   def update_entry(%Entry{} = entry, attrs) do
     entry
     |> Entry.changeset(attrs)
     |> Repo.update()
   end
+
+  def create_transient_entry(%Entry{} = entry, attrs \\ %{}) do
+    entry
+    |> Map.put(:id, nil)
+    |> Entry.changeset_transient(attrs)
+    |> Repo.insert()
+  end
+
 
   def create_entry(attrs \\ %{}) do
     %Entry{}
@@ -209,8 +222,11 @@ defmodule Budget.Entries do
         e in Entry,
         where: e.date >= ^date_start and e.date <= ^date_end,
         join: a in assoc(e, :account), as: :account,
+        left_join: re in assoc(e, :recurrency_entry),
+        left_join: r in assoc(re, :recurrency),
         preload: [account: a, recurrency_entry: :recurrency],
-        order_by: [e.date, e.description]
+        order_by: [e.date, e.description],
+        select_merge: %{is_recurrency: not is_nil(r.id)}
       )
       |> where_account_in(account_ids)
 
@@ -233,6 +249,14 @@ defmodule Budget.Entries do
     from([account: a] in query,
       where: (a.id in ^account_ids) or fragment("?::int = 0", ^length(account_ids))
     )
+  end
+
+  def get_recurrency!(id) do
+    from(
+      r in Recurrency,
+      preload: [recurrency_entries: :entry]
+    )
+    |> Repo.get!(id)
   end
 
 end

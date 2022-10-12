@@ -32,4 +32,37 @@ defmodule Budget.EntriesFixtures do
 
     entry
   end
+
+  def recurrency_fixture(attrs \\ []) do
+    date = Timex.today() |> Date.to_iso8601()
+
+    attrs = Keyword.put_new_lazy(attrs, :account_id, fn -> account_fixture().id end)
+
+    {:ok, recurrency} =
+      attrs
+      |> Keyword.put_new_lazy(:recurrency_entries, fn -> 
+        [
+          %{
+            original_date: date,
+            entry: %{
+              date: date,
+              description: "Entry description",
+              account_id: Keyword.get(attrs, :account_id),
+              value: 133
+            }
+          }
+        ]
+      end)
+      |> Enum.into(%{
+        date_start: date,
+        description: "Entry description",
+        value: 133,
+        is_forever: true,
+        frequency: :monthly
+
+      })
+      |> Budget.Entries.create_recurrency()
+
+    recurrency
+  end
 end

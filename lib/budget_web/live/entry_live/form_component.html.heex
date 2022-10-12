@@ -37,9 +37,9 @@
       <%= error_tag f, :is_carried_out %>
     </div>
 
+    <% entry_loaded = Ecto.get_meta(@changeset.data, :state) == :loaded || (@changeset.data.id && String.starts_with?(@changeset.data.id, "recurrency")) %>
+
     <div class="pt-2">
-      <% entry_loaded = Ecto.get_meta(@changeset.data, :state) == :loaded %>
-      
       <%= checkbox f, :is_recurrency, phx_hook: "BSInputError", disabled: entry_loaded %>
       <%= label f, :is_recurrency, class: "form-label" %>
       <%= error_tag f, :is_recurrency %>
@@ -51,20 +51,26 @@
 
       <div class="pt-2">
         <%= label recurrency_form, :frequency, class: "form-label" %>
-        <%= select recurrency_form, :frequency, Ecto.Enum.mappings(Recurrency, :frequency), class: "form-select form-select-sm", phx_hook: "BSInputError" %>
+        <%= select recurrency_form, 
+            :frequency, 
+            Ecto.Enum.mappings(Recurrency, :frequency), 
+            class: "form-select form-select-sm", 
+            phx_hook: "BSInputError", 
+            disabled: entry_loaded 
+        %>
         <%= error_tag recurrency_form, :frequency %>
       </div>
 
       <div class="row pt-2">
         <div class="col-auto">
-          <%= checkbox recurrency_form, :is_forever, phx_hook: "BSInputError" %>
+          <%= checkbox recurrency_form, :is_forever, phx_hook: "BSInputError", disabled: entry_loaded %>
           <%= label recurrency_form, :is_forever, class: "form-label" %>
           <%= error_tag recurrency_form, :is_forever %>
         </div>
         <div class="col">
           <%= label recurrency_form, :date_end, class: "form-label" %>
           <%= date_input recurrency_form, :date_end, 
-              disabled: input_value(recurrency_form, :is_forever),
+              disabled: input_value(recurrency_form, :is_forever) || entry_loaded,
               class: "form-control form-control-sm w-auto", 
               phx_hook: "BSInputError" 
           %>

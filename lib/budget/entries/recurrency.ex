@@ -3,6 +3,7 @@ defmodule Budget.Entries.Recurrency do
   import Ecto.Changeset
 
   alias Budget.Entries.Account
+  alias Budget.Entries.Entry
   alias Budget.Entries.RecurrencyEntry
 
   schema "recurrencies" do
@@ -60,13 +61,19 @@ defmodule Budget.Entries.Recurrency do
 
     dates
     |> Enum.filter(& !Enum.any?(recurrency.recurrency_entries, fn re -> re.original_date == &1 end))
-    |> Enum.map(& %{
+    |> Enum.map(& %Entry{
       id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(&1)}",
       date: &1,
       description: recurrency.description,
       account: recurrency.account,
       account_id: recurrency.account_id,
-      value: recurrency.value
+      value: recurrency.value,
+      is_recurrency: true,
+      recurrency_entry: %RecurrencyEntry{
+        original_date: &1,
+        recurrency_id: recurrency.id,
+        recurrency: recurrency
+      }
     })
   end
 

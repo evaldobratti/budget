@@ -5,14 +5,23 @@ defmodule BudgetWeb.EntryLive.FormComponent do
   alias Budget.Entries.Entry
   alias Budget.Entries.Recurrency
 
+
   @impl true
-  def update(%{action: action} = assigns, socket) do
+  def update(%{entry: %{id: "recurrency" <> _}} = assigns, socket) do
+    changeset = Entries.change_transient_entry(assigns.entry)
+
+    {
+      :ok, 
+      socket
+      |> assign(assigns)
+      |> assign(changeset: changeset)
+      |> assign(accounts: Entries.list_accounts())
+    }
+  end
+
+  def update(assigns, socket) do
     changeset = 
-      if action == :new_entry do
         Entries.change_entry(assigns.entry)
-      else
-        Entries.change_entry(assigns.entry)
-      end
 
     {
       :ok, 
@@ -35,6 +44,21 @@ defmodule BudgetWeb.EntryLive.FormComponent do
 
   def handle_event("save", %{"entry" => entry_params}, socket) do
     save_entry(socket, socket.assigns.action, entry_params)
+  end
+
+  def save_entry(%{assigns: %{entry: %{id: "recurrency" <> _}}} = socket, :edit_entry, entry_params) do
+    case Entries.create_transient_entry(socket.assigns.entry, entry_params) do
+      {:ok, _entry} ->
+        {
+          :noreply, 
+          socket
+          |> put_flash(:info, "Entry udpated successfully!")
+          |> push_patch(to: socket.assigns.return_to)
+        }
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, changeset: changeset)}
+    end
   end
 
   def save_entry(socket, :edit_entry, entry_params) do
