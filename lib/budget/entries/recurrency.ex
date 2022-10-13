@@ -29,7 +29,7 @@ defmodule Budget.Entries.Recurrency do
     changeset = 
       recurrency
       |> cast(attrs, [:frequency, :is_parcel, :is_forever, :value, :frequency, :date_start, :date_end, :description, :parcel_start, :parcel_end, :is_parcel, :account_id])
-      |> validate_required([:date_start, :description, :value, :account_id, :is_forever, :is_parcel, :frequency])
+      |> validate_required([:date_start, :description, :value, :account_id, :is_parcel, :frequency])
       |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
@@ -60,7 +60,6 @@ defmodule Budget.Entries.Recurrency do
     dates = dates(recurrency.frequency, recurrency.date_start, first_end)
 
     dates
-    |> Enum.filter(& !Enum.any?(recurrency.recurrency_entries, fn re -> re.original_date == &1 end))
     |> Enum.with_index()
     |> Enum.map(fn {date, ix} -> 
       complement =
@@ -85,6 +84,7 @@ defmodule Budget.Entries.Recurrency do
         }
       } 
     end)
+    |> Enum.filter(& !Enum.any?(recurrency.recurrency_entries, fn re -> re.original_date == &1.recurrency_entry.original_date end))
   end
 
   def dates(frequency, current_date, until_date) do
