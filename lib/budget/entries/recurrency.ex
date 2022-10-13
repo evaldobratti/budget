@@ -49,10 +49,10 @@ defmodule Budget.Entries.Recurrency do
 
   def entries(%__MODULE__{} = recurrency, until_date) do
     first_end = 
-      if recurrency.is_forever do
-        [until_date]
-      else
-        [recurrency.date_end, until_date]
+      cond do
+        recurrency.is_forever -> [until_date]
+        recurrency.is_parcel -> [until_date, parcel_end_date(recurrency)]
+        true -> [recurrency.date_end, until_date]
       end
       |> Enum.sort(&Timex.before?/2)
       |> Enum.at(0)
@@ -61,20 +61,30 @@ defmodule Budget.Entries.Recurrency do
 
     dates
     |> Enum.filter(& !Enum.any?(recurrency.recurrency_entries, fn re -> re.original_date == &1 end))
-    |> Enum.map(& %Entry{
-      id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(&1)}",
-      date: &1,
-      description: recurrency.description,
-      account: recurrency.account,
-      account_id: recurrency.account_id,
-      value: recurrency.value,
-      is_recurrency: true,
-      recurrency_entry: %RecurrencyEntry{
-        original_date: &1,
-        recurrency_id: recurrency.id,
-        recurrency: recurrency
-      }
-    })
+    |> Enum.with_index()
+    |> Enum.map(fn {date, ix} -> 
+      complement =
+        if recurrency.is_parcel do
+          " (#{ix + recurrency.parcel_start}/#{recurrency.parcel_end})"
+        else
+          ""
+        end
+
+      %Entry{
+        id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
+        date: date,
+        description: recurrency.description <> complement,
+        account: recurrency.account,
+        account_id: recurrency.account_id,
+        value: recurrency.value,
+        is_recurrency: true,
+        recurrency_entry: %RecurrencyEntry{
+          original_date: date,
+          recurrency_id: recurrency.id,
+          recurrency: recurrency
+        }
+      } 
+    end)
   end
 
   def dates(frequency, current_date, until_date) do
@@ -92,6 +102,18 @@ defmodule Budget.Entries.Recurrency do
 
   def recurrency_shift(:weekly, date) do
     Timex.shift(date, weeks: 1)
+  end
+
+  defp parcel_end_date(%__MODULE__{} = recurrency) do
+    parcel_end_date(recurrency, recurrency.date_start, recurrency.parcel_start)
+  end
+
+  def parcel_end_date(recurrency, current_date, current_parcel) do
+    if current_parcel == recurrency.parcel_end do
+      current_date
+    else
+      parcel_end_date(recurrency, recurrency_shift(recurrency.frequency, current_date), current_parcel + 1)
+    end
   end
 
 

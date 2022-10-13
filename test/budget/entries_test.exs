@@ -180,6 +180,67 @@ defmodule Budget.EntriesTest do
         %{date: ~D[2019-01-29], value: 200, description: "Some description"},
       ] = Entries.recurrency_entries(recurrency, ~D[2019-06-01])
     end
+
+    test "calculate parcel weekly 1 to 6" do 
+      recurrency = 
+        %Recurrency{
+          account_id: 1,
+          is_parcel: true,
+          description: "Some description",
+          frequency: :weekly,
+          value: 200,
+          date_start: ~D[2019-01-01],
+          parcel_start: 1,
+          parcel_end: 6,
+          recurrency_entries: []
+        }
+
+      assert [
+        %{date: ~D[2019-01-01], value: 200, description: "Some description (1/6)"}, 
+        %{date: ~D[2019-01-08], value: 200, description: "Some description (2/6)"},
+        %{date: ~D[2019-01-15], value: 200, description: "Some description (3/6)"},
+        %{date: ~D[2019-01-22], value: 200, description: "Some description (4/6)"},
+        %{date: ~D[2019-01-29], value: 200, description: "Some description (5/6)"},
+        %{date: ~D[2019-02-05], value: 200, description: "Some description (6/6)"},
+      ] = Entries.recurrency_entries(recurrency, ~D[2019-04-01])
+
+
+      assert [
+        %{date: ~D[2019-01-01], value: 200, description: "Some description (1/6)"}, 
+        %{date: ~D[2019-01-08], value: 200, description: "Some description (2/6)"},
+        %{date: ~D[2019-01-15], value: 200, description: "Some description (3/6)"},
+        %{date: ~D[2019-01-22], value: 200, description: "Some description (4/6)"},
+      ] = Entries.recurrency_entries(recurrency, ~D[2019-01-22])
+    end
+
+    test "calculate parcel weekly 3 to 6" do 
+      recurrency = 
+        %Recurrency{
+          account_id: 1,
+          is_parcel: true,
+          description: "Some description",
+          frequency: :weekly,
+          value: 200,
+          date_start: ~D[2019-01-01],
+          parcel_start: 3,
+          parcel_end: 6,
+          recurrency_entries: []
+        }
+
+      assert [
+        %{date: ~D[2019-01-01], value: 200, description: "Some description (3/6)"}, 
+        %{date: ~D[2019-01-08], value: 200, description: "Some description (4/6)"},
+        %{date: ~D[2019-01-15], value: 200, description: "Some description (5/6)"},
+        %{date: ~D[2019-01-22], value: 200, description: "Some description (6/6)"},
+      ] = Entries.recurrency_entries(recurrency, ~D[2019-04-01])
+
+
+      assert [
+        %{date: ~D[2019-01-01], value: 200, description: "Some description (3/6)"}, 
+        %{date: ~D[2019-01-08], value: 200, description: "Some description (4/6)"},
+        %{date: ~D[2019-01-15], value: 200, description: "Some description (5/6)"},
+      ] = Entries.recurrency_entries(recurrency, ~D[2019-01-15])
+    end
   end
 
   describe "entries_in_period/3" do
