@@ -187,24 +187,13 @@ defmodule Budget.Entries do
   end
 
   def find_recurrencies(accounts_ids) do
-    query = 
-      from(
-        r in Recurrency,
-        join: a in assoc(r, :account), as: :account,
-        preload: [:recurrency_entries, {:account, a}]
-      )
-
-      # agora tem que colocar a recorrencia nos saldos
-      # rastrear lançamentos já criados ou nao (por ex, o lancamento originador aparece duplicado)
-
-    query = 
-      if length(accounts_ids) == 0 do
-        query
-      else
-        where(query, [e], e.account_id in ^accounts_ids)
-      end
-
-    Repo.all(query)
+    from(
+      r in Recurrency,
+      join: a in assoc(r, :account), as: :account,
+      preload: [:recurrency_entries, {:account, a}]
+    )
+    |> where_account_in(accounts_ids)
+    |> Repo.all()
   end
 
 
@@ -224,7 +213,7 @@ defmodule Budget.Entries do
         join: a in assoc(e, :account), as: :account,
         left_join: re in assoc(e, :recurrency_entry),
         left_join: r in assoc(re, :recurrency),
-        preload: [account: a, recurrency_entry: :recurrency],
+        preload: [account:  a, recurrency_entry: {re, recurrency: r}],
         order_by: [e.date, e.description],
         select_merge: %{is_recurrency: not is_nil(r.id)}
       )

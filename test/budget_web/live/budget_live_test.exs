@@ -304,5 +304,47 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert recurrency_entry.original_date == Timex.today() |> Timex.shift(months: 1)
       assert entry.date == ~D[2020-06-13]
     end
+
+    test "edit a persistent entry from recurrency", %{conn: conn, account: account} do
+      recurrency = recurrency_fixture()
+
+      {:ok, %{id: id}} = 
+        recurrency.id
+        |> Entries.get_recurrency!()
+        |> Entries.recurrency_entries(Timex.today |> Timex.shift(months: 3))
+        |> Enum.at(0)
+        |> Entries.create_transient_entry(%{})
+
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      live
+      |> element("a", "Entry description")
+      |> render_click()
+
+      path = assert_patch(live)
+      assert path == BudgetWeb.Router.Helpers.budget_index_path(conn, :edit_entry, id)
+
+      live
+      |> form("#entry-form", entry: %{
+        date: ~D[2020-06-13],
+        description: "a new description",
+        value: "420"
+      })
+      |> render_submit()
+
+      recurrency = Entries.get_recurrency!(recurrency.id)
+
+      assert length(recurrency.recurrency_entries) == 2
+
+      entry = Entries.get_entry!(id)
+
+      assert entry.description == "a new description"
+      assert entry.date == ~D[2020-06-13]
+      assert entry.value == Decimal.new(420) 
+    end
   end
 end
