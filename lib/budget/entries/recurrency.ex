@@ -116,5 +116,24 @@ defmodule Budget.Entries.Recurrency do
     end
   end
 
-
+  def apply_any_description_update(entry_changeset) do
+    case apply_action(entry_changeset, :insert) do
+      {
+        :ok, 
+        %{
+          recurrency_entry: %{
+            recurrency: %{
+              is_parcel: true, 
+              parcel_start: parcel_start, 
+              parcel_end: parcel_end
+            }
+          }
+        }
+      } ->
+        update_change(entry_changeset, :description, & &1 <> " (#{parcel_start}/#{parcel_end})") 
+        
+      _ ->
+        entry_changeset
+    end
+  end
 end
