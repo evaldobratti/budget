@@ -127,6 +127,7 @@ defmodule Budget.Entries do
   def create_entry(attrs \\ %{}) do
     %Entry{}
     |> Entry.changeset(attrs)
+    |> Recurrency.apply_any_description_update()
     |> Repo.insert()
   end
 

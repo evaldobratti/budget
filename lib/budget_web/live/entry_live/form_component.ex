@@ -81,6 +81,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
 
     entry_params
     |> Entries.create_entry()
+    |> IO.inspect()
     |> case do
       {:ok, _entry} ->
         {
