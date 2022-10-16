@@ -5,6 +5,8 @@ defmodule Budget.EntriesTest do
   alias Budget.Entries.Recurrency
   alias Budget.Entries.Entry
 
+  import Budget.EntriesFixtures
+
   def create_account(_) do
     {:ok, account1} = 
       Entries.create_account(%{
@@ -384,6 +386,61 @@ defmodule Budget.EntriesTest do
       balance = Entries.balance_at([], ~D[2020-06-01])
 
       assert balance == Decimal.new(1040)
+    end
+  end
+
+  describe "create_transient_entry/2" do
+    test "create entry and recurrency_entry" do
+      recurrency = recurrency_fixture()
+
+      transient_entries = 
+        Entries.recurrency_entries(
+          recurrency, 
+          Timex.today |> Timex.shift(months: 3)
+        )
+
+      assert length(transient_entries) == 3
+
+      {:ok, created} = Entries.create_transient_entry(Enum.at(transient_entries, 1))
+
+      assert created.recurrency_entry.original_date == Timex.today() |> Timex.shift(months: 2)
+
+      transient_entries =
+        recurrency.id
+        |> Entries.get_recurrency!()
+        |> Entries.recurrency_entries(Timex.today |> Timex.shift(months: 3))
+
+      assert length(transient_entries) == 2
+    end
+  end
+
+  describe "create_entry/1" do
+    test "updates description if entry is parcel recurrency" do
+      account = account_fixture()
+
+      entry = %{
+        date: ~D[2020-06-01],
+        account_id: account.id,
+        description: "a description",
+        value: 200,
+        recurrency_entry: %{
+          original_date: ~D[2020-06-01],
+          recurrency: %{
+            description: "a description",
+            value: 200,
+            date_start: ~D[2020-06-01],
+            is_parcel: true,
+            parcel_start: 1,
+            parcel_end: 6,
+            account_id: account.id,
+            frequency: :monthly
+          }
+        }
+      }
+
+      {:ok, entry} = Entries.create_entry(entry)
+      
+      assert entry.description == "a description (1/6)"
     end
   end
   

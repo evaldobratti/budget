@@ -59,7 +59,6 @@ defmodule Budget.EntriesFixtures do
         value: 133,
         is_forever: true,
         frequency: :monthly
-
       })
       |> Budget.Entries.create_recurrency()
 
