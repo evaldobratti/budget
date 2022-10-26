@@ -1,9 +1,9 @@
 defmodule BudgetWeb.BudgetLiveTest do
   use BudgetWeb.ConnCase
-
   
   import Phoenix.LiveViewTest
   import Budget.EntriesFixtures
+
   alias Budget.Repo
   alias Budget.Entries
 
@@ -250,8 +250,8 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#next-balance") |> render =~ "520,50"
     end
     
-    test "edit existing entry from recurrency", %{conn: conn, account: account} do
-      recurrency = recurrency_fixture()
+    test "edit existing entry from recurrency", %{conn: conn} do
+      recurrency_fixture()
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -272,7 +272,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert updated.description == "a new description"
     end
 
-    test "edit transient entry from recurrency", %{conn: conn, account: account} do
+    test "edit transient entry from recurrency", %{conn: conn} do
       recurrency = recurrency_fixture()
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
@@ -305,7 +305,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert entry.date == ~D[2020-06-13]
     end
 
-    test "edit a persistent entry from recurrency", %{conn: conn, account: account} do
+    test "edit a persistent entry from recurrency", %{conn: conn} do
       recurrency = recurrency_fixture()
 
       {:ok, %{id: id}} = 

@@ -33,15 +33,20 @@ defmodule Budget.Entries.Recurrency do
       |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
+      # TODO allow this to happen
       add_error(changeset, :is_forever, "Recurrency can't be infinite parcel")
     else
-      if get_field(changeset, :is_forever) do
-        put_change(changeset, :date_end, nil)
+      if Ecto.get_meta(changeset.data, :state) == :loaded do
+        changeset
       else
-        if get_field(changeset, :is_parcel) do
-          validate_required(changeset, [:parcel_start, :parcel_end])
-        else 
-          validate_required(changeset, :date_end)
+        if get_field(changeset, :is_forever) do
+          put_change(changeset, :date_end, nil)
+        else
+          if get_field(changeset, :is_parcel) do
+            validate_required(changeset, [:parcel_start, :parcel_end])
+          else 
+            validate_required(changeset, :date_end)
+          end
         end
       end
     end
@@ -50,10 +55,11 @@ defmodule Budget.Entries.Recurrency do
   def entries(%__MODULE__{} = recurrency, until_date) do
     first_end = 
       cond do
-        recurrency.is_forever -> [until_date]
-        recurrency.is_parcel -> [until_date, parcel_end_date(recurrency)]
+        recurrency.is_forever -> [recurrency.date_end, until_date]
+        recurrency.is_parcel -> [recurrency.date_end, until_date, parcel_end_date(recurrency)]
         true -> [recurrency.date_end, until_date]
       end
+      |> Enum.filter(& &1)
       |> Enum.sort(&Timex.before?/2)
       |> Enum.at(0)
 

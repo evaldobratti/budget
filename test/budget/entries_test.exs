@@ -1,5 +1,5 @@
 defmodule Budget.EntriesTest do
-  use Budget.DataCase
+  use Budget.DataCase, async: true
 
   alias Budget.Entries
   alias Budget.Entries.Recurrency
@@ -412,6 +412,65 @@ defmodule Budget.EntriesTest do
 
       assert length(transient_entries) == 2
     end
+
+    test "updating a transient entry applying changes forward" do
+      recurrency = recurrency_fixture(date: ~D[2022-10-15])
+
+      [_, transient | _ ] = Entries.recurrency_entries(recurrency, ~D[2022-12-15])
+
+      assert "recurrency" <> _ = transient.id
+      assert transient.date == ~D[2022-12-15]
+      assert transient.value == Decimal.new(133)
+
+      {:ok, _} = Entries.create_transient_entry(transient, %{value: 500, recurrency_apply_forward: true})
+
+      recurrency_updated = Entries.get_recurrency!(recurrency.id)
+
+      assert recurrency_updated.date_end == ~D[2022-12-14]
+
+      entries = 
+        recurrency.account_id
+        |> List.wrap()
+        |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
+
+      assert %{date: ~D[2022-10-15], value: Decimal.new(133)} == Enum.at(entries, 0) |> Map.take([:date, :value])
+      assert %{date: ~D[2022-11-15], value: Decimal.new(133)} == Enum.at(entries, 1) |> Map.take([:date, :value])
+      assert %{date: ~D[2022-12-15], value: Decimal.new(500)} == Enum.at(entries, 2) |> Map.take([:date, :value])
+      assert %{date: ~D[2023-01-15], value: Decimal.new(500)} == Enum.at(entries, 3) |> Map.take([:date, :value])
+      assert %{date: ~D[2023-02-15], value: Decimal.new(500)} == Enum.at(entries, 4) |> Map.take([:date, :value])
+      assert %{date: ~D[2023-03-15], value: Decimal.new(500)} == Enum.at(entries, 5) |> Map.take([:date, :value])
+      assert %{date: ~D[2023-04-15], value: Decimal.new(500)} == Enum.at(entries, 6) |> Map.take([:date, :value])
+    end
+
+    test "updating a transient entry from parcel applying changes forward" do
+      recurrency = recurrency_fixture(date: ~D[2022-10-15], is_forever: false, is_parcel: true, parcel_start: 1, parcel_end: 6)
+
+      [_, transient | _ ] = Entries.recurrency_entries(recurrency, ~D[2022-12-15])
+
+      assert "recurrency" <> _ = transient.id
+      assert transient.date == ~D[2022-12-15]
+      assert transient.value == Decimal.new(133)
+
+      {:ok, _} = Entries.create_transient_entry(transient, %{value: 500, recurrency_apply_forward: true})
+
+      recurrency_updated = Entries.get_recurrency!(recurrency.id)
+
+      assert recurrency_updated.date_end == ~D[2022-12-14]
+
+      entries = 
+        recurrency.account_id
+        |> List.wrap()
+        |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
+
+      # TODO fix factory to generate recurrency from an entry instead of inverse
+      assert %{date: ~D[2022-10-15], value: Decimal.new(133), description: "Entry description"} == Enum.at(entries, 0) |> Map.take([:date, :value, :description])
+      assert %{date: ~D[2022-11-15], value: Decimal.new(133), description: "Entry description (2/6)"} == Enum.at(entries, 1) |> Map.take([:date, :value, :description])
+      assert %{date: ~D[2022-12-15], value: Decimal.new(500), description: "Entry description (3/6)"} == Enum.at(entries, 2) |> Map.take([:date, :value, :description])
+      assert %{date: ~D[2023-01-15], value: Decimal.new(500), description: "Entry description (4/6)"} == Enum.at(entries, 3) |> Map.take([:date, :value, :description])
+      assert %{date: ~D[2023-02-15], value: Decimal.new(500), description: "Entry description (5/6)"} == Enum.at(entries, 4) |> Map.take([:date, :value, :description])
+      assert %{date: ~D[2023-03-15], value: Decimal.new(500), description: "Entry description (6/6)"} == Enum.at(entries, 5) |> Map.take([:date, :value, :description])
+      assert nil == Enum.at(entries, 6)
+    end
   end
 
   describe "create_entry/1" do
@@ -443,5 +502,5 @@ defmodule Budget.EntriesTest do
       assert entry.description == "a description (1/6)"
     end
   end
-  
+
 end
