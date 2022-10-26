@@ -14,6 +14,8 @@ defmodule Budget.Entries.Entry do
     belongs_to :account, Account
 
     field :is_recurrency, :boolean, virtual: true
+    field :recurrency_apply_forward, :boolean, virtual: true
+
     has_one :recurrency_entry, RecurrencyEntry
 
     timestamps()
@@ -22,7 +24,7 @@ defmodule Budget.Entries.Entry do
   @doc false
   def changeset(entry, attrs) do
     entry
-    |> cast(attrs, [:date, :description, :is_carried_out, :value, :account_id, :is_recurrency])
+    |> cast(attrs, [:date, :description, :is_carried_out, :value, :account_id, :is_recurrency, :recurrency_apply_forward])
     |> validate_required([:date, :description, :is_carried_out, :value, :account_id])
     |> cast_assoc(:recurrency_entry, with: &RecurrencyEntry.changeset_from_entry/2)
   end
@@ -30,7 +32,7 @@ defmodule Budget.Entries.Entry do
   @doc false
   def changeset_transient(entry, attrs) do
     entry
-    |> cast(attrs, [:date, :description, :is_carried_out, :value, :account_id, :is_recurrency])
+    |> cast(attrs, [:date, :description, :is_carried_out, :value, :account_id, :is_recurrency, :recurrency_apply_forward])
     |> validate_required([:date, :description, :is_carried_out, :value, :account_id])
     |> cast_assoc(:recurrency_entry, with: &RecurrencyEntry.changeset_from_entry_transient/2)
   end

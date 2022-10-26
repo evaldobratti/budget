@@ -50,6 +50,12 @@
       <% [recurrency_form] = inputs_for recurrency_entry_form, :recurrency %>
 
       <div class="pt-2">
+        <%= checkbox f, :recurrency_apply_forward, phx_hook: "BSInputError" %>
+        <%= label f, :recurrency_apply_forward, "Apply these changes for the recurrency from now on", class: "form-label" %>
+        <%= error_tag f, :recurrency_apply_forward %>
+      </div>
+
+      <div class="pt-2">
         <%= label recurrency_form, :frequency, class: "form-label" %>
         <%= select recurrency_form, 
             :frequency, 

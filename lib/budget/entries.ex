@@ -105,7 +105,6 @@ defmodule Budget.Entries do
     Entry.changeset(entry, attrs)
   end
 
-
   def change_transient_entry(%Entry{} = entry, attrs \\ %{}) do
     Entry.changeset_transient(entry, attrs)
   end
@@ -117,9 +116,63 @@ defmodule Budget.Entries do
   end
 
   def create_transient_entry(%Entry{} = entry, attrs \\ %{}) do
+    # TODO add validation that id starts with recurrency
     entry
     |> Map.put(:id, nil)
     |> Entry.changeset_transient(attrs)
+    |> check_ending_recurrency
+  end
+
+  defp check_ending_recurrency(%Ecto.Changeset{changes: %{recurrency_apply_forward: true}, valid?: true} = changeset) do
+    original_date = changeset.data.recurrency_entry.original_date
+
+
+    {:ok, entry} = Ecto.Changeset.apply_action(changeset, :insert)
+    previous_recurrency = get_recurrency!(entry.recurrency_entry.recurrency_id)
+
+    parcel_regex = ~r/ \((\d+)\/\d+\)/
+    [current_parcel, description] = 
+      case Regex.run(parcel_regex, entry.description) do
+        [_, parcel] ->
+          [String.to_integer(parcel), Regex.replace(parcel_regex, entry.description, "")]
+
+        _ -> [nil, entry.description]
+      end
+
+    {:ok, entry} = 
+      create_entry(%{
+        date: entry.date,
+        description: description,
+        value: entry.value,
+        is_carried_out: entry.is_carried_out,
+        account_id: entry.account_id,
+        recurrency_entry: %{
+          original_date: entry.date,
+          recurrency: %{
+            date_start: original_date,
+            date_end: previous_recurrency.date_end,
+            frequency: previous_recurrency.frequency,
+            is_forever: previous_recurrency.is_forever,
+            is_parcel: previous_recurrency.is_parcel,
+            parcel_start: current_parcel,
+            parcel_end: previous_recurrency.parcel_end,
+
+            account_id: entry.account_id,
+            description: description,
+            value: entry.value
+          }
+        }
+      })
+
+    update_recurrency(changeset.data.recurrency_entry.recurrency, %{
+      date_end: original_date |> Timex.shift(days: -1)
+    })
+
+    {:ok, entry}
+  end
+
+  defp check_ending_recurrency(changeset) do
+    changeset
     |> Repo.insert()
   end
 
@@ -156,14 +209,15 @@ defmodule Budget.Entries do
       |> Repo.one()
 
     recurrencies = 
-      find_recurrencies(accounts_ids)
+      accounts_ids
+      |> find_recurrencies()
       |> Enum.map(& recurrency_entries(&1, date))
       |> List.flatten()
       |> Enum.map(& &1.value)
       |> Enum.reduce(Decimal.new(0), & Decimal.add(&1, &2))
 
     entries
-    |> Decimal.add( initials)
+    |> Decimal.add(initials)
     |> Decimal.add(recurrencies)
   end
 

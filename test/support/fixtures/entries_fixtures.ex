@@ -34,7 +34,7 @@ defmodule Budget.EntriesFixtures do
   end
 
   def recurrency_fixture(attrs \\ []) do
-    date = Timex.today() |> Date.to_iso8601()
+    date = Keyword.get(attrs, :date, Timex.today() |> Date.to_iso8601())
 
     attrs = Keyword.put_new_lazy(attrs, :account_id, fn -> account_fixture().id end)
 
