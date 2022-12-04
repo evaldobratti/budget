@@ -19,9 +19,9 @@ defmodule BudgetWeb.BudgetLiveTest do
     |> IO.puts()
   end
 
-  describe "accounts" do
-    setup :create_account
+  setup :create_account
 
+  describe "accounts" do
     test "lists accounts", %{conn: conn, account: account} do
       {:ok, _index_live, html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -49,9 +49,6 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   describe "entries" do
-
-    setup :create_account
-
     test "create new entry", %{conn: conn, account: account} do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -78,7 +75,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
 
     test "editing entry", %{conn: conn, account: account} do
-      entry = entry_fixture(account_id: account.id)
+      entry = entry_fixture(%{account_id: account.id})
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -100,19 +97,19 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
 
     test "navigating through months via form", %{conn: conn, account: account} do
-      today = entry_fixture(value: 200, account_id: account.id)
+      today = entry_fixture(%{value: 200, account_id: account.id})
 
-      last_month = entry_fixture(
+      last_month = entry_fixture(%{
         date: Timex.today |> Timex.shift(months: -1) |> Date.to_iso8601(),
         value: 300, 
         account_id: account.id
-      )
+      })
 
-      next_month = entry_fixture(
+      next_month = entry_fixture(%{
         date: Timex.today |> Timex.shift(months: 1) |> Date.to_iso8601(),
         value: 400, 
         account_id: account.id
-      )
+      })
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -150,19 +147,19 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
 
     test "navigating through months via buttons", %{conn: conn, account: account} do
-      today = entry_fixture(value: 200, account_id: account.id)
+      today = entry_fixture(%{value: 200, account_id: account.id})
 
-      last_month = entry_fixture(
+      last_month = entry_fixture(%{
         date: Timex.today |> Timex.shift(months: -1) |> Date.to_iso8601(),
         value: 300, 
         account_id: account.id
-      )
+      })
 
-      next_month = entry_fixture(
+      next_month = entry_fixture(%{
         date: Timex.today |> Timex.shift(months: 1) |> Date.to_iso8601(),
         value: 400, 
         account_id: account.id
-      )
+      })
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -194,7 +191,6 @@ defmodule BudgetWeb.BudgetLiveTest do
 
   describe "recurrencies" do
 
-    setup :create_account
 
     test "create entry with recurrency", %{conn: conn, account: account} do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
@@ -346,5 +342,19 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert entry.date == ~D[2020-06-13]
       assert entry.value == Decimal.new(420) 
     end
+  end
+
+
+  test "delete single entry", %{conn: conn, account: account} do
+    entry = entry_fixture(%{account_id: account.id})
+
+    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+    live
+    |> element("i.fa-trash")
+    |> render_click()
+
+    open_browser(live)
+    
   end
 end

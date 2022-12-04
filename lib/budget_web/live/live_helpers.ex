@@ -56,5 +56,15 @@ defmodule BudgetWeb.LiveHelpers do
     %JS{}
     |> JS.hide(to: "#modal", transition: "fade-out")
     |> JS.hide(to: "#modal-content", transition: "fade-out-scale")
-end
+  end
+
+  def icon(assigns) do
+    {icon, assigns} = Map.pop(assigns, :icon)
+    phx_click = Map.get(assigns, :"phx-click")
+    style = phx_click && "cursor: pointer"
+
+    ~H"""
+      <i class={"fa-solid #{icon}"} style={style} phx-click={phx_click} {assigns} />
+    """
+  end
 end
