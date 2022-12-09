@@ -24,7 +24,15 @@ defmodule Budget.Entries.Entry do
   @doc false
   def changeset(entry, attrs) do
     entry
-    |> cast(attrs, [:date, :description, :is_carried_out, :value, :account_id, :is_recurrency, :recurrency_apply_forward])
+    |> cast(attrs, [
+      :date,
+      :description,
+      :is_carried_out,
+      :value,
+      :account_id,
+      :is_recurrency,
+      :recurrency_apply_forward
+    ])
     |> validate_required([:date, :description, :is_carried_out, :value, :account_id])
     |> cast_assoc(:recurrency_entry, with: &RecurrencyEntry.changeset_from_entry/2)
   end
@@ -32,7 +40,15 @@ defmodule Budget.Entries.Entry do
   @doc false
   def changeset_transient(entry, attrs) do
     entry
-    |> cast(attrs, [:date, :description, :is_carried_out, :value, :account_id, :is_recurrency, :recurrency_apply_forward])
+    |> cast(attrs, [
+      :date,
+      :description,
+      :is_carried_out,
+      :value,
+      :account_id,
+      :is_recurrency,
+      :recurrency_apply_forward
+    ])
     |> validate_required([:date, :description, :is_carried_out, :value, :account_id])
     |> cast_assoc(:recurrency_entry, with: &RecurrencyEntry.changeset_from_entry_transient/2)
   end

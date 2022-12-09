@@ -40,7 +40,7 @@ defmodule Budget.EntriesFixtures do
 
     {:ok, recurrency} =
       attrs
-      |> Keyword.put_new_lazy(:recurrency_entries, fn -> 
+      |> Keyword.put_new_lazy(:recurrency_entries, fn ->
         [
           %{
             original_date: date,

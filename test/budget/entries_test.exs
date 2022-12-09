@@ -639,10 +639,16 @@ defmodule Budget.EntriesTest do
 
       {:ok, persisted} = Entries.create_transient_entry(transient)
 
-      assert {:ok, %{delete_entry: {1, nil}, nulify_recurrency_entry: {1, nil}, recurrency: %Entries.Recurrency{}}} =
-               Entries.delete_entry(entry.id, "recurrency-keep-future")
+      assert {:ok,
+              %{
+                delete_entry: {1, nil},
+                nulify_recurrency_entry: {1, nil},
+                recurrency: %Entries.Recurrency{}
+              }} = Entries.delete_entry(entry.id, "recurrency-keep-future")
 
-      assert Entries.get_recurrency!(recurrency.id).date_end == Timex.today() |> Timex.shift(days: -1)
+      assert Entries.get_recurrency!(recurrency.id).date_end ==
+               Timex.today() |> Timex.shift(days: -1)
+
       assert Entries.get_entry!(persisted.id)
       refute Entries.get_entry!(entry.id)
     end
@@ -656,10 +662,16 @@ defmodule Budget.EntriesTest do
 
       {:ok, persisted} = Entries.create_transient_entry(transient)
 
-      assert {:ok, %{delete_entry: {2, nil}, nulify_recurrency_entry: {2, nil}, recurrency: %Entries.Recurrency{}}} =
-               Entries.delete_entry(entry.id, "recurrency-all")
+      assert {:ok,
+              %{
+                delete_entry: {2, nil},
+                nulify_recurrency_entry: {2, nil},
+                recurrency: %Entries.Recurrency{}
+              }} = Entries.delete_entry(entry.id, "recurrency-all")
 
-      assert Entries.get_recurrency!(recurrency.id).date_end == Timex.today() |> Timex.shift(days: -1)
+      assert Entries.get_recurrency!(recurrency.id).date_end ==
+               Timex.today() |> Timex.shift(days: -1)
+
       refute Entries.get_entry!(persisted.id)
       refute Entries.get_entry!(entry.id)
     end
@@ -670,7 +682,9 @@ defmodule Budget.EntriesTest do
       [transient] =
         Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 1))
 
-      assert {:ok, %{delete_entry: {1, nil}, nulify_recurrency_entry: {1, nil}, entry: %{id: id}}} = Entries.delete_entry(transient.id, "entry")
+      assert {:ok, %{delete_entry: {1, nil}, nulify_recurrency_entry: {1, nil}, entry: %{id: id}}} =
+               Entries.delete_entry(transient.id, "entry")
+
       assert is_integer(id)
     end
 
@@ -682,17 +696,29 @@ defmodule Budget.EntriesTest do
 
       {:ok, persisted} = Entries.create_transient_entry(future)
 
-      assert {:ok, %{delete_entry: {1, nil}, nulify_recurrency_entry: {1, nil}, recurrency: %Entries.Recurrency{}}} =
-               Entries.delete_entry(transient.id, "recurrency-keep-future")
+      assert {:ok,
+              %{
+                delete_entry: {1, nil},
+                nulify_recurrency_entry: {1, nil},
+                recurrency: %Entries.Recurrency{}
+              }} = Entries.delete_entry(transient.id, "recurrency-keep-future")
 
       recurrency = Entries.get_recurrency!(recurrency.id)
-      assert recurrency.date_end == Timex.today() |> Timex.shift(months: 1) |> Timex.shift(days: -1)
+
+      assert recurrency.date_end ==
+               Timex.today() |> Timex.shift(months: 1) |> Timex.shift(days: -1)
+
       assert Entries.get_entry!(persisted.id)
+
       assert [
-        %{entry_id: true, original_date: Timex.today()},
-        %{entry_id: true, original_date: Timex.today() |> Timex.shift(months: 2)},
-        %{entry_id: false, original_date: Timex.today() |> Timex.shift(months: 1)}
-      ] == Enum.map(recurrency.recurrency_entries, & %{entry_id: not is_nil(&1.entry_id), original_date: &1.original_date})
+               %{entry_id: true, original_date: Timex.today()},
+               %{entry_id: true, original_date: Timex.today() |> Timex.shift(months: 2)},
+               %{entry_id: false, original_date: Timex.today() |> Timex.shift(months: 1)}
+             ] ==
+               Enum.map(
+                 recurrency.recurrency_entries,
+                 &%{entry_id: not is_nil(&1.entry_id), original_date: &1.original_date}
+               )
     end
   end
 end

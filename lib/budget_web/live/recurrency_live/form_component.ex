@@ -5,7 +5,7 @@ defmodule BudgetWeb.RecurrencyLive.FormComponent do
 
   @impl true
   def update(%{recurrency: recurrency} = assigns, socket) do
-    changeset = 
+    changeset =
       if assigns.action == :new do
         Entries.change_recurrency(recurrency, %{date_start: Date.utc_today()})
       else
@@ -16,8 +16,7 @@ defmodule BudgetWeb.RecurrencyLive.FormComponent do
      socket
      |> assign(assigns)
      |> assign(:changeset, changeset)
-     |> assign(:accounts, Entries.list_accounts())
-    }
+     |> assign(:accounts, Entries.list_accounts())}
   end
 
   @impl true

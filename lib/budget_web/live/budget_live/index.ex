@@ -146,7 +146,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   def handle_event("entry-delete", %{"delete-mode" => delete_mode}, socket) do
     entry_id = socket.assigns.confirm_delete.entry_id
 
-    socket = 
+    socket =
       case Entries.delete_entry(entry_id, delete_mode) do
         {:ok, _} ->
           socket

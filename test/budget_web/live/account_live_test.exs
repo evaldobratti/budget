@@ -69,7 +69,5 @@ defmodule BudgetWeb.AccountLiveTest do
       assert html =~ "Account updated successfully"
       assert html =~ "some updated name"
     end
-
   end
-
 end

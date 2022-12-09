@@ -5,13 +5,12 @@ defmodule BudgetWeb.EntryLive.FormComponent do
   alias Budget.Entries.Entry
   alias Budget.Entries.Recurrency
 
-
   @impl true
   def update(%{entry: %{id: "recurrency" <> _}} = assigns, socket) do
     changeset = Entries.change_transient_entry(assigns.entry)
 
     {
-      :ok, 
+      :ok,
       socket
       |> assign(assigns)
       |> assign(changeset: changeset)
@@ -20,11 +19,10 @@ defmodule BudgetWeb.EntryLive.FormComponent do
   end
 
   def update(assigns, socket) do
-    changeset = 
-        Entries.change_entry(assigns.entry)
+    changeset = Entries.change_entry(assigns.entry)
 
     {
-      :ok, 
+      :ok,
       socket
       |> assign(assigns)
       |> assign(changeset: changeset)
@@ -34,7 +32,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"entry" => entry_params}, socket) do
-    changeset = 
+    changeset =
       socket.assigns.entry
       |> Entries.change_entry(mount_params(entry_params))
       |> Map.put(:action, :validate)
@@ -46,11 +44,15 @@ defmodule BudgetWeb.EntryLive.FormComponent do
     save_entry(socket, socket.assigns.action, entry_params)
   end
 
-  def save_entry(%{assigns: %{entry: %{id: "recurrency" <> _}}} = socket, :edit_entry, entry_params) do
+  def save_entry(
+        %{assigns: %{entry: %{id: "recurrency" <> _}}} = socket,
+        :edit_entry,
+        entry_params
+      ) do
     case Entries.create_transient_entry(socket.assigns.entry, entry_params) do
       {:ok, _entry} ->
         {
-          :noreply, 
+          :noreply,
           socket
           |> put_flash(:info, "Entry updated successfully!")
           |> push_patch(to: socket.assigns.return_to)
@@ -65,7 +67,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
     case Entries.update_entry(socket.assigns.entry, entry_params) do
       {:ok, _entry} ->
         {
-          :noreply, 
+          :noreply,
           socket
           |> put_flash(:info, "Entry updated successfully!")
           |> push_patch(to: socket.assigns.return_to)
@@ -84,7 +86,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
     |> case do
       {:ok, _entry} ->
         {
-          :noreply, 
+          :noreply,
           socket
           |> put_flash(:info, "Entry created successfully!")
           |> push_patch(to: socket.assigns.return_to)
@@ -103,13 +105,13 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       possible_params = possible_recurrency_params(entry_params)
 
       Map.put(
-        entry_params, 
-        "recurrency_entry", 
+        entry_params,
+        "recurrency_entry",
         Map.put(
-          recurrency_entry_params, 
-          "recurrency", 
+          recurrency_entry_params,
+          "recurrency",
           Map.merge(
-            recurrency_params, 
+            recurrency_params,
             possible_params
           )
         )
@@ -131,7 +133,4 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       "frequency" => "monthly"
     }
   end
-
 end
-
-
