@@ -597,6 +597,19 @@ defmodule Budget.EntriesTest do
 
       assert :recurrency_with_future == Entries.delete_entry_state(entry.id)
     end
+
+    test "entry_state for a recurrency transient entry with future persisted" do
+      recurrency = recurrency_fixture()
+
+      entries = Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 4))
+
+      {:ok, _} =
+        entries
+        |> Enum.at(3)
+        |> Entries.create_transient_entry()
+
+      assert :recurrency_with_future == Entries.delete_entry_state(Enum.at(entries, 1).id)
+    end
   end
 
   describe "delete_entry/2" do

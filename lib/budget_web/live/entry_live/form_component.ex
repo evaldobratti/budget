@@ -52,7 +52,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
         {
           :noreply, 
           socket
-          |> put_flash(:info, "Entry udpated successfully!")
+          |> put_flash(:info, "Entry updated successfully!")
           |> push_patch(to: socket.assigns.return_to)
         }
 
@@ -67,7 +67,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
         {
           :noreply, 
           socket
-          |> put_flash(:info, "Entry udpated successfully!")
+          |> put_flash(:info, "Entry updated successfully!")
           |> push_patch(to: socket.assigns.return_to)
         }
 

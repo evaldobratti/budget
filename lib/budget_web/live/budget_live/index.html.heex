@@ -168,13 +168,8 @@
             <%= Number.Currency.number_to_currency(entry.value) %>
           </div>
           <div class="col-1">
-            <%= case entry.id do %>
-              <% "recurrency" <> _ ->  %>
-                <% nil %>
-              <% _ -> %>
-                <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id)  do %>
-                  <.icon icon="fa-trash" phx-click="entry-delete" phx-value-entry-id={entry.id} />
-                <% end %>
+            <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}"  do %>
+              <.icon icon="fa-trash"  />
             <% end %>
           </div>
         </div>

@@ -57,7 +57,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     socket
   end
 
-  def apply_return_from(socket, from) when from in ["account", "entry"] do
+  def apply_return_from(socket, from) when from in ["account", "entry", "delete"] do
     reload_entries(socket)
   end
 
@@ -146,12 +146,19 @@ defmodule BudgetWeb.BudgetLive.Index do
   def handle_event("entry-delete", %{"delete-mode" => delete_mode}, socket) do
     entry_id = socket.assigns.confirm_delete.entry_id
 
-    Entries.delete_entry(entry_id, delete_mode)
+    socket = 
+      case Entries.delete_entry(entry_id, delete_mode) do
+        {:ok, _} ->
+          socket
+          |> put_flash(:info, "Entry successfully deleted!")
+          |> push_patch(to: Routes.budget_index_path(socket, :index, from: "delete"))
 
-    {
-      :noreply,
-      socket
-    }
+        _ ->
+          socket
+          |> put_flash(:error, "An error has occurred!")
+      end
+
+    {:noreply, socket}
   end
 
   defp reload_entries(socket) do

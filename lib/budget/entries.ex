@@ -187,7 +187,6 @@ defmodule Budget.Entries do
     |> Repo.insert()
   end
 
-
   def get_entry!("recurrency" <> _ = id) do
     {:error, {:query_for_transient_entry, id}}
   end
@@ -317,15 +316,23 @@ defmodule Budget.Entries do
     |> Repo.get!(id)
   end
 
-  def delete_entry_state(entry_id) do
-    entry =
-      from(
-        e in Entry,
-        preload: [recurrency_entry: [{:recurrency, :recurrency_entries}]],
-        where: e.id == ^entry_id
-      )
-      |> Repo.one()
+  def delete_entry_state("recurrency" <> _ = entry_id) do
+    entry_id
+    |> encarnate_transient_entry()
+    |> calculate_entry_state()
+  end
 
+  def delete_entry_state(entry_id) do
+    from(
+      e in Entry,
+      preload: [recurrency_entry: [{:recurrency, :recurrency_entries}]],
+      where: e.id == ^entry_id
+    )
+    |> Repo.one()
+    |> calculate_entry_state()
+  end
+
+  defp calculate_entry_state(entry = %Entry{}) do
     if entry.recurrency_entry do
       any_future =
         Enum.any?(
@@ -343,20 +350,22 @@ defmodule Budget.Entries do
     end
   end
 
-  def delete_entry(entry_id, mode)
-
-  def delete_entry("recurrency" <> _ = entry_id, mode) do
+  defp encarnate_transient_entry(entry_id) do
     [_, recurrency_id, year, month, day] = String.split(entry_id, "-")
 
     {:ok, date} =
       Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day))
 
-    transient =
-      %Entry{} =
-      recurrency_id
-      |> get_recurrency!()
-      |> recurrency_entries(date)
-      |> Enum.find(&(&1.date == date))
+    recurrency_id
+    |> get_recurrency!()
+    |> recurrency_entries(date)
+    |> Enum.find(&(&1.date == date))
+  end
+
+  def delete_entry(entry_id, mode)
+
+  def delete_entry("recurrency" <> _ = entry_id, mode) do
+    transient = encarnate_transient_entry(entry_id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:entry, fn _repo, _changes ->
