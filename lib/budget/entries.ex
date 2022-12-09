@@ -6,7 +6,8 @@ defmodule Budget.Entries do
   alias Budget.Entries.{
     Account,
     Entry,
-    Recurrency
+    Recurrency,
+    RecurrencyEntry
   }
 
   @doc """
@@ -100,7 +101,6 @@ defmodule Budget.Entries do
     Account.changeset(account, attrs)
   end
 
-
   def change_entry(%Entry{} = entry, attrs \\ %{}) do
     Entry.changeset(entry, attrs)
   end
@@ -117,29 +117,34 @@ defmodule Budget.Entries do
 
   def create_transient_entry(%Entry{} = entry, attrs \\ %{}) do
     # TODO add validation that id starts with recurrency
-    entry
-    |> Map.put(:id, nil)
-    |> Entry.changeset_transient(attrs)
-    |> check_ending_recurrency
+    changeset =
+      entry
+      |> Map.put(:id, nil)
+      |> Entry.changeset_transient(attrs)
+
+    check_ending_recurrency(changeset)
   end
 
-  defp check_ending_recurrency(%Ecto.Changeset{changes: %{recurrency_apply_forward: true}, valid?: true} = changeset) do
+  defp check_ending_recurrency(
+         %Ecto.Changeset{changes: %{recurrency_apply_forward: true}, valid?: true} = changeset
+       ) do
     original_date = changeset.data.recurrency_entry.original_date
-
 
     {:ok, entry} = Ecto.Changeset.apply_action(changeset, :insert)
     previous_recurrency = get_recurrency!(entry.recurrency_entry.recurrency_id)
 
     parcel_regex = ~r/ \((\d+)\/\d+\)/
-    [current_parcel, description] = 
+
+    [current_parcel, description] =
       case Regex.run(parcel_regex, entry.description) do
         [_, parcel] ->
           [String.to_integer(parcel), Regex.replace(parcel_regex, entry.description, "")]
 
-        _ -> [nil, entry.description]
+        _ ->
+          [nil, entry.description]
       end
 
-    {:ok, entry} = 
+    {:ok, entry} =
       create_entry(%{
         date: entry.date,
         description: description,
@@ -156,7 +161,6 @@ defmodule Budget.Entries do
             is_parcel: previous_recurrency.is_parcel,
             parcel_start: current_parcel,
             parcel_end: previous_recurrency.parcel_end,
-
             account_id: entry.account_id,
             description: description,
             value: entry.value
@@ -176,7 +180,6 @@ defmodule Budget.Entries do
     |> Repo.insert()
   end
 
-
   def create_entry(attrs \\ %{}) do
     %Entry{}
     |> Entry.changeset(attrs)
@@ -184,37 +187,42 @@ defmodule Budget.Entries do
     |> Repo.insert()
   end
 
+  def get_entry!("recurrency" <> _ = id) do
+    {:error, {:query_for_transient_entry, id}}
+  end
 
   def get_entry!(id) do
-    Repo.get(Entry, id)
+    Repo.get(entry_query(), id)
   end
 
   def balance_at(accounts_ids, date) do
-    entries = 
+    entries =
       from(
         e in Entry,
-        join: a in assoc(e, :account), as: :account,
+        join: a in assoc(e, :account),
+        as: :account,
         where: e.date <= ^date,
         select: coalesce(sum(e.value), 0)
       )
       |> where_account_in(accounts_ids)
       |> Repo.one()
 
-    initials = 
+    initials =
       from(
-        a in Account, as: :account,
+        a in Account,
+        as: :account,
         select: coalesce(sum(a.initial_balance), 0)
       )
       |> where_account_in(accounts_ids)
       |> Repo.one()
 
-    recurrencies = 
+    recurrencies =
       accounts_ids
       |> find_recurrencies()
-      |> Enum.map(& recurrency_entries(&1, date))
+      |> Enum.map(&recurrency_entries(&1, date))
       |> List.flatten()
       |> Enum.map(& &1.value)
-      |> Enum.reduce(Decimal.new(0), & Decimal.add(&1, &2))
+      |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
 
     entries
     |> Decimal.add(initials)
@@ -244,36 +252,41 @@ defmodule Budget.Entries do
   def find_recurrencies(accounts_ids) do
     from(
       r in Recurrency,
-      join: a in assoc(r, :account), as: :account,
+      join: a in assoc(r, :account),
+      as: :account,
       preload: [:recurrency_entries, {:account, a}]
     )
     |> where_account_in(accounts_ids)
     |> Repo.all()
   end
 
-
   def entries_in_period(account_ids, date_start, date_end) do
     regular = regular_entries_in_period(account_ids, date_start, date_end)
     recurrency = recurrency_entries_in_period(account_ids, date_start, date_end)
 
-    regular ++ recurrency
+    (regular ++ recurrency)
     |> Enum.sort(&Timex.before?(&1.date, &2.date))
   end
 
-  defp regular_entries_in_period(account_ids, date_start, date_end) do
-    query = 
-      from(
-        e in Entry,
-        where: e.date >= ^date_start and e.date <= ^date_end,
-        join: a in assoc(e, :account), as: :account,
-        left_join: re in assoc(e, :recurrency_entry),
-        left_join: r in assoc(re, :recurrency),
-        preload: [account:  a, recurrency_entry: {re, recurrency: r}],
-        order_by: [e.date, e.description],
-        select_merge: %{is_recurrency: not is_nil(r.id)}
-      )
-      |> where_account_in(account_ids)
+  defp entry_query() do
+    from(
+      e in Entry,
+      as: :entry,
+      join: a in assoc(e, :account),
+      as: :account,
+      left_join: re in assoc(e, :recurrency_entry),
+      left_join: r in assoc(re, :recurrency),
+      preload: [account: a, recurrency_entry: {re, recurrency: r}],
+      order_by: [e.date, e.description],
+      select_merge: %{is_recurrency: not is_nil(r.id)}
+    )
+  end
 
+  defp regular_entries_in_period(account_ids, date_start, date_end) do
+    query =
+      entry_query()
+      |> where([entry: e], e.date >= ^date_start and e.date <= ^date_end)
+      |> where_account_in(account_ids)
 
     Repo.all(query)
   end
@@ -286,12 +299,12 @@ defmodule Budget.Entries do
       [Recurrency.entries(r, date_end) | acc]
     end)
     |> List.flatten()
-    |> Enum.filter(& Timex.between?(&1.date, date_start, date_end, inclusive: true))
+    |> Enum.filter(&Timex.between?(&1.date, date_start, date_end, inclusive: true))
   end
 
   defp where_account_in(query, account_ids) do
     from([account: a] in query,
-      where: (a.id in ^account_ids) or fragment("?::int = 0", ^length(account_ids))
+      where: a.id in ^account_ids or fragment("?::int = 0", ^length(account_ids))
     )
   end
 
@@ -303,4 +316,137 @@ defmodule Budget.Entries do
     |> Repo.get!(id)
   end
 
+  def delete_entry_state("recurrency" <> _ = entry_id) do
+    entry_id
+    |> encarnate_transient_entry()
+    |> calculate_entry_state()
+  end
+
+  def delete_entry_state(entry_id) do
+    from(
+      e in Entry,
+      preload: [recurrency_entry: [{:recurrency, :recurrency_entries}]],
+      where: e.id == ^entry_id
+    )
+    |> Repo.one()
+    |> calculate_entry_state()
+  end
+
+  defp calculate_entry_state(entry = %Entry{}) do
+    if entry.recurrency_entry do
+      any_future =
+        Enum.any?(
+          entry.recurrency_entry.recurrency.recurrency_entries,
+          &Timex.after?(&1.original_date, entry.date)
+        )
+
+      if any_future do
+        :recurrency_with_future
+      else
+        :recurrency
+      end
+    else
+      :regular
+    end
+  end
+
+  defp encarnate_transient_entry(entry_id) do
+    [_, recurrency_id, year, month, day] = String.split(entry_id, "-")
+
+    {:ok, date} =
+      Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day))
+
+    recurrency_id
+    |> get_recurrency!()
+    |> recurrency_entries(date)
+    |> Enum.find(&(&1.date == date))
+  end
+
+  def delete_entry(entry_id, mode)
+
+  def delete_entry("recurrency" <> _ = entry_id, mode) do
+    transient = encarnate_transient_entry(entry_id)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:entry, fn _repo, _changes ->
+      create_transient_entry(transient, %{})
+    end)
+    |> Ecto.Multi.run(:actions, fn _repo, %{entry: entry} ->
+      delete_entry(entry.id, mode)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{entry: entry, actions: actions}} ->
+        {:ok, %{entry: entry} |> Map.merge(actions)}
+
+      error ->
+        error
+    end
+  end
+
+  def delete_entry(entry_id, "entry") do
+    entry = get_entry!(entry_id)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update_all(
+      :nulify_recurrency_entry,
+      from(re in RecurrencyEntry, where: re.entry_id == ^entry_id),
+      set: [entry_id: nil]
+    )
+    |> Ecto.Multi.delete_all(:delete_entry, from(Entry, where: [id: ^entry.id]))
+    |> Repo.transaction()
+  end
+
+  def delete_entry(entry_id, "recurrency-keep-future") do
+    entry = get_entry!(entry_id)
+
+    recurrency_change =
+      entry.recurrency_entry.recurrency
+      |> change_recurrency(%{date_end: Timex.shift(entry.date, days: -1)})
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update_all(
+      :nulify_recurrency_entry,
+      from(re in RecurrencyEntry, where: re.entry_id == ^entry_id),
+      set: [entry_id: nil]
+    )
+    |> Ecto.Multi.update(:recurrency, recurrency_change)
+    |> Ecto.Multi.delete_all(:delete_entry, from(Entry, where: [id: ^entry.id]))
+    |> Repo.transaction()
+  end
+
+  def delete_entry(entry_id, "recurrency-all") do
+    entry = get_entry!(entry_id)
+    recurrency = entry.recurrency_entry.recurrency
+
+    recurrency_change =
+      recurrency
+      |> change_recurrency(%{date_end: Timex.shift(entry.date, days: -1)})
+
+    affected_recurrency_entries =
+      from(
+        re in RecurrencyEntry,
+        where:
+          re.recurrency_id == ^recurrency.id and
+            re.original_date >= ^entry.recurrency_entry.original_date,
+        preload: :entry
+      )
+      |> Repo.all()
+
+    affected_re_ids = affected_recurrency_entries |> Enum.map(& &1.id)
+    affected_entry_ids = affected_recurrency_entries |> Enum.map(& &1.entry.id)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update_all(
+      :nulify_recurrency_entry,
+      from(re in RecurrencyEntry, where: re.id in ^affected_re_ids),
+      set: [entry_id: nil]
+    )
+    |> Ecto.Multi.delete_all(
+      :delete_entry,
+      from(e in Entry, where: e.id in ^affected_entry_ids)
+    )
+    |> Ecto.Multi.update(:recurrency, recurrency_change)
+    |> Repo.transaction()
+  end
 end

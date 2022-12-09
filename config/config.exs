@@ -47,16 +47,16 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :number, currency: [
-                  unit: "",
-                  precision: 2,
-                  delimiter: ".",
-                  separator: ",",
-                  format: "%u%n",
-                  negative_format: "-%u%n"
-                ]
+config :number,
+  currency: [
+    unit: "",
+    precision: 2,
+    delimiter: ".",
+    separator: ",",
+    format: "%u%n",
+    negative_format: "-%u%n"
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
-

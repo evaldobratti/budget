@@ -91,19 +91,65 @@
       </.modal>
     <% end %>
 
+    <%= if @live_action == :delete_entry do %>
+      <.modal return_to={Routes.budget_index_path(@socket, :index)}>
+        <%= case @confirm_delete.delete_state do %>
+          <% :recurrency -> %>
+            This entry is associated with a recurrency. What do you want to do about it?
+
+            <div>
+              <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
+                Delete just this entry
+              </button>
+              <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-all">
+                Delete this entry and future entries
+              </button>
+            </div>
+
+          <% :recurrency_with_future -> %>
+            This entry is associated with a recurrency. Entries from this recurrency have already been updated. What do you want to do about it?
+              <div>
+                <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
+                  Delete just this entry
+                </button>
+                <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-keep-future">
+                  Delete this entry with future ones but keep changed ones 
+                </button>
+
+                <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-all">
+                  Delete this entry and all future ones
+                </button>
+              </div>
+
+          <% :regular -> %>
+            Do you confirm deleting this entry?
+            <div>
+              <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
+                Yes
+              </button>
+              <button class="btn btn-secondary btn-sm">
+                No
+              </button>
+            </div>
+        <% end %>
+      </.modal>
+    <% end %>
+
     <div class="">
 
       <div class="row" id="previous-balance">
         <div class="col-auto">
           <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %> 
         </div>
-        <div class="col">
+        <div class="col-3">
           Previous balance
         </div>
         <div class="col">
         </div>
-        <div class="col text-end">
+        <div class="col-1 text-end">
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 0)) %>
+        </div>
+        <div class="col-1">
         </div>
       </div>
 
@@ -112,7 +158,7 @@
           <div class="col-auto">
             <%= format_date(entry.date) %> 
           </div>
-          <div class="col">
+          <div class="col-3">
             <%= live_patch entry.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
           </div>
           <div class="col">
@@ -120,6 +166,11 @@
           </div>
           <div class="col text-end">
             <%= Number.Currency.number_to_currency(entry.value) %>
+          </div>
+          <div class="col-1">
+            <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}"  do %>
+              <.icon icon="fa-trash"  />
+            <% end %>
           </div>
         </div>
       <% end %>
@@ -129,7 +180,7 @@
         <div class="col-auto">
           <%= format_date(Enum.at(@dates, 1)) %> 
         </div>
-        <div class="col">
+        <div class="col-3">
           Next balance
         </div>
         <div class="col">
@@ -137,6 +188,9 @@
         <div class="col text-end">
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 1)) %>
         </div>
+        <div class="col-1">
+        </div>
+
       </div>
     </div>
   </div>

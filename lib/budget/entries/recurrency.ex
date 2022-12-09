@@ -26,10 +26,30 @@ defmodule Budget.Entries.Recurrency do
 
   @doc false
   def changeset(recurrency, attrs) do
-    changeset = 
+    changeset =
       recurrency
-      |> cast(attrs, [:frequency, :is_parcel, :is_forever, :value, :frequency, :date_start, :date_end, :description, :parcel_start, :parcel_end, :is_parcel, :account_id])
-      |> validate_required([:date_start, :description, :value, :account_id, :is_parcel, :frequency])
+      |> cast(attrs, [
+        :frequency,
+        :is_parcel,
+        :is_forever,
+        :value,
+        :frequency,
+        :date_start,
+        :date_end,
+        :description,
+        :parcel_start,
+        :parcel_end,
+        :is_parcel,
+        :account_id
+      ])
+      |> validate_required([
+        :date_start,
+        :description,
+        :value,
+        :account_id,
+        :is_parcel,
+        :frequency
+      ])
       |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
@@ -44,7 +64,7 @@ defmodule Budget.Entries.Recurrency do
         else
           if get_field(changeset, :is_parcel) do
             validate_required(changeset, [:parcel_start, :parcel_end])
-          else 
+          else
             validate_required(changeset, :date_end)
           end
         end
@@ -53,7 +73,7 @@ defmodule Budget.Entries.Recurrency do
   end
 
   def entries(%__MODULE__{} = recurrency, until_date) do
-    first_end = 
+    first_end =
       cond do
         recurrency.is_forever -> [recurrency.date_end, until_date]
         recurrency.is_parcel -> [recurrency.date_end, until_date, parcel_end_date(recurrency)]
@@ -67,7 +87,7 @@ defmodule Budget.Entries.Recurrency do
 
     dates
     |> Enum.with_index()
-    |> Enum.map(fn {date, ix} -> 
+    |> Enum.map(fn {date, ix} ->
       complement =
         if recurrency.is_parcel do
           " (#{ix + recurrency.parcel_start}/#{recurrency.parcel_end})"
@@ -88,9 +108,13 @@ defmodule Budget.Entries.Recurrency do
           recurrency_id: recurrency.id,
           recurrency: recurrency
         }
-      } 
+      }
     end)
-    |> Enum.filter(& !Enum.any?(recurrency.recurrency_entries, fn re -> re.original_date == &1.recurrency_entry.original_date end))
+    |> Enum.filter(
+      &(!Enum.any?(recurrency.recurrency_entries, fn re ->
+          re.original_date == &1.recurrency_entry.original_date
+        end))
+    )
   end
 
   def dates(frequency, current_date, until_date) do
@@ -118,26 +142,30 @@ defmodule Budget.Entries.Recurrency do
     if current_parcel == recurrency.parcel_end do
       current_date
     else
-      parcel_end_date(recurrency, recurrency_shift(recurrency.frequency, current_date), current_parcel + 1)
+      parcel_end_date(
+        recurrency,
+        recurrency_shift(recurrency.frequency, current_date),
+        current_parcel + 1
+      )
     end
   end
 
   def apply_any_description_update(entry_changeset) do
     case apply_action(entry_changeset, :insert) do
       {
-        :ok, 
+        :ok,
         %{
           recurrency_entry: %{
             recurrency: %{
-              is_parcel: true, 
-              parcel_start: parcel_start, 
+              is_parcel: true,
+              parcel_start: parcel_start,
               parcel_end: parcel_end
             }
           }
         }
       } ->
-        update_change(entry_changeset, :description, & &1 <> " (#{parcel_start}/#{parcel_end})") 
-        
+        update_change(entry_changeset, :description, &(&1 <> " (#{parcel_start}/#{parcel_end})"))
+
       _ ->
         entry_changeset
     end

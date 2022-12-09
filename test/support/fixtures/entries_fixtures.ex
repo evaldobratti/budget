@@ -19,10 +19,10 @@ defmodule Budget.EntriesFixtures do
     account
   end
 
-  def entry_fixture(attrs) do
+  def entry_fixture(attrs \\ %{}) do
     {:ok, entry} =
       attrs
-      |> Keyword.put_new_lazy(:account_id, fn -> account_fixture().id end)
+      |> Map.put_new_lazy(:account_id, fn -> account_fixture().id end)
       |> Enum.into(%{
         date: Timex.today() |> Date.to_iso8601(),
         description: "Entry description",
@@ -40,7 +40,7 @@ defmodule Budget.EntriesFixtures do
 
     {:ok, recurrency} =
       attrs
-      |> Keyword.put_new_lazy(:recurrency_entries, fn -> 
+      |> Keyword.put_new_lazy(:recurrency_entries, fn ->
         [
           %{
             original_date: date,
