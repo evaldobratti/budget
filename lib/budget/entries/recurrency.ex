@@ -83,7 +83,7 @@ defmodule Budget.Entries.Recurrency do
       |> Enum.sort(&Timex.before?/2)
       |> Enum.at(0)
 
-    dates = dates(recurrency.frequency, recurrency.date_start, first_end)
+    dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
     dates
     |> Enum.with_index()
@@ -117,34 +117,38 @@ defmodule Budget.Entries.Recurrency do
     )
   end
 
-  def dates(frequency, current_date, until_date) do
+  def dates(frequency, ix_offset, initial_date, until_date) do
+    current_date = Timex.shift(initial_date, [{recurrency_shift(frequency), ix_offset}])
+
     if Timex.before?(current_date, until_date) or Timex.equal?(current_date, until_date) do
-      next = recurrency_shift(frequency, current_date)
-      [current_date] ++ dates(frequency, next, until_date)
+      [current_date] ++ dates(frequency, ix_offset + 1, initial_date, until_date)
     else
       []
     end
   end
 
-  def recurrency_shift(:monthly, date) do
-    Timex.shift(date, months: 1)
+  def recurrency_shift(:monthly) do
+    :months
   end
 
-  def recurrency_shift(:weekly, date) do
-    Timex.shift(date, weeks: 1)
+  def recurrency_shift(:weekly) do
+    :weeks
   end
 
   defp parcel_end_date(%__MODULE__{} = recurrency) do
-    parcel_end_date(recurrency, recurrency.date_start, recurrency.parcel_start)
+    parcel_end_date(recurrency, 0, recurrency.date_start, recurrency.parcel_start)
   end
 
-  def parcel_end_date(recurrency, current_date, current_parcel) do
+  def parcel_end_date(recurrency, ix_offset, initial_date, current_parcel) do
+    current_date = Timex.shift(initial_date, [{recurrency_shift(recurrency.frequency), ix_offset}])
+
     if current_parcel == recurrency.parcel_end do
       current_date
     else
       parcel_end_date(
         recurrency,
-        recurrency_shift(recurrency.frequency, current_date),
+        ix_offset + 1,
+        initial_date,
         current_parcel + 1
       )
     end

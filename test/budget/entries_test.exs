@@ -180,6 +180,32 @@ defmodule Budget.EntriesTest do
              ] = Entries.recurrency_entries(recurrency, ~D[2019-06-01])
     end
 
+    test "calculate infinite recurrency entries starting date 31" do
+      recurrency = %Recurrency{
+        account_id: 1,
+        is_forever: false,
+        description: "Some description",
+        frequency: :monthly,
+        value: 200,
+        date_start: ~D[2019-01-31],
+        date_end: ~D[2020-01-31],
+        recurrency_entries: []
+      }
+
+      assert [
+               ~D[2019-01-31],
+               ~D[2019-02-28],
+               ~D[2019-03-31],
+               ~D[2019-04-30],
+               ~D[2019-05-31],
+               ~D[2019-06-30],
+               ~D[2019-07-31]
+             ] ==
+               recurrency
+               |> Entries.recurrency_entries(~D[2019-07-31])
+               |> Enum.map(& &1.date)
+    end
+
     test "calculate parcel weekly 1 to 6" do
       recurrency = %Recurrency{
         account_id: 1,
