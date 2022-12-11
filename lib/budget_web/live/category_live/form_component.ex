@@ -43,7 +43,7 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
   end
 
   defp save_category(socket, :new_category, category_params) do
-    case Entries.create_category(category_params) do
+    case Entries.create_category(category_params, Map.get(socket.assigns, :parent)) do
       {:ok, _category} ->
         {
           :noreply,

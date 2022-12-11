@@ -25,6 +25,7 @@ defmodule BudgetWeb.Router do
     live "/entries/:id/delete", BudgetLive.Index, :delete_entry
     live "/categories/new", BudgetLive.Index, :new_category
     live "/categories/:id/edit", BudgetLive.Index, :edit_category
+    live "/categories/:id/children/new", BudgetLive.Index, :new_category_child
 
     live "/accounts", AccountLive.Index, :index
     # live "/accounts/new", AccountLive.Index, :new

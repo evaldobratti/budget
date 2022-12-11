@@ -49,6 +49,11 @@ defmodule BudgetWeb.BudgetLive.Index do
     |> assign(category: Entries.get_category!(id))
   end
 
+  def apply_action(socket, :new_category_child, %{"id" => id}) do
+    socket
+    |> assign(category: Entries.get_category!(id))
+  end
+
   def apply_action(socket, :edit_entry, %{"id" => id}) do
     entry = Enum.find(socket.assigns.entries, &(to_string(&1.id) === id))
 
