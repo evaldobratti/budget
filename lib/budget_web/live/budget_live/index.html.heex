@@ -10,6 +10,18 @@
   </.modal>
 <% end %>
 
+<%= if @live_action in [:new_category, :edit_category] do %>
+  <.modal return_to={Routes.budget_index_path(@socket, :index)}>
+    <.live_component
+      module={BudgetWeb.CategoryLive.FormComponent}
+      id={@category.id || :new}
+      action={@live_action}
+      category={@category}
+      return_to={Routes.budget_index_path(@socket, :index, from: "category")}
+    />
+  </.modal>
+<% end %>
+
 <div class="row">
   <div class="col-3">
     <div class="row">
@@ -28,6 +40,24 @@
         </div>
         <div class="col-auto ms-auto">
           <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_account, account.id) %>
+        </div>
+      </div>
+    <% end %>
+    <div class="row">
+      <div class="col align-items-center">
+        <span class="h5">Categories</span>
+      </div>
+      <div class="col-auto ms-auto">
+        <%= live_patch "New Category", to: Routes.budget_index_path(@socket, :new_category), class: "btn btn-sm btn-primary" %>
+      </div>
+    </div>
+    <%= for {category, []} <- @categories do %>
+      <div class="row">
+        <div class="col-auto">
+          <%= category.name %>
+        </div>
+        <div class="col-auto ms-auto">
+          <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_category, category.id) %>
         </div>
       </div>
     <% end %>

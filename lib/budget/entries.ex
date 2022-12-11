@@ -464,9 +464,22 @@ defmodule Budget.Entries do
     |> Repo.insert()
   end
 
+  def update_category(category, attrs) do
+    category
+    |> Category.changeset(attrs)
+    |> Repo.update()
+  end
+
   def list_categories do
     Category
     |> Repo.all
     |> Category.arrange
   end
+
+  def change_category(category, attrs \\ %{}) do
+    category
+    |> Category.changeset(attrs)
+  end
+
+  def get_category!(id), do: Repo.get!(Category, id)
 end

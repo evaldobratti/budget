@@ -1,0 +1,20 @@
+<div>
+  <.form
+    let={f}
+    for={@changeset}
+    id="category-form"
+    phx-target={@myself}
+    phx-change="validate"
+    phx-submit="save">
+  
+    <div class="py-2">
+      <%= label f, :name, class: "form-label" %>
+      <%= text_input f, :name, class: "form-control", phx_hook: "BSInputError" %>
+      <%= error_tag f, :name %>
+    </div>
+  
+    <div>
+      <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary" %>
+    </div>
+  </.form>
+</div>

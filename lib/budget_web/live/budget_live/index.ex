@@ -39,6 +39,16 @@ defmodule BudgetWeb.BudgetLive.Index do
     |> assign(account: Entries.get_account!(id))
   end
 
+  def apply_action(socket, :new_category, _params) do
+    socket
+    |> assign(category: %Entries.Category{})
+  end
+
+  def apply_action(socket, :edit_category, %{"id" => id}) do
+    socket
+    |> assign(category: Entries.get_category!(id))
+  end
+
   def apply_action(socket, :edit_entry, %{"id" => id}) do
     entry = Enum.find(socket.assigns.entries, &(to_string(&1.id) === id))
 
@@ -57,7 +67,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     socket
   end
 
-  def apply_return_from(socket, from) when from in ["account", "entry", "delete"] do
+  def apply_return_from(socket, from) when from in ["account", "entry", "delete", "category"] do
     reload_entries(socket)
   end
 
@@ -171,6 +181,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     entries = Entries.entries_in_period(accounts_ids, date_start, date_end)
 
     socket
+    |> assign(categories: Entries.list_categories)
     |> assign(accounts: Entries.list_accounts())
     |> assign(entries: Enum.sort(entries, &Timex.before?(&1.date, &2.date)))
     |> assign(balances: [previous_balance, next_balance])
