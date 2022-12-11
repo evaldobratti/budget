@@ -7,7 +7,8 @@ defmodule Budget.Entries do
     Account,
     Entry,
     Recurrency,
-    RecurrencyEntry
+    RecurrencyEntry,
+    Category
   }
 
   @doc """
@@ -448,5 +449,24 @@ defmodule Budget.Entries do
     )
     |> Ecto.Multi.update(:recurrency, recurrency_change)
     |> Repo.transaction()
+  end
+
+  def create_category(attrs, parent \\ nil) do
+    %Category{}
+    |> Category.changeset(attrs)
+    |> then(fn changeset -> 
+      if parent do
+        Category.make_child_of(changeset, parent)
+      else
+        changeset
+      end
+    end) 
+    |> Repo.insert()
+  end
+
+  def list_categories do
+    Category
+    |> Repo.all
+    |> Category.arrange
   end
 end

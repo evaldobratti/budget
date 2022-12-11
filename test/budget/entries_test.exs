@@ -4,6 +4,7 @@ defmodule Budget.EntriesTest do
   alias Budget.Entries
   alias Budget.Entries.Recurrency
   alias Budget.Entries.Entry
+  alias Budget.Entries.Category
 
   import Budget.EntriesFixtures
 
@@ -745,6 +746,45 @@ defmodule Budget.EntriesTest do
                  recurrency.recurrency_entries,
                  &%{entry_id: not is_nil(&1.entry_id), original_date: &1.original_date}
                )
+    end
+  end
+
+  describe "create_category/2" do
+    test "create root category" do
+      assert {:ok, %Category{name: "root"}} = Entries.create_category(%{name: "root"})
+    end
+
+    test "create child category" do
+      {:ok, %{id: id} = parent} = Entries.create_category(%{name: "root"})
+
+      assert {:ok, %{name: "child", path: [^id]}} =
+               Entries.create_category(%{name: "child"}, parent)
+    end
+  end
+
+  describe "list_categories/0" do
+    test "list all categoris" do
+      {:ok, %{id: id_root} = root} = Entries.create_category(%{name: "root"})
+      {:ok, %{id: id_parent} = parent} = Entries.create_category(%{name: "parent"}, root)
+
+      assert {:ok, %{name: "child", path: [^id_root, ^id_parent]}} =
+               Entries.create_category(%{name: "child"}, parent)
+
+      assert [
+               %{name: "root"} = root,
+               %{name: "parent"} = parent,
+               %{name: "child"} = child
+             ] = root |> Category.subtree() |> Budget.Repo.all()
+
+      assert [
+               {^root,
+                [
+                  {^parent,
+                   [
+                     {^child, []}
+                   ]}
+                ]}
+             ] = Entries.list_categories()
     end
   end
 end
