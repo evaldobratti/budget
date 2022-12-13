@@ -3,6 +3,7 @@ defmodule Budget.Entries.Entry do
   import Ecto.Changeset
 
   alias Budget.Entries.Account
+  alias Budget.Entries.Category
   alias Budget.Entries.RecurrencyEntry
 
   schema "entries" do
@@ -12,6 +13,7 @@ defmodule Budget.Entries.Entry do
     field :value, :decimal
 
     belongs_to :account, Account
+    belongs_to :category, Category
 
     field :is_recurrency, :boolean, virtual: true
     field :recurrency_apply_forward, :boolean, virtual: true
@@ -31,9 +33,10 @@ defmodule Budget.Entries.Entry do
       :value,
       :account_id,
       :is_recurrency,
-      :recurrency_apply_forward
+      :recurrency_apply_forward,
+      :category_id
     ])
-    |> validate_required([:date, :description, :is_carried_out, :value, :account_id])
+    |> validate_required([:date, :description, :is_carried_out, :value, :account_id, :category_id])
     |> cast_assoc(:recurrency_entry, with: &RecurrencyEntry.changeset_from_entry/2)
   end
 
@@ -47,9 +50,10 @@ defmodule Budget.Entries.Entry do
       :value,
       :account_id,
       :is_recurrency,
-      :recurrency_apply_forward
+      :recurrency_apply_forward,
+      :category_id
     ])
-    |> validate_required([:date, :description, :is_carried_out, :value, :account_id])
+    |> validate_required([:date, :description, :is_carried_out, :value, :account_id, :category_id])
     |> cast_assoc(:recurrency_entry, with: &RecurrencyEntry.changeset_from_entry_transient/2)
   end
 end

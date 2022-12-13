@@ -186,7 +186,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     entries = Entries.entries_in_period(accounts_ids, date_start, date_end)
 
     socket
-    |> assign(categories: Entries.list_categories)
+    |> assign(categories: Entries.list_categories_arranged())
     |> assign(accounts: Entries.list_accounts())
     |> assign(entries: Enum.sort(entries, &Timex.before?(&1.date, &2.date)))
     |> assign(balances: [previous_balance, next_balance])
@@ -199,5 +199,30 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def accounts_selected(_par1, _par2) do
     []
+  end
+
+  def render_categories([], _socket), do: nil
+
+  def render_categories(categories, socket) do
+    assigns = %{categories: categories, socket: socket}
+
+    ~H"""
+    <%= for {category, children} <- @categories do %>
+      <div class="row">
+        <div class="col-auto">
+          <%= category.name %>
+        </div>
+        <div class="col-auto ms-auto">
+          <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_category, category.id) %>
+        </div>
+        <div class="col-auto">
+          <%= live_patch "+", to: Routes.budget_index_path(@socket, :new_category_child, category), class: "btn btn-sm btn-primary" %>
+        </div>
+      </div>
+      <div class="ms-3">
+        <%= render_categories(children, @socket) %>
+      </div>
+    <% end %>
+    """
   end
 end

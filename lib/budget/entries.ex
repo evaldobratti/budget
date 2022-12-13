@@ -152,6 +152,7 @@ defmodule Budget.Entries do
         value: entry.value,
         is_carried_out: entry.is_carried_out,
         account_id: entry.account_id,
+        category_id: entry.category_id,
         recurrency_entry: %{
           original_date: entry.date,
           recurrency: %{
@@ -163,8 +164,9 @@ defmodule Budget.Entries do
             parcel_start: current_parcel,
             parcel_end: previous_recurrency.parcel_end,
             account_id: entry.account_id,
+            category_id: entry.category_id,
             description: description,
-            value: entry.value
+            value: entry.value,
           }
         }
       })
@@ -255,7 +257,7 @@ defmodule Budget.Entries do
       r in Recurrency,
       join: a in assoc(r, :account),
       as: :account,
-      preload: [:recurrency_entries, {:account, a}]
+      preload: [recurrency_entries: :entry, account: a]
     )
     |> where_account_in(accounts_ids)
     |> Repo.all()
@@ -470,10 +472,14 @@ defmodule Budget.Entries do
     |> Repo.update()
   end
 
-  def list_categories do
+  def list_categories_arranged do
+    list_categories()
+    |> Category.arrange
+  end
+
+  def list_categories() do
     Category
     |> Repo.all
-    |> Category.arrange
   end
 
   def change_category(category, attrs \\ %{}) do

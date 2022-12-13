@@ -12,6 +12,10 @@ defmodule BudgetWeb.BudgetLiveTest do
     %{account: account}
   end
 
+  defp create_category(_) do
+    %{category: category_fixture()}
+  end
+
   def debug(html) do
     html
     |> Floki.parse_fragment!()
@@ -19,7 +23,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     |> IO.puts()
   end
 
-  setup :create_account
+  setup [:create_account, :create_category]
 
   describe "accounts" do
     test "lists accounts", %{conn: conn, account: account} do
@@ -49,7 +53,7 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   describe "entries" do
-    test "create new entry", %{conn: conn, account: account} do
+    test "create new entry", %{conn: conn, account: account, category: category} do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
@@ -62,6 +66,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           description: "a description",
           account_id: account.id,
+          category_id: category.id,
           value: "200"
         }
       )
@@ -198,7 +203,7 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   describe "recurrencies" do
-    test "create entry with recurrency", %{conn: conn, account: account} do
+    test "create entry with recurrency", %{conn: conn, account: account, category: category} do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
@@ -211,6 +216,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           description: "a description",
           account_id: account.id,
+          category_id: category.id,
           value: "200",
           is_recurrency: true
         }
@@ -406,9 +412,9 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   test "delete recurrent transient entry", %{conn: conn} do
-    recurrency = recurrency_fixture()
+    recurrency_fixture()
 
-    {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
     html =
       live
@@ -442,9 +448,9 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   test "delete recurrent transient with future persisted", %{conn: conn} do
-    recurrency = recurrency_fixture()
+    recurrency_fixture()
 
-    {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
     live
     |> element("button", ">>")

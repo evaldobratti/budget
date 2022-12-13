@@ -19,10 +19,22 @@ defmodule Budget.EntriesFixtures do
     account
   end
 
+  def category_fixture(attrs \\ %{}) do
+    {:ok, category} =
+      attrs
+      |> Enum.into(%{
+        name: "root category"
+      })
+      |> Budget.Entries.create_category()
+
+    category
+  end
+
   def entry_fixture(attrs \\ %{}) do
     {:ok, entry} =
       attrs
       |> Map.put_new_lazy(:account_id, fn -> account_fixture().id end)
+      |> Map.put_new_lazy(:category_id, fn -> category_fixture().id end)
       |> Enum.into(%{
         date: Timex.today() |> Date.to_iso8601(),
         description: "Entry description",
@@ -33,35 +45,44 @@ defmodule Budget.EntriesFixtures do
     entry
   end
 
-  def recurrency_fixture(attrs \\ []) do
-    date = Keyword.get(attrs, :date, Timex.today() |> Date.to_iso8601())
+  def recurrency_fixture(attrs \\ %{}) when is_map(attrs) do
+    date = Map.get(attrs, :date, Timex.today() |> Date.to_iso8601())
 
-    attrs = Keyword.put_new_lazy(attrs, :account_id, fn -> account_fixture().id end)
+    attrs = Map.put_new_lazy(attrs, :account_id, fn -> account_fixture().id end)
+    attrs = Map.put_new_lazy(attrs, :category_id, fn -> category_fixture().id end)
 
-    {:ok, recurrency} =
+    {:ok, entry} =
       attrs
-      |> Keyword.put_new_lazy(:recurrency_entries, fn ->
-        [
-          %{
-            original_date: date,
-            entry: %{
-              date: date,
-              description: "Entry description",
-              account_id: Keyword.get(attrs, :account_id),
-              value: 133
-            }
-          }
-        ]
-      end)
       |> Enum.into(%{
-        date_start: date,
+        date: date,
         description: "Entry description",
-        value: 133,
-        is_forever: true,
-        frequency: :monthly
+        value: 133
       })
-      |> Budget.Entries.create_recurrency()
+      |> Map.put(
+        :recurrency_entry,
+        attrs
+        |> Map.get(:recurrency_entry, %{})
+        |> Enum.into(%{
+          original_date: date
+        })
+        |> Map.put(
+          :recurrency,
+          attrs
+          |> Map.get(:recurrency_entry, %{})
+          |> Map.get(:recurrency, %{})
+          |> Enum.into(%{
+            date_start: date,
+            description: "Entry description",
+            account_id: Map.get(attrs, :account_id),
+            category_id: Map.get(attrs, :category_id),
+            value: 133,
+            is_forever: true,
+            frequency: :monthly
+          })
+        )
+      )
+      |> Budget.Entries.create_entry()
 
-    recurrency
+    Budget.Entries.get_recurrency!(entry.recurrency_entry.recurrency_id)
   end
 end
