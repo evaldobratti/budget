@@ -7,7 +7,8 @@ defmodule Budget.Entries do
     Account,
     Entry,
     Recurrency,
-    RecurrencyEntry
+    RecurrencyEntry,
+    Category
   }
 
   @doc """
@@ -151,6 +152,7 @@ defmodule Budget.Entries do
         value: entry.value,
         is_carried_out: entry.is_carried_out,
         account_id: entry.account_id,
+        category_id: entry.category_id,
         recurrency_entry: %{
           original_date: entry.date,
           recurrency: %{
@@ -162,8 +164,9 @@ defmodule Budget.Entries do
             parcel_start: current_parcel,
             parcel_end: previous_recurrency.parcel_end,
             account_id: entry.account_id,
+            category_id: entry.category_id,
             description: description,
-            value: entry.value
+            value: entry.value,
           }
         }
       })
@@ -254,7 +257,7 @@ defmodule Budget.Entries do
       r in Recurrency,
       join: a in assoc(r, :account),
       as: :account,
-      preload: [:recurrency_entries, {:account, a}]
+      preload: [recurrency_entries: :entry, account: a, category: []]
     )
     |> where_account_in(accounts_ids)
     |> Repo.all()
@@ -276,7 +279,8 @@ defmodule Budget.Entries do
       as: :account,
       left_join: re in assoc(e, :recurrency_entry),
       left_join: r in assoc(re, :recurrency),
-      preload: [account: a, recurrency_entry: {re, recurrency: r}],
+      join: c in assoc(e, :category),
+      preload: [account: a, recurrency_entry: {re, recurrency: r}, category: c],
       order_by: [e.date, e.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}
     )
@@ -449,4 +453,40 @@ defmodule Budget.Entries do
     |> Ecto.Multi.update(:recurrency, recurrency_change)
     |> Repo.transaction()
   end
+
+  def create_category(attrs, parent \\ nil) do
+    %Category{}
+    |> Category.changeset(attrs)
+    |> then(fn changeset -> 
+      if parent do
+        Category.make_child_of(changeset, parent)
+      else
+        changeset
+      end
+    end) 
+    |> Repo.insert()
+  end
+
+  def update_category(category, attrs) do
+    category
+    |> Category.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def list_categories_arranged do
+    list_categories()
+    |> Category.arrange
+  end
+
+  def list_categories() do
+    Category
+    |> Repo.all
+  end
+
+  def change_category(category, attrs \\ %{}) do
+    category
+    |> Category.changeset(attrs)
+  end
+
+  def get_category!(id), do: Repo.get!(Category, id)
 end

@@ -15,6 +15,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       |> assign(assigns)
       |> assign(changeset: changeset)
       |> assign(accounts: Entries.list_accounts())
+      |> assign(categories: Entries.list_categories())
     }
   end
 
@@ -27,6 +28,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       |> assign(assigns)
       |> assign(changeset: changeset)
       |> assign(accounts: Entries.list_accounts())
+      |> assign(categories: Entries.list_categories())
     }
   end
 
@@ -130,6 +132,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       "description" => Ecto.Changeset.get_field(changeset, :description),
       "value" => Ecto.Changeset.get_field(changeset, :value),
       "account_id" => Ecto.Changeset.get_field(changeset, :account_id),
+      "category_id" => Ecto.Changeset.get_field(changeset, :category_id),
       "frequency" => "monthly"
     }
   end

@@ -50,7 +50,8 @@ defmodule Budget.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:timex, "~> 3.7.9"},
-      {:number, "~> 1.0.3"}
+      {:number, "~> 1.0.3"},
+      {:ecto_materialized_trail, "~> 0.3.0"}
     ]
   end
 

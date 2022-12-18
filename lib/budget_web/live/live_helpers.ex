@@ -35,17 +35,22 @@ defmodule BudgetWeb.LiveHelpers do
         phx-window-keydown={JS.dispatch("click", to: "#close")}
         phx-key="escape"
       >
-        <%= if @return_to do %>
-          <%= live_patch "x",
-            to: @return_to,
-            id: "close",
-            class: "phx-modal-close",
-            phx_click: hide_modal()
-          %>
-        <% else %>
-          <a id="close" href="#" class="phx-modal-close" phx-click={hide_modal()}>x</a>
-        <% end %>
-
+        <div class="d-flex">
+          <%= if @return_to do %>
+            <%= live_patch to: @return_to,
+              id: "close",
+              class: "ms-auto",
+              phx_click: hide_modal()
+              do
+            %>
+              <.icon icon="fa-xmark" />
+            <% end %>
+          <% else %>
+            <a id="close" href="#" phx-click={hide_modal()} class="ms-auto">
+              <.icon icon="fa-xmark" />
+            </a>
+          <% end %>
+        </div>
         <%= render_slot(@inner_block) %>
       </div>
     </div>
@@ -64,7 +69,7 @@ defmodule BudgetWeb.LiveHelpers do
     style = phx_click && "cursor: pointer"
 
     ~H"""
-      <i class={"fa-solid #{icon}"} style={style} phx-click={phx_click} {assigns} />
+      <i class={"fa-solid #{icon} #{assigns[:class]}"} style={style} phx-click={phx_click} {assigns} />
     """
   end
 end

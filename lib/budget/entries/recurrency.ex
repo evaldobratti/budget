@@ -3,6 +3,7 @@ defmodule Budget.Entries.Recurrency do
   import Ecto.Changeset
 
   alias Budget.Entries.Account
+  alias Budget.Entries.Category
   alias Budget.Entries.Entry
   alias Budget.Entries.RecurrencyEntry
 
@@ -18,6 +19,7 @@ defmodule Budget.Entries.Recurrency do
     field :value, :decimal
 
     belongs_to :account, Account
+    belongs_to :category, Category
 
     has_many :recurrency_entries, RecurrencyEntry
 
@@ -40,7 +42,8 @@ defmodule Budget.Entries.Recurrency do
         :parcel_start,
         :parcel_end,
         :is_parcel,
-        :account_id
+        :account_id,
+        :category_id
       ])
       |> validate_required([
         :date_start,
@@ -48,7 +51,8 @@ defmodule Budget.Entries.Recurrency do
         :value,
         :account_id,
         :is_parcel,
-        :frequency
+        :frequency,
+        :category_id
       ])
       |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
@@ -101,6 +105,8 @@ defmodule Budget.Entries.Recurrency do
         description: recurrency.description <> complement,
         account: recurrency.account,
         account_id: recurrency.account_id,
+        category_id: recurrency.category_id,
+        category: recurrency.category,
         value: recurrency.value,
         is_recurrency: true,
         recurrency_entry: %RecurrencyEntry{
@@ -140,7 +146,8 @@ defmodule Budget.Entries.Recurrency do
   end
 
   def parcel_end_date(recurrency, ix_offset, initial_date, current_parcel) do
-    current_date = Timex.shift(initial_date, [{recurrency_shift(recurrency.frequency), ix_offset}])
+    current_date =
+      Timex.shift(initial_date, [{recurrency_shift(recurrency.frequency), ix_offset}])
 
     if current_parcel == recurrency.parcel_end do
       current_date
