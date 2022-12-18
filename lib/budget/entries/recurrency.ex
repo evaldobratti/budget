@@ -106,6 +106,7 @@ defmodule Budget.Entries.Recurrency do
         account: recurrency.account,
         account_id: recurrency.account_id,
         category_id: recurrency.category_id,
+        category: recurrency.category,
         value: recurrency.value,
         is_recurrency: true,
         recurrency_entry: %RecurrencyEntry{
@@ -145,7 +146,8 @@ defmodule Budget.Entries.Recurrency do
   end
 
   def parcel_end_date(recurrency, ix_offset, initial_date, current_parcel) do
-    current_date = Timex.shift(initial_date, [{recurrency_shift(recurrency.frequency), ix_offset}])
+    current_date =
+      Timex.shift(initial_date, [{recurrency_shift(recurrency.frequency), ix_offset}])
 
     if current_parcel == recurrency.parcel_end do
       current_date

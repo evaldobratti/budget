@@ -257,7 +257,7 @@ defmodule Budget.Entries do
       r in Recurrency,
       join: a in assoc(r, :account),
       as: :account,
-      preload: [recurrency_entries: :entry, account: a]
+      preload: [recurrency_entries: :entry, account: a, category: []]
     )
     |> where_account_in(accounts_ids)
     |> Repo.all()
@@ -279,7 +279,8 @@ defmodule Budget.Entries do
       as: :account,
       left_join: re in assoc(e, :recurrency_entry),
       left_join: r in assoc(re, :recurrency),
-      preload: [account: a, recurrency_entry: {re, recurrency: r}],
+      join: c in assoc(e, :category),
+      preload: [account: a, recurrency_entry: {re, recurrency: r}, category: c],
       order_by: [e.date, e.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}
     )

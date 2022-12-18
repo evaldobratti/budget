@@ -172,36 +172,40 @@
     <div class="">
 
       <div class="row" id="previous-balance">
-        <div class="col-auto">
+        <div class="col-2">
           <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %> 
         </div>
-        <div class="col-3">
+        <div class="col">
           Previous balance
         </div>
-        <div class="col">
+        <div class="col-4">
         </div>
         <div class="col-1 text-end">
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 0)) %>
         </div>
-        <div class="col-1">
+        <div class="col-auto">
+          <.icon icon="fa-trash" class="invisible" />
         </div>
       </div>
 
       <%= for entry <- @entries do %>
         <div class="row" id={"entry-#{entry.id}"}>
-          <div class="col-auto">
+          <div class="col-2">
             <%= format_date(entry.date) %> 
           </div>
-          <div class="col-3">
+          <div class="col">
             <%= live_patch entry.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
           </div>
-          <div class="col">
+          <div class="col-2">
+            <%= entry.category.name %>
+          </div>
+          <div class="col-2">
             <%= entry.account.name %>
           </div>
-          <div class="col text-end">
+          <div class="col-2 text-end">
             <%= Number.Currency.number_to_currency(entry.value) %>
           </div>
-          <div class="col-1">
+          <div class="col-auto">
             <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}"  do %>
               <.icon icon="fa-trash"  />
             <% end %>
@@ -209,22 +213,21 @@
         </div>
       <% end %>
 
-
       <div class="row" id="next-balance">
-        <div class="col-auto">
+        <div class="col-2">
           <%= format_date(Enum.at(@dates, 1)) %> 
         </div>
-        <div class="col-3">
+        <div class="col">
           Next balance
         </div>
-        <div class="col">
+        <div class="col-4">
         </div>
-        <div class="col text-end">
+        <div class="col-1 text-end">
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 1)) %>
         </div>
-        <div class="col-1">
+        <div class="col-auto">
+          <.icon icon="fa-trash" class="invisible" />
         </div>
-
       </div>
     </div>
   </div>

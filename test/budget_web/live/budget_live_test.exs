@@ -1,5 +1,5 @@
 defmodule BudgetWeb.BudgetLiveTest do
-  use BudgetWeb.ConnCase
+  use BudgetWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Budget.EntriesFixtures
@@ -507,5 +507,58 @@ defmodule BudgetWeb.BudgetLiveTest do
     assert live
            |> element("button", ">>")
            |> render_click() =~ "Entry description"
+  end
+
+  test "create new category", %{conn: conn} do
+    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+    live
+    |> element("a", "New Category")
+    |> render_click()
+
+    live
+    |> form("#category-form", category: %{name: "test category"})
+    |> render_submit()
+
+    html = render(live)
+
+    assert html =~ "Category created successfully"
+    assert html =~ "test category"
+  end
+
+  test "create new child category", %{conn: conn, category: category} do
+    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+    live
+    |> element("a[href='#{Routes.budget_index_path(conn, :new_category_child, category)}']")
+    |> render_click()
+
+    assert render(live) =~ "Creating a child category of root category"
+
+    live
+    |> form("#category-form", category: %{name: "test category"})
+    |> render_submit()
+
+    html = render(live)
+
+    assert html =~ "Category created successfully"
+    assert html =~ "test category"
+  end
+
+  test "edit category", %{conn: conn, category: category} do
+    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+    live
+    |> element("a[href='#{Routes.budget_index_path(conn, :edit_category, category)}']")
+    |> render_click()
+
+    live
+    |> form("#category-form", category: %{name: "another category name"})
+    |> render_submit()
+
+    html = render(live)
+
+    assert html =~ "Category updated successfully"
+    assert html =~ "another category name"
   end
 end

@@ -69,7 +69,7 @@ defmodule BudgetWeb.LiveHelpers do
     style = phx_click && "cursor: pointer"
 
     ~H"""
-      <i class={"fa-solid #{icon}"} style={style} phx-click={phx_click} {assigns} />
+      <i class={"fa-solid #{icon} #{assigns[:class]}"} style={style} phx-click={phx_click} {assigns} />
     """
   end
 end
