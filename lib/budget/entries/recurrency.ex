@@ -10,16 +10,14 @@ defmodule Budget.Entries.Recurrency do
   schema "recurrencies" do
     field :date_end, :date
     field :date_start, :date
-    field :description, :string
     field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly]
     field :is_forever, :boolean
     field :is_parcel, :boolean, default: false
     field :parcel_end, :integer
     field :parcel_start, :integer
-    field :value, :decimal
+    field :entry_payload, :map
 
     belongs_to :account, Account
-    belongs_to :category, Category
 
     has_many :recurrency_entries, RecurrencyEntry
 
@@ -34,25 +32,21 @@ defmodule Budget.Entries.Recurrency do
         :frequency,
         :is_parcel,
         :is_forever,
-        :value,
         :frequency,
         :date_start,
         :date_end,
-        :description,
         :parcel_start,
         :parcel_end,
         :is_parcel,
         :account_id,
-        :category_id
+        :entry_payload
       ])
       |> validate_required([
         :date_start,
-        :description,
-        :value,
         :account_id,
         :is_parcel,
         :frequency,
-        :category_id
+        :entry_payload
       ])
       |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
@@ -89,6 +83,8 @@ defmodule Budget.Entries.Recurrency do
 
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
+    params = Budget.Entries.restore_recurrency_params(recurrency.entry_payload)
+ 
     dates
     |> Enum.with_index()
     |> Enum.map(fn {date, ix} ->
@@ -99,15 +95,24 @@ defmodule Budget.Entries.Recurrency do
           ""
         end
 
+      params = 
+        if Map.has_key?(params, :originator_regular) do
+          regular = 
+            params
+            |> Map.get(:originator_regular)
+
+          regular = Map.put(regular, :description, Map.get(regular, :description) <> complement)
+
+          Map.put(params, :originator_regular, regular)
+        else
+          params
+        end
+
       %Entry{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
         date: date,
-        description: recurrency.description <> complement,
         account: recurrency.account,
         account_id: recurrency.account_id,
-        category_id: recurrency.category_id,
-        category: recurrency.category,
-        value: recurrency.value,
         is_recurrency: true,
         recurrency_entry: %RecurrencyEntry{
           original_date: date,
@@ -115,6 +120,7 @@ defmodule Budget.Entries.Recurrency do
           recurrency: recurrency
         }
       }
+      |> Map.merge(params)
     end)
     |> Enum.filter(
       &(!Enum.any?(recurrency.recurrency_entries, fn re ->
@@ -175,7 +181,12 @@ defmodule Budget.Entries.Recurrency do
           }
         }
       } ->
-        update_change(entry_changeset, :description, &(&1 <> " (#{parcel_start}/#{parcel_end})"))
+        originator_regular_changeset = 
+          entry_changeset 
+          |> get_change(:originator_regular)
+          |> update_change(:description, &(&1 <> " (#{parcel_start}/#{parcel_end})"))
+
+        put_change(entry_changeset, :originator_regular, originator_regular_changeset)
 
       _ ->
         entry_changeset

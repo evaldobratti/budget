@@ -1,4 +1,5 @@
 defmodule Budget.Entries do
+  alias Budget.Entries.Originators
   alias Budget.Repo
 
   import Ecto.Query
@@ -137,22 +138,24 @@ defmodule Budget.Entries do
     parcel_regex = ~r/ \((\d+)\/\d+\)/
 
     [current_parcel, description] =
-      case Regex.run(parcel_regex, entry.description) do
+      case Regex.run(parcel_regex, entry.originator_regular.description) do
         [_, parcel] ->
-          [String.to_integer(parcel), Regex.replace(parcel_regex, entry.description, "")]
+          [String.to_integer(parcel), Regex.replace(parcel_regex, entry.originator_regular.description, "")]
 
         _ ->
-          [nil, entry.description]
+          [nil, entry.originator_regular.description]
       end
 
     {:ok, entry} =
       create_entry(%{
         date: entry.date,
-        description: description,
         value: entry.value,
         is_carried_out: entry.is_carried_out,
         account_id: entry.account_id,
-        category_id: entry.category_id,
+        originator_regular: %{
+          description: description,
+          category_id: entry.originator_regular.category_id
+        },
         recurrency_entry: %{
           original_date: entry.date,
           recurrency: %{
@@ -164,9 +167,14 @@ defmodule Budget.Entries do
             parcel_start: current_parcel,
             parcel_end: previous_recurrency.parcel_end,
             account_id: entry.account_id,
-            category_id: entry.category_id,
-            description: description,
-            value: entry.value,
+            entry_payload: %{
+              originator_regular: %{
+                description: description,
+                category_id: entry.originator_regular.category_id
+              },
+              value: entry.value
+            }
+
           }
         }
       })
@@ -257,7 +265,7 @@ defmodule Budget.Entries do
       r in Recurrency,
       join: a in assoc(r, :account),
       as: :account,
-      preload: [recurrency_entries: :entry, account: a, category: []]
+      preload: [recurrency_entries: :entry, account: a]
     )
     |> where_account_in(accounts_ids)
     |> Repo.all()
@@ -279,9 +287,14 @@ defmodule Budget.Entries do
       as: :account,
       left_join: re in assoc(e, :recurrency_entry),
       left_join: r in assoc(re, :recurrency),
-      join: c in assoc(e, :category),
-      preload: [account: a, recurrency_entry: {re, recurrency: r}, category: c],
-      order_by: [e.date, e.description],
+      left_join: regular in assoc(e, :originator_regular),
+      join: c in assoc(regular, :category),
+      preload: [
+        account: a, 
+        recurrency_entry: {re, recurrency: r}, 
+        originator_regular: {regular, category: c}
+      ],
+      order_by: [e.date, regular.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}
     )
   end
@@ -489,4 +502,20 @@ defmodule Budget.Entries do
   end
 
   def get_category!(id), do: Repo.get!(Category, id)
+
+  def restore_recurrency_params(%{"originator_regular" => regular} = payload) do
+    category =
+      regular
+      |> Map.get("category_id")
+      |> get_category!()
+
+    %{
+      originator_regular: %Originators.Regular{
+        description: Map.get(regular, "description"),
+        category: category,
+        category_id: category.id
+      },
+      value: Decimal.new(Map.get(payload, "value")),
+    }
+  end
 end
