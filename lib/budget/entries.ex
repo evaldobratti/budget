@@ -113,10 +113,27 @@ defmodule Budget.Entries do
   end
 
   def create_entry(entry \\ %Entry{}, attrs) do
-    entry
-    |> Map.put(:id, nil)
-    |> Entry.changeset(attrs)
-    |> Repo.insert()
+    case entry.id do
+      "recurrency" <> _ ->
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(:entry, Map.put(entry, :id, nil))
+        |> Ecto.Multi.update(:entry_update, fn %{entry: entry} ->
+          Entry.changeset(entry, attrs)
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{entry_update: entry_update}} ->
+            {:ok, entry_update}
+
+          error ->
+            error
+        end
+
+      _ ->
+        %Entry{}
+        |> Entry.changeset(attrs)
+        |> Repo.insert()
+    end
   end
 
   def get_entry!("recurrency" <> _ = id) do
@@ -211,8 +228,8 @@ defmodule Budget.Entries do
       left_join: regular in assoc(e, :originator_regular),
       join: c in assoc(regular, :category),
       preload: [
-        account: a, 
-        recurrency_entry: {re, recurrency: r}, 
+        account: a,
+        recurrency_entry: {re, recurrency: r},
         originator_regular: {regular, category: c}
       ],
       order_by: [e.date, regular.description],
@@ -249,7 +266,7 @@ defmodule Budget.Entries do
   def get_recurrency!(id) do
     from(
       r in Recurrency,
-      preload: [recurrency_entries: :entry]
+      preload: [recurrency_entries: [entry: :originator_regular]]
     )
     |> Repo.get!(id)
   end
@@ -340,7 +357,7 @@ defmodule Budget.Entries do
 
     recurrency_change =
       entry.recurrency_entry.recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.date, days: -1)})
+      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
 
     Ecto.Multi.new()
     |> Ecto.Multi.update_all(
@@ -359,7 +376,7 @@ defmodule Budget.Entries do
 
     recurrency_change =
       recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.date, days: -1)})
+      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
 
     affected_recurrency_entries =
       from(
@@ -372,7 +389,9 @@ defmodule Budget.Entries do
       |> Repo.all()
 
     affected_re_ids = affected_recurrency_entries |> Enum.map(& &1.id)
-    affected_entry_ids = affected_recurrency_entries |> Enum.map(& &1.entry.id)
+
+    affected_entry_ids =
+      affected_recurrency_entries |> Enum.filter(& &1.entry) |> Enum.map(& &1.entry.id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update_all(
@@ -391,13 +410,13 @@ defmodule Budget.Entries do
   def create_category(attrs, parent \\ nil) do
     %Category{}
     |> Category.changeset(attrs)
-    |> then(fn changeset -> 
+    |> then(fn changeset ->
       if parent do
         Category.make_child_of(changeset, parent)
       else
         changeset
       end
-    end) 
+    end)
     |> Repo.insert()
   end
 
@@ -409,12 +428,12 @@ defmodule Budget.Entries do
 
   def list_categories_arranged do
     list_categories()
-    |> Category.arrange
+    |> Category.arrange()
   end
 
   def list_categories() do
     Category
-    |> Repo.all
+    |> Repo.all()
   end
 
   def change_category(category, attrs \\ %{}) do
@@ -429,5 +448,4 @@ defmodule Budget.Entries do
 
     module.restore_for_recurrency(payload)
   end
-
 end

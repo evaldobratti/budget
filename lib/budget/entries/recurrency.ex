@@ -37,15 +37,14 @@ defmodule Budget.Entries.Recurrency do
         :parcel_start,
         :parcel_end,
         :is_parcel,
-        :account_id,
+        :account_id
       ])
       |> validate_required([
         :date_start,
         :account_id,
         :is_parcel,
-        :frequency,
+        :frequency
       ])
-      |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
       # TODO allow this to happen
@@ -80,12 +79,13 @@ defmodule Budget.Entries.Recurrency do
 
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
-    # params = 
-    #   recurrency.entry_payload
-    #   |> Enum.max_by(fn {date, _} -> Date.from_iso8601!(date) end, &Timex.after?/2)
-    #   |> then(fn {_, payload} -> payload end)
-    #   |> Budget.Entries.restore_recurrency_params()
- 
+    payloads =
+      recurrency.entry_payload
+      |> Enum.map(fn {date, payload} ->
+        {Date.from_iso8601!(date), Budget.Entries.restore_recurrency_params(payload)}
+      end)
+      |> Enum.into(%{})
+
     dates
     |> Enum.with_index()
     |> Enum.map(fn {date, ix} ->
@@ -102,11 +102,11 @@ defmodule Budget.Entries.Recurrency do
           %RecurrencyEntry{
             original_date: date,
             recurrency_id: recurrency.id,
-            recurrency: recurrency,
+            recurrency: recurrency
           }
         end
 
-      params = payload_at_date(recurrency, date)
+      params = payload_at_date(payloads, date)
 
       %Entry{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
@@ -125,17 +125,18 @@ defmodule Budget.Entries.Recurrency do
     )
   end
 
-  defp payload_at_date(recurrency, at_date) do
-    recurrency.entry_payload
-    |> Enum.map(fn {date, payload} -> {Date.from_iso8601!(date), payload} end)
-    |> Enum.filter(fn {date, _payload} -> 
+  defp payload_at_date(payloads, at_date) do
+    payloads
+    |> Enum.filter(fn {date, _payload} ->
       Timex.equal?(date, at_date) or Timex.before?(date, at_date)
     end)
-    |> Enum.min_by(fn {date, _payload} ->
-      date
-    end, &Timex.after?/2)
+    |> Enum.min_by(
+      fn {date, _payload} ->
+        date
+      end,
+      &Timex.after?/2
+    )
     |> elem(1)
-    |> Budget.Entries.restore_recurrency_params()
   end
 
   def dates(frequency, ix_offset, initial_date, until_date) do

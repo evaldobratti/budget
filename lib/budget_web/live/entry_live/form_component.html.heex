@@ -12,17 +12,23 @@
       <%= date_input f, :date, class: "form-control form-control-sm w-auto", phx_hook: "BSInputError" %>
       <%= error_tag f, :date %>
     </div>
+
+    <% [regular_form] = inputs_for f, :originator_regular %>
+
+    <%= if Ecto.get_meta(regular_form.data, :state) == :loaded do %>
+      <%= hidden_input regular_form, :id %>
+    <% end %>
   
     <div class="pt-2">
-      <%= label f, :description, class: "form-label" %>
-      <%= text_input f, :description, class: "form-control form-control-sm", phx_hook: "BSInputError" %>
-      <%= error_tag f, :description %>
+      <%= label regular_form, :description, class: "form-label" %>
+      <%= text_input regular_form, :description, class: "form-control form-control-sm", phx_hook: "BSInputError" %>
+      <%= error_tag regular_form, :description %>
     </div>
 
     <div class="pt-2">
-      <%= label f, :category_id, class: "form-label" %>
-      <%= select f, :category_id, Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id}), class: "form-select form-select-sm", phx_hook: "BSInputError" %>
-      <%= error_tag f, :category_id %>
+      <%= label regular_form, :category_id, class: "form-label" %>
+      <%= select regular_form, :category_id, Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id}), class: "form-select form-select-sm", phx_hook: "BSInputError" %>
+      <%= error_tag regular_form, :category_id %>
     </div>
 
     <div class="pt-2">

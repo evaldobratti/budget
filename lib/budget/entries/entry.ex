@@ -16,13 +16,13 @@ defmodule Budget.Entries.Entry do
 
     belongs_to :account, Account
 
-    belongs_to :originator_regular, Regular
-    belongs_to :originator_transfer, Transfer
+    belongs_to :originator_regular, Regular, on_replace: :update
+    # belongs_to :originator_transfer, Transfer
 
     field :is_recurrency, :boolean, virtual: true
     field :recurrency_apply_forward, :boolean, virtual: true
 
-    has_one :recurrency_entry, RecurrencyEntry
+    has_one :recurrency_entry, RecurrencyEntry 
 
     timestamps()
   end
@@ -44,7 +44,7 @@ defmodule Budget.Entries.Entry do
     |> validate_required([:date, :is_carried_out, :value, :account_id])
     |> cast_assoc(:recurrency_entry)
     |> cast_assoc(:originator_regular)
-    |> cast_assoc(:originator_transfer)
+    # |> cast_assoc(:originator_transfer)
     |> validate_originator()
     |> put_initial_recurrency_payload()
     |> put_updated_recurrency_payload()

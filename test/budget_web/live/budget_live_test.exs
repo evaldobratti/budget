@@ -64,9 +64,11 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> form("#entry-form",
         entry: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          description: "a description",
+          originator_regular: %{
+            description: "a description",
+            category_id: category.id,
+          },
           account_id: account.id,
-          category_id: category.id,
           value: "200"
         }
       )
@@ -93,7 +95,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       live
       |> form("#entry-form",
         entry: %{
-          description: "a new description",
+          originator_regular: %{description: "a new description"},
           value: "400"
         }
       )
@@ -102,7 +104,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       updated = Entries.get_entry!(entry.id)
 
       assert updated.value == Decimal.new(400)
-      assert updated.description == "a new description"
+      assert updated.originator_regular.description == "a new description"
     end
 
     test "navigating through months via form", %{conn: conn, account: account} do
@@ -214,9 +216,11 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> form("#entry-form",
         entry: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          description: "a description",
+          originator_regular: %{
+            description: "a description",
+            category_id: category.id
+          },
           account_id: account.id,
-          category_id: category.id,
           value: "200",
           is_recurrency: true
         }
@@ -227,7 +231,10 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> form("#entry-form",
         entry: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          description: "a description",
+          originator_regular: %{
+            description: "a description",
+            category_id: category.id
+          },
           account_id: account.id,
           value: "200",
           is_recurrency: true,
@@ -266,7 +273,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
 
     test "edit existing entry from recurrency", %{conn: conn} do
-      recurrency_fixture()
+      recurrency = recurrency_fixture()
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -277,20 +284,29 @@ defmodule BudgetWeb.BudgetLiveTest do
       live
       |> form("#entry-form",
         entry: %{
-          description: "a new description",
+          originator_regular: %{
+            description: "a new description"
+          },
           value: "420"
         }
       )
       |> render_submit()
 
-      updated = Budget.Repo.one(Budget.Entries.Entry)
+      updated =
+        recurrency.id
+        |> Entries.get_recurrency!()
+        |> then(& &1.recurrency_entries)
+        |> Enum.at(0)
+        |> then(& &1.entry.id)
+        |> Entries.get_entry!()
 
       assert updated.value == Decimal.new(420)
-      assert updated.description == "a new description"
+      assert updated.originator_regular.description == "a new description"
     end
 
     test "edit transient entry from recurrency", %{conn: conn} do
       recurrency = recurrency_fixture()
+      another_category = category_fixture()
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -306,7 +322,10 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> form("#entry-form",
         entry: %{
           date: ~D[2020-06-13],
-          description: "a new description",
+          originator_regular: %{
+            description: "a new description",
+            category_id: another_category.id
+          },
           value: "420"
         }
       )
@@ -321,7 +340,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       entry = recurrency_entry.entry
 
-      assert entry.description == "a new description"
+      assert entry.originator_regular.description == "a new description"
       assert recurrency_entry.original_date == Timex.today() |> Timex.shift(months: 1)
       assert entry.date == ~D[2020-06-13]
     end
@@ -334,7 +353,7 @@ defmodule BudgetWeb.BudgetLiveTest do
         |> Entries.get_recurrency!()
         |> Entries.recurrency_entries(Timex.today() |> Timex.shift(months: 3))
         |> Enum.at(0)
-        |> Entries.create_transient_entry()
+        |> Entries.create_entry(%{})
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -353,7 +372,9 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> form("#entry-form",
         entry: %{
           date: ~D[2020-06-13],
-          description: "a new description",
+          originator_regular: %{
+            description: "a new description",
+          },
           value: "420"
         }
       )
@@ -365,7 +386,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       entry = Entries.get_entry!(id)
 
-      assert entry.description == "a new description"
+      assert entry.originator_regular.description == "a new description"
       assert entry.date == ~D[2020-06-13]
       assert entry.value == Decimal.new(420)
     end

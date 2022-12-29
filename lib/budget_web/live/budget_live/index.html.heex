@@ -129,7 +129,7 @@
       <.modal return_to={Routes.budget_index_path(@socket, :index)}>
         <%= case @confirm_delete.delete_state do %>
           <% :recurrency -> %>
-            This entry is associated with a recurrency. What do you want to do about it?
+            This entry is associated to a recurrency. What do you want to do about it?
 
             <div>
               <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
@@ -141,7 +141,7 @@
             </div>
 
           <% :recurrency_with_future -> %>
-            This entry is associated with a recurrency. Entries from this recurrency have already been updated. What do you want to do about it?
+            This entry is associated to a recurrency. Future entries from this recurrency have already been updated, so what do you want to do about it?
               <div>
                 <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
                   Delete just this entry
@@ -149,7 +149,6 @@
                 <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-keep-future">
                   Delete this entry with future ones but keep changed ones 
                 </button>
-
                 <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-all">
                   Delete this entry and all future ones
                 </button>
@@ -194,10 +193,16 @@
             <%= format_date(entry.date) %> 
           </div>
           <div class="col">
-            <%= live_patch entry.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
+            <%= live_patch entry.originator_regular.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
+            <%= if entry.recurrency_entry && entry.recurrency_entry.parcel do %>
+              <span class="text-end">
+                <%= "(#{entry.recurrency_entry.parcel}/#{entry.recurrency_entry.parcel_end})" %>
+              </span>
+            <% end %>
+
           </div>
           <div class="col-2">
-            <%= entry.category.name %>
+            <%= entry.originator_regular.category.name %>
           </div>
           <div class="col-2">
             <%= entry.account.name %>
