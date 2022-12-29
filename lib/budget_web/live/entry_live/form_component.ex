@@ -129,10 +129,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
 
     %{
       "date_start" => Ecto.Changeset.get_field(changeset, :date),
-      "description" => Ecto.Changeset.get_field(changeset, :description),
-      "value" => Ecto.Changeset.get_field(changeset, :value),
       "account_id" => Ecto.Changeset.get_field(changeset, :account_id),
-      "category_id" => Ecto.Changeset.get_field(changeset, :category_id),
       "frequency" => "monthly"
     }
   end

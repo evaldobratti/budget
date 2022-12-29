@@ -3,7 +3,6 @@ defmodule Budget.Entries.Recurrency do
   import Ecto.Changeset
 
   alias Budget.Entries.Account
-  alias Budget.Entries.Category
   alias Budget.Entries.Entry
   alias Budget.Entries.RecurrencyEntry
 
@@ -39,14 +38,12 @@ defmodule Budget.Entries.Recurrency do
         :parcel_end,
         :is_parcel,
         :account_id,
-        :entry_payload
       ])
       |> validate_required([
         :date_start,
         :account_id,
         :is_parcel,
         :frequency,
-        :entry_payload
       ])
       |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
@@ -83,30 +80,33 @@ defmodule Budget.Entries.Recurrency do
 
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
-    params = Budget.Entries.restore_recurrency_params(recurrency.entry_payload)
+    # params = 
+    #   recurrency.entry_payload
+    #   |> Enum.max_by(fn {date, _} -> Date.from_iso8601!(date) end, &Timex.after?/2)
+    #   |> then(fn {_, payload} -> payload end)
+    #   |> Budget.Entries.restore_recurrency_params()
  
     dates
     |> Enum.with_index()
     |> Enum.map(fn {date, ix} ->
-      complement =
+      recurrency_entry =
         if recurrency.is_parcel do
-          " (#{ix + recurrency.parcel_start}/#{recurrency.parcel_end})"
+          %RecurrencyEntry{
+            original_date: date,
+            recurrency_id: recurrency.id,
+            recurrency: recurrency,
+            parcel: ix + recurrency.parcel_start,
+            parcel_end: recurrency.parcel_end
+          }
         else
-          ""
+          %RecurrencyEntry{
+            original_date: date,
+            recurrency_id: recurrency.id,
+            recurrency: recurrency,
+          }
         end
 
-      params = 
-        if Map.has_key?(params, :originator_regular) do
-          regular = 
-            params
-            |> Map.get(:originator_regular)
-
-          regular = Map.put(regular, :description, Map.get(regular, :description) <> complement)
-
-          Map.put(params, :originator_regular, regular)
-        else
-          params
-        end
+      params = payload_at_date(recurrency, date)
 
       %Entry{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
@@ -114,11 +114,7 @@ defmodule Budget.Entries.Recurrency do
         account: recurrency.account,
         account_id: recurrency.account_id,
         is_recurrency: true,
-        recurrency_entry: %RecurrencyEntry{
-          original_date: date,
-          recurrency_id: recurrency.id,
-          recurrency: recurrency
-        }
+        recurrency_entry: recurrency_entry
       }
       |> Map.merge(params)
     end)
@@ -127,6 +123,19 @@ defmodule Budget.Entries.Recurrency do
           re.original_date == &1.recurrency_entry.original_date
         end))
     )
+  end
+
+  defp payload_at_date(recurrency, at_date) do
+    recurrency.entry_payload
+    |> Enum.map(fn {date, payload} -> {Date.from_iso8601!(date), payload} end)
+    |> Enum.filter(fn {date, _payload} -> 
+      Timex.equal?(date, at_date) or Timex.before?(date, at_date)
+    end)
+    |> Enum.min_by(fn {date, _payload} ->
+      date
+    end, &Timex.after?/2)
+    |> elem(1)
+    |> Budget.Entries.restore_recurrency_params()
   end
 
   def dates(frequency, ix_offset, initial_date, until_date) do
@@ -164,32 +173,6 @@ defmodule Budget.Entries.Recurrency do
         initial_date,
         current_parcel + 1
       )
-    end
-  end
-
-  def apply_any_description_update(entry_changeset) do
-    case apply_action(entry_changeset, :insert) do
-      {
-        :ok,
-        %{
-          recurrency_entry: %{
-            recurrency: %{
-              is_parcel: true,
-              parcel_start: parcel_start,
-              parcel_end: parcel_end
-            }
-          }
-        }
-      } ->
-        originator_regular_changeset = 
-          entry_changeset 
-          |> get_change(:originator_regular)
-          |> update_change(:description, &(&1 <> " (#{parcel_start}/#{parcel_end})"))
-
-        put_change(entry_changeset, :originator_regular, originator_regular_changeset)
-
-      _ ->
-        entry_changeset
     end
   end
 end

@@ -1,4 +1,4 @@
-defmodule Budget.Entries.Originators.Transfer do
+defmodule Budget.Entries.Originator.Transfer do
   use Ecto.Schema
 
   alias Budget.Entries.Entry

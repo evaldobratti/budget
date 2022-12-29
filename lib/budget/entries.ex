@@ -1,5 +1,4 @@
 defmodule Budget.Entries do
-  alias Budget.Entries.Originators
   alias Budget.Repo
 
   import Ecto.Query
@@ -107,94 +106,16 @@ defmodule Budget.Entries do
     Entry.changeset(entry, attrs)
   end
 
-  def change_transient_entry(%Entry{} = entry, attrs \\ %{}) do
-    Entry.changeset_transient(entry, attrs)
-  end
-
   def update_entry(%Entry{} = entry, attrs) do
     entry
     |> Entry.changeset(attrs)
     |> Repo.update()
   end
 
-  def create_transient_entry(%Entry{} = entry, attrs \\ %{}) do
-    # TODO add validation that id starts with recurrency
-    changeset =
-      entry
-      |> Map.put(:id, nil)
-      |> Entry.changeset_transient(attrs)
-
-    check_ending_recurrency(changeset)
-  end
-
-  defp check_ending_recurrency(
-         %Ecto.Changeset{changes: %{recurrency_apply_forward: true}, valid?: true} = changeset
-       ) do
-    original_date = changeset.data.recurrency_entry.original_date
-
-    {:ok, entry} = Ecto.Changeset.apply_action(changeset, :insert)
-    previous_recurrency = get_recurrency!(entry.recurrency_entry.recurrency_id)
-
-    parcel_regex = ~r/ \((\d+)\/\d+\)/
-
-    [current_parcel, description] =
-      case Regex.run(parcel_regex, entry.originator_regular.description) do
-        [_, parcel] ->
-          [String.to_integer(parcel), Regex.replace(parcel_regex, entry.originator_regular.description, "")]
-
-        _ ->
-          [nil, entry.originator_regular.description]
-      end
-
-    {:ok, entry} =
-      create_entry(%{
-        date: entry.date,
-        value: entry.value,
-        is_carried_out: entry.is_carried_out,
-        account_id: entry.account_id,
-        originator_regular: %{
-          description: description,
-          category_id: entry.originator_regular.category_id
-        },
-        recurrency_entry: %{
-          original_date: entry.date,
-          recurrency: %{
-            date_start: original_date,
-            date_end: previous_recurrency.date_end,
-            frequency: previous_recurrency.frequency,
-            is_forever: previous_recurrency.is_forever,
-            is_parcel: previous_recurrency.is_parcel,
-            parcel_start: current_parcel,
-            parcel_end: previous_recurrency.parcel_end,
-            account_id: entry.account_id,
-            entry_payload: %{
-              originator_regular: %{
-                description: description,
-                category_id: entry.originator_regular.category_id
-              },
-              value: entry.value
-            }
-
-          }
-        }
-      })
-
-    update_recurrency(changeset.data.recurrency_entry.recurrency, %{
-      date_end: original_date |> Timex.shift(days: -1)
-    })
-
-    {:ok, entry}
-  end
-
-  defp check_ending_recurrency(changeset) do
-    changeset
-    |> Repo.insert()
-  end
-
-  def create_entry(attrs \\ %{}) do
-    %Entry{}
+  def create_entry(entry \\ %Entry{}, attrs) do
+    entry
+    |> Map.put(:id, nil)
     |> Entry.changeset(attrs)
-    |> Recurrency.apply_any_description_update()
     |> Repo.insert()
   end
 
@@ -386,7 +307,7 @@ defmodule Budget.Entries do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:entry, fn _repo, _changes ->
-      create_transient_entry(transient, %{})
+      create_entry(transient, %{})
     end)
     |> Ecto.Multi.run(:actions, fn _repo, %{entry: entry} ->
       delete_entry(entry.id, mode)
@@ -503,19 +424,10 @@ defmodule Budget.Entries do
 
   def get_category!(id), do: Repo.get!(Category, id)
 
-  def restore_recurrency_params(%{"originator_regular" => regular} = payload) do
-    category =
-      regular
-      |> Map.get("category_id")
-      |> get_category!()
+  def restore_recurrency_params(payload) do
+    module = Entry.originator_module(payload)
 
-    %{
-      originator_regular: %Originators.Regular{
-        description: Map.get(regular, "description"),
-        category: category,
-        category_id: category.id
-      },
-      value: Decimal.new(Map.get(payload, "value")),
-    }
+    module.restore_for_recurrency(payload)
   end
+
 end

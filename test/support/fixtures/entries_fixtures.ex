@@ -78,6 +78,7 @@ defmodule Budget.EntriesFixtures do
         date: date,
         value: value,
         account_id: account_id,
+        is_recurrency: true,
         originator_regular: %{
           description: description,
           category_id: category_id
@@ -100,13 +101,6 @@ defmodule Budget.EntriesFixtures do
             account_id: account_id,
             is_forever: true,
             frequency: :monthly,
-            entry_payload: %{
-              value: value,
-              originator_regular: %{
-                description: description,
-                category_id: category_id
-              }
-            }
           })
         )
       )
