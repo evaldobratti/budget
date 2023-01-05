@@ -39,9 +39,9 @@ defmodule Budget.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.17.5"},
+      {:phoenix_live_view, "~> 0.18.3"},
       {:floki, ">= 0.30.0", only: :test},
-      {:phoenix_live_dashboard, "~> 0.6"},
+      {:phoenix_live_dashboard, "~> 0.7"},
       {:esbuild, "~> 0.4", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},
       {:telemetry_metrics, "~> 0.6"},
@@ -51,7 +51,8 @@ defmodule Budget.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:timex, "~> 3.7.9"},
       {:number, "~> 1.0.3"},
-      {:ecto_materialized_trail, "~> 0.3.0"}
+      {:ecto_materialized_trail, "~> 0.3.0"},
+      {:primer_live, path: "/Users/user/codes/personal/primer_live"}
     ]
   end
 
@@ -63,11 +64,15 @@ defmodule Budget.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup"],
+      setup: ["deps.get", "cmd npm --prefix assets install",  "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.deploy": ["esbuild default --minify", "phx.digest"]
+      "assets.deploy": [
+        "cmd npm --prefix assets install",
+        "esbuild default --minify",
+        "phx.digest"
+      ]
     ]
   end
 end

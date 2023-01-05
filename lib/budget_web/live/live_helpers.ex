@@ -1,6 +1,6 @@
 defmodule BudgetWeb.LiveHelpers do
   import Phoenix.LiveView
-  import Phoenix.LiveView.Helpers
+  use Phoenix.Component
 
   alias Phoenix.LiveView.JS
 

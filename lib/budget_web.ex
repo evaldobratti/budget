@@ -46,6 +46,11 @@ defmodule BudgetWeb do
     quote do
       use Phoenix.LiveView,
         layout: {BudgetWeb.LayoutView, "live.html"}
+      use PrimerLive
+
+      def handle_event("patch", %{"to" => to}, socket) do
+        {:noreply, push_patch(socket, to: to)}
+      end
 
       unquote(view_helpers())
     end
@@ -54,6 +59,7 @@ defmodule BudgetWeb do
   def live_component do
     quote do
       use Phoenix.LiveComponent
+      use PrimerLive
 
       unquote(view_helpers())
     end

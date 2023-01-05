@@ -1,5 +1,6 @@
 <%= if @live_action in [:new_account, :edit_account] do %>
-  <.modal return_to={Routes.budget_index_path(@socket, :index)}>
+  <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop>
+    <:body>
     <.live_component
       module={BudgetWeb.AccountLive.FormComponent}
       id={@account.id || :new}
@@ -7,7 +8,8 @@
       account={@account}
       return_to={Routes.budget_index_path(@socket, :index, from: "account")}
     />
-  </.modal>
+    </:body>
+  </.dialog>
 <% end %>
 
 <%= if @live_action in [:new_category, :edit_category] do %>
