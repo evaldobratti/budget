@@ -222,41 +222,49 @@
         </div>
         <div class="col-4 px-2">
         </div>
-        <div class="col-1 text-right px-2">
+        <div class={"col-1 text-right px-2 #{value_color(Enum.at(@balances, 0))}"}>
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 0)) %>
         </div>
         <div class="col-1 px-2">
         </div>
       </:row>
 
-        <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center">
-          <div class="col-1 px-2">
-            <%= format_date(entry.date) %> 
-          </div>
-          <div class="flex-1 px-2">
-            <%= live_patch entry.originator_regular.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
+      <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center">
+        <div class="col-1 px-2">
+          <%= format_date(entry.date) %> 
+        </div>
+        <div class="flex-1 px-2 d-flex">
+          <%= live_patch entry.originator_regular.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
+          <div class="ml-auto">
             <%= if entry.recurrency_entry && entry.recurrency_entry.parcel do %>
-              <span class="text-end">
+              <span>
                 <%= "(#{entry.recurrency_entry.parcel}/#{entry.recurrency_entry.parcel_end})" %>
               </span>
             <% end %>
-
-          </div>
-          <div class="col-2 px-2">
-            <%= entry.originator_regular.category.name %>
-          </div>
-          <div class="col-2 px-2">
-            <%= entry.account.name %>
-          </div>
-          <div class="col-2 text-right px-2">
-            <%= Number.Currency.number_to_currency(entry.value) %>
-          </div>
-          <div class="col-1 px-2">
-            <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
-              <.octicon name="trash-16" />
+            <%= if entry.recurrency_entry do %>
+              <.octicon name="arrow-switch-16" />
             <% end %>
           </div>
-        </:row>
+        </div>
+        <div class="col-2 px-2">
+          <%= entry.originator_regular.category.name %>
+        </div>
+        <div class="col-2 px-2">
+          <%= entry.account.name %>
+        </div>
+        <div class={"col-2 text-right px-2 #{value_color(entry.value)}"}>
+          <%= Number.Currency.number_to_currency(entry.value) %>
+        </div>
+        <div class="col-1 px-2">
+          <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
+            <.octicon name="trash-16" />
+          <% end %>
+        </div>
+      </:row>
+
+      <:row :if={Enum.empty?(@entries)} is_hover_gray id={"empty-transactions"} class="d-flex flex-justify-center">
+        No transactions in this period.
+      </:row>
 
       <:row id="next-balance" class="d-flex">
         <div class="col-1 px-2">
@@ -267,7 +275,7 @@
         </div>
         <div class="col-4 px-2">
         </div>
-        <div class="col-1 text-right px-2">
+        <div class={"col-1 text-right px-2 #{value_color(Enum.at(@balances, 1))}"}>
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 1)) %>
         </div>
         <div class="col-1 px-2">
