@@ -290,8 +290,9 @@ defmodule Budget.Entries do
   defp calculate_entry_state(entry = %Entry{}) do
     if entry.recurrency_entry do
       any_future =
-        Enum.any?(
-          entry.recurrency_entry.recurrency.recurrency_entries,
+        entry.recurrency_entry.recurrency.recurrency_entries
+        |> Enum.filter(& &1.entry_id)
+        |> Enum.any?(
           &Timex.after?(&1.original_date, entry.date)
         )
 
