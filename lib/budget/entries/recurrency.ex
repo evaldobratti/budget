@@ -9,7 +9,7 @@ defmodule Budget.Entries.Recurrency do
   schema "recurrencies" do
     field :date_end, :date
     field :date_start, :date
-    field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly]
+    field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly], default: :monthly
     field :is_forever, :boolean
     field :is_parcel, :boolean, default: false
     field :parcel_end, :integer
@@ -40,8 +40,6 @@ defmodule Budget.Entries.Recurrency do
         :account_id
       ])
       |> validate_required([
-        :date_start,
-        :account_id,
         :is_parcel,
         :frequency
       ])

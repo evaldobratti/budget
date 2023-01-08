@@ -36,7 +36,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a", "New Account")
+      |> element("a[href='#{Routes.budget_index_path(conn, :new_account)}']")
       |> render_click()
 
       live
@@ -534,7 +534,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
     live
-    |> element("a", "New Category")
+    |> element("a[href='#{Routes.budget_index_path(conn, :new_category)}']")
     |> render_click()
 
     live
@@ -554,7 +554,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     |> element("a[href='#{Routes.budget_index_path(conn, :new_category_child, category)}']")
     |> render_click()
 
-    assert render(live) =~ "Creating a child category of root category"
+    assert render(live) =~ "Creating a child category of &#39;root category&#39;"
 
     live
     |> form("#category-form", category: %{name: "test category"})

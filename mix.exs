@@ -52,7 +52,7 @@ defmodule Budget.MixProject do
       {:timex, "~> 3.7.9"},
       {:number, "~> 1.0.3"},
       {:ecto_materialized_trail, "~> 0.3.0"},
-      {:primer_live, path: "/Users/user/codes/personal/primer_live"}
+      {:primer_live, "~> 0.1.12"}
     ]
   end
 

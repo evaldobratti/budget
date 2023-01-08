@@ -1,77 +1,101 @@
+<.header class="mb-4">
+  <:item :let={classes}>
+    <.link navigate="/" class={[classes.link, "f4 d-flex flex-items-center"]}>
+      <.octicon name="note-16" width="32" height="32" class="mr-2" />
+      <span>My Budget</span>
+    </.link>
+  </:item>
+</.header>
+
 <%= if @live_action in [:new_account, :edit_account] do %>
   <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop>
-    <:body>
-    <.live_component
-      module={BudgetWeb.AccountLive.FormComponent}
-      id={@account.id || :new}
-      action={@live_action}
-      account={@account}
-      return_to={Routes.budget_index_path(@socket, :index, from: "account")}
-    />
+    <:header_title>Account</:header_title>
+    <:body class="pt-0">
+      <.live_component
+        module={BudgetWeb.AccountLive.FormComponent}
+        id={@account.id || :new}
+        action={@live_action}
+        account={@account}
+        return_to={Routes.budget_index_path(@socket, :index, from: "account")}
+      />
     </:body>
   </.dialog>
 <% end %>
 
 <%= if @live_action in [:new_category, :edit_category] do %>
-  <.modal return_to={Routes.budget_index_path(@socket, :index)}>
-    <.live_component
-      module={BudgetWeb.CategoryLive.FormComponent}
-      id={@category.id || :new}
-      action={@live_action}
-      category={@category}
-      return_to={Routes.budget_index_path(@socket, :index, from: "category")}
-    />
-  </.modal>
+  <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop>
+    <:header_title>Category</:header_title>
+    <:body class="pt-0">
+      <.live_component
+        module={BudgetWeb.CategoryLive.FormComponent}
+        id={@category.id || :new}
+        action={@live_action}
+        category={@category}
+        return_to={Routes.budget_index_path(@socket, :index, from: "category")}
+      />
+    </:body>
+  </.dialog>
 <% end %>
 
 <%= if @live_action == :new_category_child do %>
-  <.modal return_to={Routes.budget_index_path(@socket, :index)}>
-    <.live_component
-      module={BudgetWeb.CategoryLive.FormComponent}
-      id={@category.id || :new}
-      action={:new_category}
-      category={%Entries.Category{}}
-      parent={@category}
-      return_to={Routes.budget_index_path(@socket, :index, from: "category")}
-    />
-  </.modal>
+
+  <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop>
+    <:header_title>Category</:header_title>
+
+    <:body class="pt-0">
+      <.live_component
+        module={BudgetWeb.CategoryLive.FormComponent}
+        id={@category.id || :new}
+        action={:new_category}
+        category={%Entries.Category{}}
+        parent={@category}
+        return_to={Routes.budget_index_path(@socket, :index, from: "category")}
+      />
+    </:body>
+  </.dialog>
 <% end %>
 
-<div class="row">
-  <div class="col-3">
-    <div class="row">
-      <div class="col align-items-center">
-        <span class="h5">Accounts</span>
-      </div>
-      <div class="col-auto ms-auto">
-        <%= live_patch "New Account", to: Routes.budget_index_path(@socket, :new_account), class: "btn btn-sm btn-primary" %>
-      </div>
-    </div>
-    <%= for account <- @accounts do %>
-      <div class="row">
-        <div class="col-auto">
-          <input type="checkbox" phx-click="toggle-account" phx-value-account-id={account.id} checked={account.id in @accounts_selected_ids} />
-          <%= account.name %>
+<div class="d-flex">
+  <div class="col-2 px-4">
+    <div class="border-bottom color-border-muted pb-4">
+      <div class="d-flex">
+        <div class="col align-items-center">
+          <span class="h5">Accounts</span>
         </div>
-        <div class="col-auto ms-auto">
-          <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_account, account.id) %>
+        <div class="col-auto ml-auto">
+          <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_account), class: "btn btn-sm btn-primary" %>
         </div>
       </div>
-    <% end %>
-    <div class="row">
-      <div class="col align-items-center">
-        <span class="h5">Categories</span>
-      </div>
-      <div class="col-auto ms-auto">
-        <%= live_patch "New Category", to: Routes.budget_index_path(@socket, :new_category), class: "btn btn-sm btn-primary" %>
-      </div>
+      <%= for account <- @accounts do %>
+        <div class="d-flex mt-2">
+          <div>
+            <input type="checkbox" phx-click="toggle-account" phx-value-account-id={account.id} checked={account.id in @accounts_selected_ids} />
+            <%= account.name %>
+          </div>
+          <div class="ml-auto">
+            <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_account, account.id) %>
+          </div>
+        </div>
+      <% end %>
     </div>
-    <%= render_categories(@categories, @socket) %>
+
+    <div class="pt-4">
+      <div class="d-flex">
+        <div class="align-items-center">
+          <span class="h5">Categories</span>
+        </div>
+        <div class="ml-auto">
+          <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_category), class: "btn btn-sm btn-primary" %>
+        </div>
+      </div>
+      <%= render_categories(@categories, @socket) %>
+    </div>
   </div>
-  <div class="col">
-    <div class="row">
-      <div class="col-auto align-items-center">
-        <span class="h5">Entries</span>
+
+  <div class="col-10 px-4">
+    <div class="d-flex">
+      <div class="col align-items-center">
+        <span class="h5">Transactions</span>
       </div>
       <div class="col-auto mx-auto">
         <.form
@@ -79,122 +103,137 @@
           for={:dates}
           phx-change="update-dates"
         >
-          <div class="row">
-            <div class="col-auto">
-              <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
-            </div>
-            <div class="col-auto">
-              <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
-            </div>
-
-            <div class="col-auto d-flex align-items-center">
-              until
-            </div>
-            <div class="col-auto">
-              <input name="date-end" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")} />
-            </div>
-            <div class="col-auto d-flex align-items-end">
-              <button class="btn btn-sm btn-primary" phx-click="month-next" type="button"><%= ">>" %></button>
-            </div>
+          <div>
+            <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
+            <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
+            until
+            <input name="date-end" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")} />
+            <button class="btn btn-sm btn-primary" phx-click="month-next" type="button"><%= ">>" %></button>
           </div>
         </.form>
       </div>
-      <div class="col-auto d-flex align-items-end">
+      <div class="col-auto align-items-end">
         <%= live_patch "New Entry", to: Routes.budget_index_path(@socket, :new_entry), class: "btn btn-sm btn-primary" %>
         <%= if @live_action == :new_entry do %>
-          <.modal return_to={Routes.budget_index_path(@socket, :index)}>
-            <.live_component
-              module={BudgetWeb.EntryLive.FormComponent}
-              action={@live_action}
-              id={:new}
-              entry={%Entry{date: Timex.today()}}
-              return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
-            />
-          </.modal>
+          <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop>
+            <:header_title>Transaction</:header_title>
+            <:body class="pt-0">
+              <.live_component
+                module={BudgetWeb.EntryLive.FormComponent}
+                action={@live_action}
+                id={:new}
+                entry={%Entry{date: Timex.today()}}
+                return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
+              />
+            </:body>
+          </.dialog>
         <% end %>
       </div>
     </div>
 
     <%= if @live_action == :edit_entry do %>
-      <.modal return_to={Routes.budget_index_path(@socket, :index)}>
-        <.live_component
-          module={BudgetWeb.EntryLive.FormComponent}
-          action={@live_action}
-          id={@edit_entry.id}
-          entry={@edit_entry}
-          return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
-        />
-      </.modal>
+      <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop>
+        <:header_title>Transaction</:header_title>
+        <:body>
+          <.live_component
+            module={BudgetWeb.EntryLive.FormComponent}
+            action={@live_action}
+            id={@edit_entry.id}
+            entry={@edit_entry}
+            return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
+          />
+        </:body>
+      </.dialog>
     <% end %>
 
     <%= if @live_action == :delete_entry do %>
-      <.modal return_to={Routes.budget_index_path(@socket, :index)}>
-        <%= case @confirm_delete.delete_state do %>
-          <% :recurrency -> %>
-            This entry is associated to a recurrency. What do you want to do about it?
 
-            <div>
-              <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
-                Delete just this entry
-              </button>
-              <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-all">
-                Delete this entry and future entries
-              </button>
-            </div>
+      <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop>
+        <:header_title>Delete transaction</:header_title>
+        <:body>
+          <%= case @confirm_delete.delete_state do %>
+            <% :recurrency -> %>
+              This entry is associated to a recurrency. What do you want to do about it?
 
-          <% :recurrency_with_future -> %>
-            This entry is associated to a recurrency. Future entries from this recurrency have already been updated, so what do you want to do about it?
               <div>
-                <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
+                <button class="btn btn-danger btn-sm mt-2" phx-click="entry-delete" phx-value-delete-mode="entry" style="width: 100%">
                   Delete just this entry
                 </button>
-                <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-keep-future">
-                  Delete this entry with future ones but keep changed ones 
-                </button>
-                <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="recurrency-all">
-                  Delete this entry and all future ones
+                <button class="btn btn-danger btn-sm mt-2" phx-click="entry-delete" phx-value-delete-mode="recurrency-all" style="width: 100%">
+                  Delete this entry and future entries
                 </button>
               </div>
 
-          <% :regular -> %>
-            Do you confirm deleting this entry?
-            <div>
-              <button class="btn btn-danger btn-sm" phx-click="entry-delete" phx-value-delete-mode="entry">
-                Yes
-              </button>
-              <button class="btn btn-secondary btn-sm">
-                No
-              </button>
-            </div>
-        <% end %>
-      </.modal>
+            <% :recurrency_with_future -> %>
+              This entry is associated to a recurrency. Future entries from this recurrency have already been updated, so what do you want to do about it?
+                <div>
+                  <button class="btn btn-danger btn-sm mt-2" phx-click="entry-delete" phx-value-delete-mode="entry" style="width: 100%">
+                    Delete just this entry
+                  </button>
+                  <button class="btn btn-danger btn-sm mt-2" phx-click="entry-delete" phx-value-delete-mode="recurrency-keep-future" style="width: 100%">
+                    Delete this entry with future ones but keep ones changed
+                  </button>
+                  <button class="btn btn-danger btn-sm mt-2" phx-click="entry-delete" phx-value-delete-mode="recurrency-all" style="width: 100%">
+                    Delete this entry and all future ones
+                  </button>
+                </div>
+
+            <% :regular -> %>
+              Do you confirm deleting this entry?
+              <div>
+                <%= live_patch "No", to: Routes.budget_index_path(@socket, :index), class: "btn btn-secondary btn-sm mt-2 text-center", style: "width: 100%"%>
+                <button class="btn btn-danger btn-sm mt-2" phx-click="entry-delete" phx-value-delete-mode="entry" style="width: 100%">
+                  Yes
+                </button>
+              </div>
+          <% end %>
+        </:body>
+      </.dialog>
     <% end %>
 
-    <div class="">
+    <.box is_condensed class="mt-2">
+      <:header class="d-flex">
+        <div class="col-1 px-2">
+          Date 
+        </div>
+        <div class="flex-1 px-2">
+          Description
+        </div>
+        <div class="col-2 px-2">
+          Category
+        </div>
+        <div class="col-2 px-2">
+          Account
+        </div>
 
-      <div class="row" id="previous-balance">
-        <div class="col-2">
+        <div class="col-2 text-right px-2">
+          Value
+        </div>
+
+        <div class="col-1 px-2">
+        </div>
+      </:header>
+      <:row id="previous-balance" class="d-flex">
+        <div class="col-1 px-2">
           <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %> 
         </div>
-        <div class="col">
+        <div class="flex-1 px-2">
           Previous balance
         </div>
-        <div class="col-4">
+        <div class="col-4 px-2">
         </div>
-        <div class="col-1 text-end">
+        <div class="col-1 text-right px-2">
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 0)) %>
         </div>
-        <div class="col-auto">
-          <.icon icon="fa-trash" class="invisible" />
+        <div class="col-1 px-2">
         </div>
-      </div>
+      </:row>
 
-      <%= for entry <- @entries do %>
-        <div class="row" id={"entry-#{entry.id}"}>
-          <div class="col-2">
+        <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center">
+          <div class="col-1 px-2">
             <%= format_date(entry.date) %> 
           </div>
-          <div class="col">
+          <div class="flex-1 px-2">
             <%= live_patch entry.originator_regular.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
             <%= if entry.recurrency_entry && entry.recurrency_entry.parcel do %>
               <span class="text-end">
@@ -203,39 +242,38 @@
             <% end %>
 
           </div>
-          <div class="col-2">
+          <div class="col-2 px-2">
             <%= entry.originator_regular.category.name %>
           </div>
-          <div class="col-2">
+          <div class="col-2 px-2">
             <%= entry.account.name %>
           </div>
-          <div class="col-2 text-end">
+          <div class="col-2 text-right px-2">
             <%= Number.Currency.number_to_currency(entry.value) %>
           </div>
-          <div class="col-auto">
-            <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}"  do %>
-              <.icon icon="fa-trash"  />
+          <div class="col-1 px-2">
+            <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
+              <.octicon name="trash-16" />
             <% end %>
           </div>
-        </div>
-      <% end %>
+        </:row>
 
-      <div class="row" id="next-balance">
-        <div class="col-2">
+      <:row id="next-balance" class="d-flex">
+        <div class="col-1 px-2">
           <%= format_date(Enum.at(@dates, 1)) %> 
         </div>
-        <div class="col">
+        <div class="flex-1 px-2">
           Next balance
         </div>
-        <div class="col-4">
+        <div class="col-4 px-2">
         </div>
-        <div class="col-1 text-end">
+        <div class="col-1 text-right px-2">
           <%= Number.Currency.number_to_currency(Enum.at(@balances, 1)) %>
         </div>
-        <div class="col-auto">
+        <div class="col-1 px-2">
           <.icon icon="fa-trash" class="invisible" />
         </div>
-      </div>
-    </div>
+      </:row>
+    </.box>
   </div>
 </div>

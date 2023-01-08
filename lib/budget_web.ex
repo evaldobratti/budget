@@ -46,7 +46,6 @@ defmodule BudgetWeb do
     quote do
       use Phoenix.LiveView,
         layout: {BudgetWeb.LayoutView, "live.html"}
-      use PrimerLive
 
       def handle_event("patch", %{"to" => to}, socket) do
         {:noreply, push_patch(socket, to: to)}
@@ -107,6 +106,8 @@ defmodule BudgetWeb do
       alias BudgetWeb.Router.Helpers, as: Routes
 
       import BudgetWeb.ViewHelpers
+
+      use PrimerLive
     end
   end
 

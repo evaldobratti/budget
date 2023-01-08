@@ -305,7 +305,7 @@ defmodule Budget.Entries do
     end
   end
 
-  defp encarnate_transient_entry(entry_id) do
+  def encarnate_transient_entry(entry_id) do
     [_, recurrency_id, year, month, day] = String.split(entry_id, "-")
 
     {:ok, date} =

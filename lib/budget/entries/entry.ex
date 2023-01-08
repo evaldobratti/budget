@@ -58,6 +58,8 @@ defmodule Budget.Entries.Entry do
     recurrency_casted = recurrency_entry_casted && get_change(recurrency_entry_casted, :recurrency)
 
     if Enum.all?([new_entry, is_recurrency, valid?, recurrency_entry_casted, recurrency_casted]) do
+      entry_date = get_field(changeset, :date)
+
       module =
         changeset
         |> apply_action!(:insert)
@@ -69,16 +71,17 @@ defmodule Budget.Entries.Entry do
       changeset = 
         update_change(changeset, :recurrency_entry, fn re_changeset ->
           update_change(re_changeset, :recurrency, fn r_changeset ->
-            date_start = get_field(r_changeset, :date_start)
-
             put_change(
               r_changeset, 
               :entry_payload, 
               %{
-                Date.to_iso8601(date_start) => payload
+                Date.to_iso8601(entry_date) => payload
               }
             )
+            |> put_change(:date_start, entry_date)
+            |> put_change(:account_id, get_field(changeset, :account_id))
           end)
+          |> put_change(:original_date, entry_date)
         end)
 
       r_changeset =

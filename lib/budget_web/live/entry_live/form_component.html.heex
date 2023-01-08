@@ -7,115 +7,74 @@
     phx-change="validate"
     phx-submit="save"
   >
-    <div class="pt-2">
-      <%= label f, :date, class: "form-label" %>
-      <%= date_input f, :date, class: "form-control form-control-sm w-auto", phx_hook: "BSInputError" %>
-      <%= error_tag f, :date %>
-    </div>
+
+    <.form_group form={f} field={:date}>
+      <.text_input form={f} field={:date} type="date" autocomplete="off" />
+    </.form_group>
 
     <% [regular_form] = inputs_for f, :originator_regular %>
 
     <%= if Ecto.get_meta(regular_form.data, :state) == :loaded do %>
       <%= hidden_input regular_form, :id %>
     <% end %>
+
+    <.form_group form={regular_form} field={:description}>
+      <.text_input form={regular_form} field={:description} autocomplete="off" />
+    </.form_group>
   
-    <div class="pt-2">
-      <%= label regular_form, :description, class: "form-label" %>
-      <%= text_input regular_form, :description, class: "form-control form-control-sm", phx_hook: "BSInputError" %>
-      <%= error_tag regular_form, :description %>
-    </div>
+    <.form_group form={regular_form} field={:category_id}>
+      <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} />
+    </.form_group>
 
-    <div class="pt-2">
-      <%= label regular_form, :category_id, class: "form-label" %>
-      <%= select regular_form, :category_id, Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id}), class: "form-select form-select-sm", phx_hook: "BSInputError" %>
-      <%= error_tag regular_form, :category_id %>
-    </div>
+    <.form_group form={f} field={:account_id}>
+      <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
+    </.form_group>
 
-    <div class="pt-2">
-      <%= label f, :account_id, class: "form-label" %>
-      <%= select f, :account_id, Enum.map(@accounts, &{&1.name, &1.id}), class: "form-select form-select-sm", phx_hook: "BSInputError" %>
-      <%= error_tag f, :account_id %>
-    </div>
+    <.form_group form={f} field={:value}>
+      <.text_input form={f} field={:value} type="number" autocomplete="off" />
+    </.form_group>
 
-    <div class="pt-2">
-      <%= label f, :value, class: "form-label" %>
-      <%= number_input f, :value, class: "form-control form-control-sm", phx_hook: "BSInputError" %>
-      <%= error_tag f, :value %>
-    </div>
-
-    <div class="pt-2">
-      <%= checkbox f, :is_carried_out, phx_hook: "BSInputError" %>
-      <%= label f, :is_carried_out, class: "form-label" %>
-      <%= error_tag f, :is_carried_out %>
-    </div>
+    <.checkbox form={f} field={:is_carried_out} />
 
     <% entry_loaded = Ecto.get_meta(@changeset.data, :state) == :loaded || (@changeset.data.id && String.starts_with?(@changeset.data.id, "recurrency")) %>
 
-    <div class="pt-2">
-      <%= checkbox f, :is_recurrency, phx_hook: "BSInputError", disabled: entry_loaded %>
-      <%= label f, :is_recurrency, class: "form-label" %>
-      <%= error_tag f, :is_recurrency %>
-    </div>
+    <.checkbox form={f} field={:is_recurrency} />
 
-    <%= if Ecto.Changeset.get_field(@changeset, :is_recurrency) do %>
-      <% [recurrency_entry_form] = inputs_for f, :recurrency_entry %>
-      <% [recurrency_form] = inputs_for recurrency_entry_form, :recurrency %>
+    <% [recurrency_entry_form] = inputs_for f, :recurrency_entry %>
+    <% [recurrency_form] = inputs_for recurrency_entry_form, :recurrency %>
 
-      <div class="pt-2">
-        <%= checkbox f, :recurrency_apply_forward, phx_hook: "BSInputError" %>
-        <%= label f, :recurrency_apply_forward, "Apply these changes for the recurrency from now on", class: "form-label" %>
-        <%= error_tag f, :recurrency_apply_forward %>
-      </div>
+    <%= if entry_loaded do %>
+      <.checkbox form={f} field={:recurrency_apply_forward} />
+    <% end %>
 
-      <div class="pt-2">
-        <%= label recurrency_form, :frequency, class: "form-label" %>
-        <%= select recurrency_form, 
-            :frequency, 
-            Ecto.Enum.mappings(Recurrency, :frequency), 
-            class: "form-select form-select-sm", 
-            phx_hook: "BSInputError", 
-            disabled: entry_loaded 
-        %>
-        <%= error_tag recurrency_form, :frequency %>
-      </div>
+    <%= if Ecto.Changeset.get_field(@changeset, :is_recurrency) && !entry_loaded do %>
+
+      <.form_group form={recurrency_form} field={:frequency}>
+        <.select form={recurrency_form} field={:frequency} options={Ecto.Enum.mappings(Recurrency, :frequency)} />
+      </.form_group>
 
       <% is_parcel = Ecto.Changeset.get_field(recurrency_form.source, :is_parcel) %>
       <% is_forever = Ecto.Changeset.get_field(recurrency_form.source, :is_forever) %>
       <% has_end_date = Ecto.Changeset.get_field(recurrency_form.source, :date_end) %>
 
-      <div class="row pt-2">
-        <div class="col-auto">
-          <%= checkbox recurrency_form, :is_parcel, phx_hook: "BSInputError", disabled: entry_loaded || is_forever || has_end_date %>
-          <%= label recurrency_form, :is_parcel, class: "form-label" %>
-          <%= error_tag recurrency_form, :is_parcel %>
-        </div>
-        <div class="col-auto">
-          <%= label recurrency_form, :parcel_start, class: "form-label" %>
-          <%= number_input recurrency_form, :parcel_start, class: "form-control form-control-sm", phx_hook: "BSInputError", disabled: entry_loaded  || is_forever || has_end_date %>
-          <%= error_tag recurrency_form, :parcel_start %>
-        </div>
-        <div class="col-auto">
-          <%= label recurrency_form, :parcel_end, class: "form-label" %>
-          <%= number_input recurrency_form, :parcel_end, class: "form-control form-control-sm", phx_hook: "BSInputError", disabled: entry_loaded  || is_forever || has_end_date %>
-          <%= error_tag recurrency_form, :parcel_end %>
-        </div>
+      <div class="pt-2">
+        <.checkbox form={recurrency_form} field={:is_parcel} disabled={entry_loaded  || is_forever || has_end_date}> 
+          <:disclosure>
+            <.form_group form={recurrency_form} field={:parcel_start}>
+              <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} />
+            </.form_group>
+            <.form_group form={recurrency_form} field={:parcel_end}>
+              <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} />
+            </.form_group>
+          </:disclosure>
+        </.checkbox>
       </div>
 
       <div class="row pt-2">
-        <div class="col-auto">
-          <%= checkbox recurrency_form, :is_forever, phx_hook: "BSInputError", disabled: is_parcel || entry_loaded %>
-          <%= label recurrency_form, :is_forever, class: "form-label" %>
-          <%= error_tag recurrency_form, :is_forever %>
-        </div>
-        <div class="col">
-          <%= label recurrency_form, :date_end, class: "form-label" %>
-          <%= date_input recurrency_form, :date_end, 
-              disabled: input_value(recurrency_form, :is_forever) || is_parcel || entry_loaded,
-              class: "form-control form-control-sm w-auto", 
-              phx_hook: "BSInputError" 
-          %>
-          <%= error_tag recurrency_form, :date_end %>
-        </div>
+        <.checkbox form={recurrency_form} field={:is_forever} disabled={entry_loaded  || is_parcel} /> 
+        <.form_group form={recurrency_form} field={:date_end}>
+          <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || entry_loaded} />
+        </.form_group>
       </div>
     <% end %>
   </.form>

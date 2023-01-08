@@ -140,6 +140,7 @@ defmodule Budget.EntriesTest do
     test "calculate finite recurrency entries until date - monthly" do
       recurrency =
         recurrency_fixture(%{
+          date: ~D[2019-01-01],
           originator_regular: %{
             description: "Some description",
             category_id: category_fixture().id
@@ -149,14 +150,12 @@ defmodule Budget.EntriesTest do
             recurrency: %{
               is_forever: false,
               frequency: :monthly,
-              date_start: ~D[2019-01-01],
               date_end: ~D[2019-03-31]
             }
           }
         })
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, description: "Some description"},
                %{date: ~D[2019-02-01], value: 200, description: "Some description"},
                %{date: ~D[2019-03-01], value: 200, description: "Some description"}
              ] =
@@ -170,7 +169,6 @@ defmodule Budget.EntriesTest do
                )
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, description: "Some description"},
                %{date: ~D[2019-02-01], value: 200, description: "Some description"},
                %{date: ~D[2019-03-01], value: 200, description: "Some description"}
              ] =
@@ -186,7 +184,6 @@ defmodule Budget.EntriesTest do
       assert [] = Entries.recurrency_entries(recurrency, ~D[2018-03-01])
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, description: "Some description"},
                %{date: ~D[2019-02-01], value: 200, description: "Some description"},
                %{date: ~D[2019-03-01], value: 200, description: "Some description"}
              ] =
@@ -203,6 +200,7 @@ defmodule Budget.EntriesTest do
     test "calculate finite recurrency entries until date - weekly" do
       recurrency =
         recurrency_fixture(%{
+          date: ~D[2019-01-01],
           originator_regular: %{
             description: "Some description",
             category_id: category_fixture().id
@@ -213,14 +211,12 @@ defmodule Budget.EntriesTest do
               is_forever: false,
               frequency: :weekly,
               value: 200,
-              date_start: ~D[2019-01-01],
               date_end: ~D[2019-01-31]
             }
           }
         })
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, description: "Some description"},
                %{date: ~D[2019-01-08], value: 200, description: "Some description"},
                %{date: ~D[2019-01-15], value: 200, description: "Some description"},
                %{date: ~D[2019-01-22], value: 200, description: "Some description"},
@@ -236,7 +232,6 @@ defmodule Budget.EntriesTest do
                )
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, description: "Some description"},
                %{date: ~D[2019-01-08], value: 200, description: "Some description"},
                %{date: ~D[2019-01-15], value: 200, description: "Some description"}
              ] =
@@ -252,7 +247,6 @@ defmodule Budget.EntriesTest do
       assert [] = Entries.recurrency_entries(recurrency, ~D[2018-03-01])
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, description: "Some description"},
                %{date: ~D[2019-01-08], value: 200, description: "Some description"},
                %{date: ~D[2019-01-15], value: 200, description: "Some description"},
                %{date: ~D[2019-01-22], value: 200, description: "Some description"},
@@ -271,18 +265,17 @@ defmodule Budget.EntriesTest do
     test "calculate infinite recurrency entries starting date 31" do
       recurrency =
         recurrency_fixture(%{
+          date: ~D[2019-01-31],
           recurrency_entry: %{
             recurrency: %{
               is_forever: false,
               frequency: :monthly,
-              date_start: ~D[2019-01-31],
               date_end: ~D[2020-01-31]
             }
           }
         })
 
       assert [
-               ~D[2019-01-31],
                ~D[2019-02-28],
                ~D[2019-03-31],
                ~D[2019-04-30],
@@ -298,6 +291,7 @@ defmodule Budget.EntriesTest do
     test "calculate parcel weekly 1 to 6" do
       recurrency =
         recurrency_fixture(%{
+          date: ~D[2019-01-01],
           originator_regular: %{
             description: "Some description",
             category_id: category_fixture().id
@@ -308,7 +302,6 @@ defmodule Budget.EntriesTest do
               is_forever: false,
               is_parcel: true,
               frequency: :weekly,
-              date_start: ~D[2019-01-01],
               parcel_start: 1,
               parcel_end: 6
             }
@@ -316,13 +309,6 @@ defmodule Budget.EntriesTest do
         })
 
       assert [
-               %{
-                 date: ~D[2019-01-01],
-                 value: 200,
-                 description: "Some description",
-                 parcel: 1,
-                 parcel_end: 6
-               },
                %{
                  date: ~D[2019-01-08],
                  value: 200,
@@ -372,13 +358,6 @@ defmodule Budget.EntriesTest do
 
       assert [
                %{
-                 date: ~D[2019-01-01],
-                 value: 200,
-                 description: "Some description",
-                 parcel: 1,
-                 parcel_end: 6
-               },
-               %{
                  date: ~D[2019-01-08],
                  value: 200,
                  description: "Some description",
@@ -415,6 +394,7 @@ defmodule Budget.EntriesTest do
     test "calculate parcel weekly 3 to 6" do
       recurrency =
         recurrency_fixture(%{
+          date: ~D[2019-01-01],
           originator_regular: %{
             description: "Some description",
             category_id: category_fixture().id
@@ -425,7 +405,6 @@ defmodule Budget.EntriesTest do
               is_forever: false,
               is_parcel: true,
               frequency: :weekly,
-              date_start: ~D[2019-01-01],
               parcel_start: 3,
               parcel_end: 6
             }
@@ -433,7 +412,6 @@ defmodule Budget.EntriesTest do
         })
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, parcel: 3, parcel_end: 6},
                %{date: ~D[2019-01-08], value: 200, parcel: 4, parcel_end: 6},
                %{date: ~D[2019-01-15], value: 200, parcel: 5, parcel_end: 6},
                %{date: ~D[2019-01-22], value: 200, parcel: 6, parcel_end: 6}
@@ -449,7 +427,6 @@ defmodule Budget.EntriesTest do
                )
 
       assert [
-               %{date: ~D[2019-01-01], value: 200, parcel: 3, parcel_end: 6},
                %{date: ~D[2019-01-08], value: 200, parcel: 4, parcel_end: 6},
                %{date: ~D[2019-01-15], value: 200, parcel: 5, parcel_end: 6}
              ] =
@@ -467,20 +444,19 @@ defmodule Budget.EntriesTest do
     test "recurrency when it ends and the end of an entry" do
       recurrency =
         recurrency_fixture(%{
+          date: ~D[2019-01-01],
           recurrency_entry: %{
             recurrency: %{
               is_forever: false,
               description: "Some description",
               frequency: :monthly,
               value: 200,
-              date_start: ~D[2019-01-01],
               date_end: ~D[2019-03-01]
             }
           }
         })
 
       assert [
-               %{date: ~D[2019-01-01]},
                %{date: ~D[2019-02-01]},
                %{date: ~D[2019-03-01]}
              ] = Entries.recurrency_entries(recurrency, ~D[2019-03-03])

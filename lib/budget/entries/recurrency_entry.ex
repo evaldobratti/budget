@@ -19,8 +19,6 @@ defmodule Budget.Entries.RecurrencyEntry do
   def changeset(recurrency_entry, attrs) do
     recurrency_entry
     |> cast(attrs, [:original_date, :recurrency_id])
-    |> validate_required([:original_date])
     |> cast_assoc(:recurrency)
   end
-
 end
