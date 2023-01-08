@@ -55,7 +55,14 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def apply_action(socket, :edit_entry, %{"id" => id}) do
-    entry = Enum.find(socket.assigns.entries, &(to_string(&1.id) === id))
+    entry = 
+      case id do
+        "recurrency" <> _ ->
+          Entries.encarnate_transient_entry(id)
+
+        _ ->
+          Entries.get_entry!(id)
+      end
 
     socket
     |> assign(edit_entry: entry)
@@ -208,18 +215,16 @@ defmodule BudgetWeb.BudgetLive.Index do
 
     ~H"""
     <%= for {category, children} <- @categories do %>
-      <div class="row">
-        <div class="col-auto">
-          <%= category.name %>
+      <div class="d-flex mt-2">
+        <div>
+          <%= if length(category.path) > 0, do: "└ " %><%=category.name %>
         </div>
-        <div class="col-auto ms-auto">
+        <div class="ml-auto">
           <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_category, category.id) %>
-        </div>
-        <div class="col-auto">
           <%= live_patch "+", to: Routes.budget_index_path(@socket, :new_category_child, category), class: "btn btn-sm btn-primary" %>
         </div>
       </div>
-      <div class="ms-3">
+      <div class="pl-3 ml-2" style="border-left: solid 1px">
         <%= render_categories(children, @socket) %>
       </div>
     <% end %>

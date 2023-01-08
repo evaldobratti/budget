@@ -106,88 +106,34 @@ defmodule Budget.Entries do
     Entry.changeset(entry, attrs)
   end
 
-  def change_transient_entry(%Entry{} = entry, attrs \\ %{}) do
-    Entry.changeset_transient(entry, attrs)
-  end
-
   def update_entry(%Entry{} = entry, attrs) do
     entry
     |> Entry.changeset(attrs)
     |> Repo.update()
   end
 
-  def create_transient_entry(%Entry{} = entry, attrs \\ %{}) do
-    # TODO add validation that id starts with recurrency
-    changeset =
-      entry
-      |> Map.put(:id, nil)
-      |> Entry.changeset_transient(attrs)
+  def create_entry(entry \\ %Entry{}, attrs) do
+    case entry.id do
+      "recurrency" <> _ ->
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(:entry, Map.put(entry, :id, nil))
+        |> Ecto.Multi.update(:entry_update, fn %{entry: entry} ->
+          Entry.changeset(entry, attrs)
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{entry_update: entry_update}} ->
+            {:ok, entry_update}
 
-    check_ending_recurrency(changeset)
-  end
+          error ->
+            error
+        end
 
-  defp check_ending_recurrency(
-         %Ecto.Changeset{changes: %{recurrency_apply_forward: true}, valid?: true} = changeset
-       ) do
-    original_date = changeset.data.recurrency_entry.original_date
-
-    {:ok, entry} = Ecto.Changeset.apply_action(changeset, :insert)
-    previous_recurrency = get_recurrency!(entry.recurrency_entry.recurrency_id)
-
-    parcel_regex = ~r/ \((\d+)\/\d+\)/
-
-    [current_parcel, description] =
-      case Regex.run(parcel_regex, entry.description) do
-        [_, parcel] ->
-          [String.to_integer(parcel), Regex.replace(parcel_regex, entry.description, "")]
-
-        _ ->
-          [nil, entry.description]
-      end
-
-    {:ok, entry} =
-      create_entry(%{
-        date: entry.date,
-        description: description,
-        value: entry.value,
-        is_carried_out: entry.is_carried_out,
-        account_id: entry.account_id,
-        category_id: entry.category_id,
-        recurrency_entry: %{
-          original_date: entry.date,
-          recurrency: %{
-            date_start: original_date,
-            date_end: previous_recurrency.date_end,
-            frequency: previous_recurrency.frequency,
-            is_forever: previous_recurrency.is_forever,
-            is_parcel: previous_recurrency.is_parcel,
-            parcel_start: current_parcel,
-            parcel_end: previous_recurrency.parcel_end,
-            account_id: entry.account_id,
-            category_id: entry.category_id,
-            description: description,
-            value: entry.value,
-          }
-        }
-      })
-
-    update_recurrency(changeset.data.recurrency_entry.recurrency, %{
-      date_end: original_date |> Timex.shift(days: -1)
-    })
-
-    {:ok, entry}
-  end
-
-  defp check_ending_recurrency(changeset) do
-    changeset
-    |> Repo.insert()
-  end
-
-  def create_entry(attrs \\ %{}) do
-    %Entry{}
-    |> Entry.changeset(attrs)
-    |> Recurrency.apply_any_description_update()
-    |> Repo.insert()
+      _ ->
+        %Entry{}
+        |> Entry.changeset(attrs)
+        |> Repo.insert()
+    end
   end
 
   def get_entry!("recurrency" <> _ = id) do
@@ -257,7 +203,7 @@ defmodule Budget.Entries do
       r in Recurrency,
       join: a in assoc(r, :account),
       as: :account,
-      preload: [recurrency_entries: :entry, account: a, category: []]
+      preload: [recurrency_entries: :entry, account: a]
     )
     |> where_account_in(accounts_ids)
     |> Repo.all()
@@ -279,9 +225,14 @@ defmodule Budget.Entries do
       as: :account,
       left_join: re in assoc(e, :recurrency_entry),
       left_join: r in assoc(re, :recurrency),
-      join: c in assoc(e, :category),
-      preload: [account: a, recurrency_entry: {re, recurrency: r}, category: c],
-      order_by: [e.date, e.description],
+      left_join: regular in assoc(e, :originator_regular),
+      join: c in assoc(regular, :category),
+      preload: [
+        account: a,
+        recurrency_entry: {re, recurrency: r},
+        originator_regular: {regular, category: c}
+      ],
+      order_by: [e.date, regular.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}
     )
   end
@@ -315,7 +266,7 @@ defmodule Budget.Entries do
   def get_recurrency!(id) do
     from(
       r in Recurrency,
-      preload: [recurrency_entries: :entry]
+      preload: [recurrency_entries: [entry: :originator_regular]]
     )
     |> Repo.get!(id)
   end
@@ -354,7 +305,7 @@ defmodule Budget.Entries do
     end
   end
 
-  defp encarnate_transient_entry(entry_id) do
+  def encarnate_transient_entry(entry_id) do
     [_, recurrency_id, year, month, day] = String.split(entry_id, "-")
 
     {:ok, date} =
@@ -373,7 +324,7 @@ defmodule Budget.Entries do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:entry, fn _repo, _changes ->
-      create_transient_entry(transient, %{})
+      create_entry(transient, %{})
     end)
     |> Ecto.Multi.run(:actions, fn _repo, %{entry: entry} ->
       delete_entry(entry.id, mode)
@@ -406,7 +357,7 @@ defmodule Budget.Entries do
 
     recurrency_change =
       entry.recurrency_entry.recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.date, days: -1)})
+      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
 
     Ecto.Multi.new()
     |> Ecto.Multi.update_all(
@@ -425,7 +376,7 @@ defmodule Budget.Entries do
 
     recurrency_change =
       recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.date, days: -1)})
+      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
 
     affected_recurrency_entries =
       from(
@@ -438,7 +389,9 @@ defmodule Budget.Entries do
       |> Repo.all()
 
     affected_re_ids = affected_recurrency_entries |> Enum.map(& &1.id)
-    affected_entry_ids = affected_recurrency_entries |> Enum.map(& &1.entry.id)
+
+    affected_entry_ids =
+      affected_recurrency_entries |> Enum.filter(& &1.entry) |> Enum.map(& &1.entry.id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.update_all(
@@ -457,13 +410,13 @@ defmodule Budget.Entries do
   def create_category(attrs, parent \\ nil) do
     %Category{}
     |> Category.changeset(attrs)
-    |> then(fn changeset -> 
+    |> then(fn changeset ->
       if parent do
         Category.make_child_of(changeset, parent)
       else
         changeset
       end
-    end) 
+    end)
     |> Repo.insert()
   end
 
@@ -475,12 +428,12 @@ defmodule Budget.Entries do
 
   def list_categories_arranged do
     list_categories()
-    |> Category.arrange
+    |> Category.arrange()
   end
 
   def list_categories() do
     Category
-    |> Repo.all
+    |> Repo.all()
   end
 
   def change_category(category, attrs \\ %{}) do
@@ -489,4 +442,10 @@ defmodule Budget.Entries do
   end
 
   def get_category!(id), do: Repo.get!(Category, id)
+
+  def restore_recurrency_params(payload) do
+    module = Entry.originator_module(payload)
+
+    module.restore_for_recurrency(payload)
+  end
 end

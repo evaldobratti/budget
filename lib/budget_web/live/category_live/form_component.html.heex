@@ -5,20 +5,19 @@
     id="category-form"
     phx-target={@myself}
     phx-change="validate"
-    phx-submit="save">
+    phx-submit="save"
+    class="pt-4">
 
     <%= if Map.get(assigns, :parent) do %>
-      Creating a child category of <%= @parent.name %>
+      Creating a child category of '<%= @parent.name %>'
     <% end %>
   
-    <div class="py-2">
-      <%= label f, :name, class: "form-label" %>
-      <%= text_input f, :name, class: "form-control", phx_hook: "BSInputError" %>
-      <%= error_tag f, :name %>
-    </div>
-  
-    <div>
-      <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary" %>
+    <.form_group form={f} field={:name}>
+      <.text_input form={f} field={:name} autocomplete="off" />
+    </.form_group>
+
+    <div class="d-flex">
+      <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary ml-auto" %>
     </div>
   </.form>
 </div>

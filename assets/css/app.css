@@ -1,6 +1,4 @@
 /* This file is for your main application CSS */
-@import "../node_modules/bootstrap/dist/css/bootstrap.css";
-
 [x-cloak] { display: none !important; }
 
 /* LiveView specific classes for your customization */

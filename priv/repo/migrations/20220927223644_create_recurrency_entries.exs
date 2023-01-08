@@ -6,6 +6,8 @@ defmodule Budget.Repo.Migrations.CreateRecurrencyEntries do
       add :original_date, :date
       add :recurrency_id, references(:recurrencies, on_delete: :nothing)
       add :entry_id, references(:entries, on_delete: :nothing)
+      add :parcel, :int
+      add :parcel_end, :int
 
       timestamps()
     end

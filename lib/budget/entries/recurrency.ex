@@ -3,23 +3,20 @@ defmodule Budget.Entries.Recurrency do
   import Ecto.Changeset
 
   alias Budget.Entries.Account
-  alias Budget.Entries.Category
   alias Budget.Entries.Entry
   alias Budget.Entries.RecurrencyEntry
 
   schema "recurrencies" do
     field :date_end, :date
     field :date_start, :date
-    field :description, :string
-    field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly]
+    field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly], default: :monthly
     field :is_forever, :boolean
     field :is_parcel, :boolean, default: false
     field :parcel_end, :integer
     field :parcel_start, :integer
-    field :value, :decimal
+    field :entry_payload, :map
 
     belongs_to :account, Account
-    belongs_to :category, Category
 
     has_many :recurrency_entries, RecurrencyEntry
 
@@ -34,27 +31,18 @@ defmodule Budget.Entries.Recurrency do
         :frequency,
         :is_parcel,
         :is_forever,
-        :value,
         :frequency,
         :date_start,
         :date_end,
-        :description,
         :parcel_start,
         :parcel_end,
         :is_parcel,
-        :account_id,
-        :category_id
+        :account_id
       ])
       |> validate_required([
-        :date_start,
-        :description,
-        :value,
-        :account_id,
         :is_parcel,
-        :frequency,
-        :category_id
+        :frequency
       ])
-      |> cast_assoc(:recurrency_entries, with: &RecurrencyEntry.changeset_from_recurrency/2)
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
       # TODO allow this to happen
@@ -89,38 +77,64 @@ defmodule Budget.Entries.Recurrency do
 
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
+    payloads =
+      recurrency.entry_payload
+      |> Enum.map(fn {date, payload} ->
+        {Date.from_iso8601!(date), Budget.Entries.restore_recurrency_params(payload)}
+      end)
+      |> Enum.into(%{})
+
     dates
     |> Enum.with_index()
     |> Enum.map(fn {date, ix} ->
-      complement =
+      recurrency_entry =
         if recurrency.is_parcel do
-          " (#{ix + recurrency.parcel_start}/#{recurrency.parcel_end})"
+          %RecurrencyEntry{
+            original_date: date,
+            recurrency_id: recurrency.id,
+            recurrency: recurrency,
+            parcel: ix + recurrency.parcel_start,
+            parcel_end: recurrency.parcel_end
+          }
         else
-          ""
+          %RecurrencyEntry{
+            original_date: date,
+            recurrency_id: recurrency.id,
+            recurrency: recurrency
+          }
         end
+
+      params = payload_at_date(payloads, date)
 
       %Entry{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
         date: date,
-        description: recurrency.description <> complement,
         account: recurrency.account,
         account_id: recurrency.account_id,
-        category_id: recurrency.category_id,
-        category: recurrency.category,
-        value: recurrency.value,
         is_recurrency: true,
-        recurrency_entry: %RecurrencyEntry{
-          original_date: date,
-          recurrency_id: recurrency.id,
-          recurrency: recurrency
-        }
+        recurrency_entry: recurrency_entry
       }
+      |> Map.merge(params)
     end)
     |> Enum.filter(
       &(!Enum.any?(recurrency.recurrency_entries, fn re ->
           re.original_date == &1.recurrency_entry.original_date
         end))
     )
+  end
+
+  defp payload_at_date(payloads, at_date) do
+    payloads
+    |> Enum.filter(fn {date, _payload} ->
+      Timex.equal?(date, at_date) or Timex.before?(date, at_date)
+    end)
+    |> Enum.min_by(
+      fn {date, _payload} ->
+        date
+      end,
+      &Timex.after?/2
+    )
+    |> elem(1)
   end
 
   def dates(frequency, ix_offset, initial_date, until_date) do
@@ -158,27 +172,6 @@ defmodule Budget.Entries.Recurrency do
         initial_date,
         current_parcel + 1
       )
-    end
-  end
-
-  def apply_any_description_update(entry_changeset) do
-    case apply_action(entry_changeset, :insert) do
-      {
-        :ok,
-        %{
-          recurrency_entry: %{
-            recurrency: %{
-              is_parcel: true,
-              parcel_start: parcel_start,
-              parcel_end: parcel_end
-            }
-          }
-        }
-      } ->
-        update_change(entry_changeset, :description, &(&1 <> " (#{parcel_start}/#{parcel_end})"))
-
-      _ ->
-        entry_changeset
     end
   end
 end
