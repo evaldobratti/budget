@@ -224,7 +224,7 @@ defmodule BudgetWeb.BudgetLive.Index do
           <%= live_patch "+", to: Routes.budget_index_path(@socket, :new_category_child, category), class: "btn btn-sm btn-primary" %>
         </div>
       </div>
-      <div class="pl-3 ml-2" style="border-left: solid 1px">
+      <div class="pl-1 ml-1" style="border-left: solid 1px">
         <%= render_categories(children, @socket) %>
       </div>
     <% end %>
