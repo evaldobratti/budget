@@ -92,6 +92,11 @@
 .form-group {
   display: flex;
   flex-direction: column;
+  margin-top: 0;
+}
+
+.form-checkbox {
+  margin-top: 0;
 }
 
 .form-group .form-group-body {
@@ -103,5 +108,12 @@
 .form-group .form-control {
   flex: 1;
   width: initial;
+  background-color: white;
+}
+
+.form-group .form-control[disabled] {
+  flex: 1;
+  width: initial;
+  background-color: var(--color-canvas-inset);;
 }
 

@@ -29,7 +29,7 @@
       </.form_group>
     </div>
 
-    <.form_group form={regular_form} field={:description} class="mt-0">
+    <.form_group form={regular_form} field={:description} >
       <.text_input form={regular_form} field={:description} autocomplete="off" />
     </.form_group>
 
@@ -38,8 +38,8 @@
     </.form_group>
 
     <div class="d-flex">
-      <.checkbox form={f} field={:is_carried_out} class="flex-1 my-0" />
-      <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1 my-0" />
+      <.checkbox form={f} field={:is_carried_out} class="flex-1" />
+      <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
     </div>
 
     <% [recurrency_entry_form] = inputs_for f, :recurrency_entry %>
@@ -61,33 +61,27 @@
 
       <div class="d-flex">
         <div class="flex-1">
-          <.checkbox form={recurrency_form} field={:is_parcel} disabled={entry_loaded  || is_forever || has_end_date} class="mt-0"> 
-            <:disclosure>
-              <.form_group form={recurrency_form} field={:parcel_start}>
-                <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
-              </.form_group>
-              <.form_group form={recurrency_form} field={:parcel_end}>
-                <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
-              </.form_group>
-            </:disclosure>
-          </.checkbox>
+          <.checkbox form={recurrency_form} field={:is_parcel} disabled={entry_loaded  || is_forever || has_end_date} /> 
+
+          <.form_group form={recurrency_form} field={:parcel_start}>
+            <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
+          </.form_group>
+          <.form_group form={recurrency_form} field={:parcel_end}>
+            <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
+          </.form_group>
         </div>
 
-        <.dynamic_tag :if={!is_parcel} name="div" class="flex-1">
-          <.checkbox form={recurrency_form} field={:is_forever} disabled={entry_loaded  || is_parcel} class="mt-0" /> 
-          <.form_group :if={!input_value(recurrency_form, :is_forever)} form={recurrency_form} field={:date_end}>
+        <div class="flex-1">
+          <.checkbox form={recurrency_form} field={:is_forever} disabled={entry_loaded  || is_parcel} /> 
+          <.form_group form={recurrency_form} field={:date_end}>
             <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || entry_loaded} class="width-small" />
           </.form_group>
-        </.dynamic_tag>
+        </div>
       </div>
     <% end %>
   </.form>
 
-  <div class="row">
-    <div class="col-auto">
-      <div class="pt-4">
-        <%= submit "Save", phx_disable_with: "Saving...", form: "entry-form", class: "btn btn-primary btn-sm" %>
-      </div>
-    </div>
+  <div class="d-flex">
+    <%= submit "Save", phx_disable_with: "Saving...", form: "entry-form", class: "btn btn-primary btn-sm", style: "width: 100%" %>
   </div>
 </div>

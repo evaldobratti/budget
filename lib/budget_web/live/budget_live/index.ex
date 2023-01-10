@@ -230,12 +230,4 @@ defmodule BudgetWeb.BudgetLive.Index do
     <% end %>
     """
   end
-
-  def value_color(value) do
-    case Decimal.compare(value, 0) do
-      :gt -> "color-fg-success"
-      :lt -> "color-fg-danger"
-      :eq -> ""
-    end
-  end
 end

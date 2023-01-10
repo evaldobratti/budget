@@ -6,10 +6,10 @@
     phx-target={@myself}
     phx-change="validate"
     phx-submit="save"
-    class="pt-4">
+    >
 
     <%= if Map.get(assigns, :parent) do %>
-      Creating a child category of '<%= @parent.name %>'
+      <div class="pb-3">Creating a child category of '<%= @parent.name %>'</div>
     <% end %>
   
     <.form_group form={f} field={:name}>
@@ -17,7 +17,7 @@
     </.form_group>
 
     <div class="d-flex">
-      <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary ml-auto" %>
+      <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary btn-block" %>
     </div>
   </.form>
 </div>
