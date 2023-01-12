@@ -21,4 +21,21 @@ defmodule BudgetWeb.LiveHelpers do
     """
   end
 
+  attr :tooltip, :string
+  attr :rest, :global
+  slot :inner_block
+  def tooltiped(assigns) do
+    ~H"""
+      <span class="tooltip" 
+        phx-mounted={JS.dispatch("budget:tooltip-setup")} 
+        phx-remove={JS.dispatch("budget:tooltip-cleanup")} 
+        {@rest}
+      >
+        <%= @tooltip %>
+        <div class="arrow"></div>
+      </span>
+      <%= render_slot(@inner_block) %>
+    """
+  end
+
 end

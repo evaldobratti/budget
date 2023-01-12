@@ -1,18 +1,19 @@
 <main class="container-xxl">
   <%= if Map.get(@flash, "info") do %>
     <div 
+      id="flash-toast-info"
       class="position-fixed bottom-0 right-0 p-3" 
       style="z-index: 11"
       x-data="{open: true}"
       x-show="open"
     >
-      <div id="liveToast" class="toast show text-white bg-success bg-gradient" role="alert" aria-live="assertive" aria-atomic="true">
-      <.alert state="info">
-        <%= Map.get(@flash, "info") %>
-        <.button class="flash-close" @click="open = false">
-          <.octicon name="x-16" />
-        </.button>
-      </.alert>
+      <div class="toast show text-white bg-success bg-gradient" role="alert" aria-live="assertive" aria-atomic="true">
+        <.alert state="info">
+          <%= Map.get(@flash, "info") %>
+          <.button class="flash-close" @click="open = false">
+            <.octicon name="x-16" />
+          </.button>
+        </.alert>
       </div>
     </div>
   <% end %>

@@ -181,7 +181,6 @@
             <% :regular -> %>
               Do you confirm deleting this entry?
               <div>
-                <%= live_patch "No", to: Routes.budget_index_path(@socket, :index), class: "btn btn-secondary btn-sm btn-block mt-2 text-center"%>
                 <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="entry-delete" phx-value-delete-mode="entry">
                   Yes
                 </button>
@@ -191,7 +190,7 @@
       </.dialog>
     <% end %>
 
-    <.box is_condensed class="mt-2">
+    <.box is_condensed class="my-2">
       <:header class="d-flex">
         <div class="col-1 px-1">
           Date 
@@ -242,7 +241,9 @@
               </span>
             <% end %>
             <%= if entry.recurrency_entry do %>
-              <.octicon name="arrow-switch-16" />
+              <.tooltiped tooltip="Recurrency">
+                <.octicon name="arrow-switch-16" />
+              </.tooltiped>
             <% end %>
           </div>
         </div>
@@ -256,9 +257,11 @@
           <.currency value={entry.value} />
         </div>
         <div class="col-1 px-1">
-          <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
-            <.octicon name="trash-16" />
-          <% end %>
+          <.tooltiped tooltip="Delete">
+            <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
+              <.octicon name="trash-16" />
+            <% end %>
+          </.tooltiped>
         </div>
       </:row>
 
