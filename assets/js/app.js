@@ -112,14 +112,6 @@ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("
 let liveSocket = new LiveSocket("/live", Socket, {
   dom: {
     onBeforeElUpdated(from, to){
-      if (from.dataset["xtooltip"] === "") {
-        setupTooltip(from)
-      }
-
-      if (from.dataset["xtooltip"] === "" && to.dataset["xtooltip"] !== "") {
-        console.info("cleanup?")
-      }
-
       if (!from) return
       if (!from._x_dataStack) return
 

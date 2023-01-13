@@ -20,7 +20,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"entry" => entry_params}, socket) do
+  def handle_event("validate", %{"entry" => entry_params} = params, socket) do
     changeset =
       socket.assigns.entry
       |> Entries.change_entry(entry_params)
@@ -29,11 +29,11 @@ defmodule BudgetWeb.EntryLive.FormComponent do
     {:noreply, assign(socket, :changeset, changeset)}
   end
 
-  def handle_event("save", %{"entry" => entry_params}, socket) do
-    save_entry(socket, socket.assigns.action, entry_params)
+  def handle_event("save", %{"entry" => entry_params} = params, socket) do
+    save_entry(socket, socket.assigns.action, entry_params, Map.get(params, "keep_adding", "false") == "true")
   end
 
-  def save_entry(socket, :edit_entry, entry_params) do
+  def save_entry(socket, :edit_entry, entry_params, _keep_adding) do
     entry = socket.assigns.entry
 
 
@@ -64,16 +64,23 @@ defmodule BudgetWeb.EntryLive.FormComponent do
     end
   end
 
-  def save_entry(socket, :new_entry, entry_params) do
+  def save_entry(socket, :new_entry, entry_params, keep_adding) do
     entry_params
     |> Entries.create_entry()
     |> case do
       {:ok, _entry} ->
+        return_to = 
+          if keep_adding do
+            "/?from=entry&entry-add-new=true"
+          else
+            socket.assigns.return_to
+          end
+
         {
           :noreply,
           socket
           |> put_flash(:info, "Entry created successfully!")
-          |> push_patch(to: socket.assigns.return_to)
+          |> push_patch(to: return_to)
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->

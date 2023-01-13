@@ -40,6 +40,9 @@
     <div class="d-flex">
       <.checkbox form={f} field={:is_carried_out} class="flex-1" />
       <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
+      <.checkbox :if={!entry_loaded} name={:keep_adding} value={true} class="flex-1"> 
+        <:label>Keep adding</:label>
+      </.checkbox>
     </div>
 
     <% [recurrency_entry_form] = inputs_for f, :recurrency_entry %>
@@ -77,6 +80,7 @@
             <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || entry_loaded} class="width-small" />
           </.form_group>
         </div>
+
       </div>
     <% end %>
   </.form>

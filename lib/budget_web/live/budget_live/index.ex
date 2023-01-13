@@ -21,6 +21,10 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
+    if Map.get(params, "entry-add-new") do
+      Process.send_after(self(), :add_new_entry, 200)
+    end
+
     {
       :noreply,
       socket
@@ -106,6 +110,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       |> reload_entries()
     }
   end
+
 
   def handle_event("month-next", _params, socket) do
     [date_start | _] = socket.assigns.dates
@@ -229,5 +234,9 @@ defmodule BudgetWeb.BudgetLive.Index do
       </div>
     <% end %>
     """
+  end
+
+  def handle_info(:add_new_entry, socket) do
+    {:noreply, socket |> push_patch(to: Routes.budget_index_path(socket, :new_entry))}
   end
 end
