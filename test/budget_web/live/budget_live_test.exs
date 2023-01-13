@@ -57,7 +57,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a", "New Entry")
+      |> element("a[href='#{Routes.budget_index_path(conn, :new_entry)}']")
       |> render_click()
 
       live
@@ -81,6 +81,35 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#previous-balance") |> render =~ "120,50"
       assert live |> element("#entry-#{entry.id}") |> render =~ "200,00"
       assert live |> element("#next-balance") |> render =~ "320,50"
+    end
+
+    test "keeps adding entries", %{conn: conn, account: account, category: category} do
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+      live
+      |> element("a[href='#{Routes.budget_index_path(conn, :new_entry)}']")
+      |> render_click()
+
+      live
+      |> form("#entry-form",
+        entry: %{
+          date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
+          originator_regular: %{
+            description: "a description",
+            category_id: category.id,
+          },
+          account_id: account.id,
+          value: "200"
+        },
+        keep_adding: true
+      )
+      |> render_submit()
+
+      refute live |> element("#entry-form") |> has_element?
+
+      assert "/entries/new" == assert_patch(live, 100)
+      assert "/?entry-add-new=true&from=entry" == assert_patch(live, 100)
+      assert "/entries/new" == assert_patch(live, 300)
     end
 
     test "editing entry", %{conn: conn, account: account} do
@@ -209,7 +238,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a", "New Entry")
+      |> element("a[href='#{Routes.budget_index_path(conn, :new_entry)}']")
       |> render_click()
 
       live

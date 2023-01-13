@@ -71,7 +71,15 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       {:ok, _entry} ->
         return_to = 
           if keep_adding do
-            "/?from=entry&entry-add-new=true"
+            uri = URI.parse(socket.assigns.return_to)
+            query = 
+              uri.query
+              |> URI.decode_query() 
+              |> Enum.into(%{}) 
+              |> Map.put("entry-add-new", true) 
+              |> URI.encode_query()
+
+            %{ uri | query: query} |> URI.to_string()
           else
             socket.assigns.return_to
           end
