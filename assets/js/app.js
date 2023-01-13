@@ -1,8 +1,8 @@
 // We import the CSS which is extracted to its own file by esbuild.
 // Remove this line if you add a your own CSS build pipeline (e.g postcss).
-import "../css/app.css"
 import { Prompt } from "primer-live";
 import "primer-live/primer-live.css";
+import "../css/app.css"
 
 // If you want to use Phoenix channels, run `mix help phx.gen.channel`
 // to get started and then uncomment the line below.
@@ -27,6 +27,11 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
+import Alpine from 'alpinejs'
+import { offset, flip, shift, computePosition, autoUpdate, arrow } from "@floating-ui/dom"
+ 
+window.Alpine = Alpine
+Alpine.start()
 
 const Hooks = {
   Prompt,
@@ -34,7 +39,6 @@ const Hooks = {
     updated() {
       const input = this.el
       const feedback = document.querySelector(`[phx-feedback-for='${input.name}']`)
-      console.info(this.el.id)
 
       if (!feedback || feedback.classList.contains('phx-no-feedback')) return
 
@@ -49,7 +53,58 @@ const Hooks = {
         }
       })
     }
+  },
+}
+
+const setupTooltip = (tooltip) => {
+  const arrowElement = tooltip.querySelector(".arrow")
+  const target = tooltip.nextElementSibling
+  const placement = 'top'
+
+  const cleanup = autoUpdate(target, tooltip, function update() {
+    computePosition(target, tooltip, {
+      placement,
+      middleware: [
+        offset(8),
+        flip(),
+        shift({padding: 5}),
+        arrow({element: arrowElement})
+      ],
+    }).then(({x, y, placement, middlewareData}) => {
+      Object.assign(tooltip.style, {
+        left: `${x}px`,
+        top: `${y}px`,
+      });
+      const {x: arrowX, y: arrowY} = middlewareData.arrow;
+
+      const staticSide = {
+        top: 'bottom',
+        right: 'left',
+        bottom: 'top',
+        left: 'right',
+      }[placement.split('-')[0]];
+
+      Object.assign(arrowElement.style, {
+        left: arrowX != null ? `${arrowX}px` : '',
+        top: arrowY != null ? `${arrowY}px` : '',
+        right: '',
+        bottom: '',
+        [staticSide]: '-4px',
+      });
+
+    });
+  })
+   
+  function showTooltip() {
+    tooltip.style.display = 'block';
   }
+   
+  function hideTooltip() {
+    tooltip.style.display = 'none';
+  }
+
+  target.addEventListener("mouseenter", showTooltip)
+  target.addEventListener("mouseleave", hideTooltip)
 }
 
 
@@ -57,7 +112,15 @@ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("
 let liveSocket = new LiveSocket("/live", Socket, {
   dom: {
     onBeforeElUpdated(from, to){
-      if(from && from._x_dataStack){ window.Alpine.clone(from, to) }
+      if (!from) return
+      if (!from._x_dataStack) return
+
+      Alpine.clone(from, to)
+    },
+    onNodeAdded(el) {
+      if (el && el.dataset && el.dataset["xtooltip"] === "") {
+        setupTooltip(el)
+      }
     }
   },
   params: {_csrf_token: csrfToken}, hooks: Hooks
@@ -67,6 +130,8 @@ let liveSocket = new LiveSocket("/live", Socket, {
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", info => topbar.show())
 window.addEventListener("phx:page-loading-stop", info => topbar.hide())
+window.addEventListener("budget:tooltip-setup", event => setupTooltip(event.target))
+window.addEventListener("budget:tooltip-cleanup", event => console.info('cleanup', event))
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

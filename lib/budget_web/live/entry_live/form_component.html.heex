@@ -7,43 +7,48 @@
     phx-change="validate"
     phx-submit="save"
   >
-
-    <.form_group form={f} field={:date}>
-      <.text_input form={f} field={:date} type="date" autocomplete="off" />
-    </.form_group>
-
     <% [regular_form] = inputs_for f, :originator_regular %>
 
     <%= if Ecto.get_meta(regular_form.data, :state) == :loaded do %>
       <%= hidden_input regular_form, :id %>
     <% end %>
 
-    <.form_group form={regular_form} field={:description}>
-      <.text_input form={regular_form} field={:description} autocomplete="off" />
-    </.form_group>
-  
-    <.form_group form={regular_form} field={:category_id}>
-      <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} />
-    </.form_group>
+    <% entry_loaded = Ecto.get_meta(@changeset.data, :state) == :loaded || (@changeset.data.id && String.starts_with?(@changeset.data.id, "recurrency")) %>
 
-    <.form_group form={f} field={:account_id}>
-      <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
+    <div class="d-flex">
+      <.form_group form={f} field={:date} class="flex-1">
+        <.text_input form={f} field={:date} type="date" autocomplete="off" />
+      </.form_group>
+
+      <.form_group form={regular_form} field={:category_id} class="flex-1">
+        <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" />
+      </.form_group>
+
+      <.form_group form={f} field={:account_id} class="flex-1">
+        <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
+      </.form_group>
+    </div>
+
+    <.form_group form={regular_form} field={:description} >
+      <.text_input form={regular_form} field={:description} autocomplete="off" />
     </.form_group>
 
     <.form_group form={f} field={:value}>
       <.text_input form={f} field={:value} type="number" autocomplete="off" />
     </.form_group>
 
-    <.checkbox form={f} field={:is_carried_out} />
-
-    <% entry_loaded = Ecto.get_meta(@changeset.data, :state) == :loaded || (@changeset.data.id && String.starts_with?(@changeset.data.id, "recurrency")) %>
-
-    <.checkbox form={f} field={:is_recurrency} />
+    <div class="d-flex">
+      <.checkbox form={f} field={:is_carried_out} class="flex-1" />
+      <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
+      <.checkbox :if={!entry_loaded} name={:keep_adding} value={true} class="flex-1"> 
+        <:label>Keep adding</:label>
+      </.checkbox>
+    </div>
 
     <% [recurrency_entry_form] = inputs_for f, :recurrency_entry %>
     <% [recurrency_form] = inputs_for recurrency_entry_form, :recurrency %>
 
-    <%= if entry_loaded do %>
+    <%= if entry_loaded && @changeset.data.recurrency_entry do %>
       <.checkbox form={f} field={:recurrency_apply_forward} />
     <% end %>
 
@@ -57,47 +62,30 @@
       <% is_forever = Ecto.Changeset.get_field(recurrency_form.source, :is_forever) %>
       <% has_end_date = Ecto.Changeset.get_field(recurrency_form.source, :date_end) %>
 
-      <div class="pt-2">
-        <.checkbox form={recurrency_form} field={:is_parcel} disabled={entry_loaded  || is_forever || has_end_date}> 
-          <:disclosure>
-            <.form_group form={recurrency_form} field={:parcel_start}>
-              <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} />
-            </.form_group>
-            <.form_group form={recurrency_form} field={:parcel_end}>
-              <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} />
-            </.form_group>
-          </:disclosure>
-        </.checkbox>
-      </div>
+      <div class="d-flex">
+        <div class="flex-1">
+          <.checkbox form={recurrency_form} field={:is_parcel} disabled={entry_loaded  || is_forever || has_end_date} /> 
 
-      <div class="row pt-2">
-        <.checkbox form={recurrency_form} field={:is_forever} disabled={entry_loaded  || is_parcel} /> 
-        <.form_group form={recurrency_form} field={:date_end}>
-          <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || entry_loaded} />
-        </.form_group>
+          <.form_group form={recurrency_form} field={:parcel_start}>
+            <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
+          </.form_group>
+          <.form_group form={recurrency_form} field={:parcel_end}>
+            <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
+          </.form_group>
+        </div>
+
+        <div class="flex-1">
+          <.checkbox form={recurrency_form} field={:is_forever} disabled={entry_loaded  || is_parcel} /> 
+          <.form_group form={recurrency_form} field={:date_end}>
+            <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || entry_loaded} class="width-small" />
+          </.form_group>
+        </div>
+
       </div>
     <% end %>
   </.form>
 
-  <div class="row">
-    <div class="col-auto">
-      <div class="pt-4">
-        <%= submit "Save", phx_disable_with: "Saving...", form: "entry-form", class: "btn btn-primary btn-sm" %>
-      </div>
-    </div>
-    <%= if Ecto.get_meta(@changeset.data, :state) == :loaded do %>
-      <div class="col-auto">
-        <div class="pt-4">
-          <%= submit "Delete entry TODO", phx_disable_with: "Saving...", class: "btn btn-danger btn-sm" %>
-        </div>
-      </div>
-      <%= if Map.get(@changeset.data, :recurrency_entry) do %>
-        <div class="col-auto">
-          <div class="pt-4">
-            <%= submit "Delete entry and recurrency TODO", phx_disable_with: "Saving...", class: "btn btn-danger btn-sm" %>
-          </div>
-        </div>
-      <% end %>
-    <% end %>
+  <div class="d-flex">
+    <%= submit "Save", phx_disable_with: "Saving...", form: "entry-form", class: "btn btn-primary btn-sm", style: "width: 100%" %>
   </div>
 </div>
