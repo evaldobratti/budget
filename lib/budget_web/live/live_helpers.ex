@@ -38,4 +38,14 @@ defmodule BudgetWeb.LiveHelpers do
     """
   end
 
+  def fa_icon(assigns) do
+    {icon, assigns} = Map.pop(assigns, :icon)
+    phx_click = Map.get(assigns, :"phx-click")
+    style = phx_click && "cursor: pointer"
+
+    ~H"""
+      <i class={"fa-solid #{icon} #{assigns[:class]}"} style={style} phx-click={phx_click} {assigns} />
+    """
+  end
+
 end
