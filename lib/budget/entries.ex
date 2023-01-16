@@ -214,7 +214,8 @@ defmodule Budget.Entries do
     recurrency = recurrency_entries_in_period(account_ids, date_start, date_end)
 
     (regular ++ recurrency)
-    |> Enum.sort(&Timex.before?(&1.date, &2.date))
+    |> Enum.sort_by(& Decimal.to_float(&1.position))
+    |> Enum.sort_by(& &1.date, & Timex.before?(&1, &2) || Timex.equal?(&1, &2))
   end
 
   defp entry_query() do
@@ -232,7 +233,7 @@ defmodule Budget.Entries do
         recurrency_entry: {re, recurrency: r},
         originator_regular: {regular, category: c}
       ],
-      order_by: [e.date, regular.description],
+      order_by: [e.date, e.position, regular.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}
     )
   end
@@ -292,9 +293,7 @@ defmodule Budget.Entries do
       any_future =
         entry.recurrency_entry.recurrency.recurrency_entries
         |> Enum.filter(& &1.entry_id)
-        |> Enum.any?(
-          &Timex.after?(&1.original_date, entry.date)
-        )
+        |> Enum.any?(&Timex.after?(&1.original_date, entry.date))
 
       if any_future do
         :recurrency_with_future
@@ -358,7 +357,9 @@ defmodule Budget.Entries do
 
     recurrency_change =
       entry.recurrency_entry.recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
+      |> change_recurrency(%{
+        date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)
+      })
 
     Ecto.Multi.new()
     |> Ecto.Multi.update_all(
@@ -377,7 +378,9 @@ defmodule Budget.Entries do
 
     recurrency_change =
       recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
+      |> change_recurrency(%{
+        date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)
+      })
 
     affected_recurrency_entries =
       from(
@@ -449,4 +452,26 @@ defmodule Budget.Entries do
 
     module.restore_for_recurrency(payload)
   end
+
+  def put_entry_before(%{date: date} = entry, %{date: date} = entry_reference) do
+    position = entry_reference.position
+
+    before_position =
+      from(
+        e in Entry,
+        where: e.position < ^position,
+        order_by: [desc: e.position],
+        limit: 1,
+        select: e.position
+      )
+      |> Repo.one()
+      |> Kernel.||(Decimal.new(0))
+
+    update_entry(entry, %{position: Decimal.add(before_position, position) |> Decimal.div(2)})
+  end
+
+  def put_entry_before(_entry, _entry_reference) do
+    {:error, "Transcations with different dates can't be reordered"}
+  end
+
 end

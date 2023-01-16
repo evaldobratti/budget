@@ -717,6 +717,7 @@ defmodule Budget.EntriesTest do
       assert transient.originator_regular.description == "Entry description"
       assert transient.recurrency_entry.parcel == 3
       assert transient.recurrency_entry.parcel_end == 6
+      assert transient.position == Decimal.new(-1)
 
       {:ok, _} = Entries.create_entry(transient, %{value: 500, recurrency_apply_forward: true})
 
@@ -896,7 +897,8 @@ defmodule Budget.EntriesTest do
                 originator_regular: %{
                   description: "a description",
                   category_id: ^category_id
-                }
+                },
+                position: position
               }} =
                Entries.create_entry(%{
                  date: ~D[2022-01-01] |> Date.to_iso8601(),
@@ -907,6 +909,24 @@ defmodule Budget.EntriesTest do
                  },
                  value: 200
                })
+
+      assert position == Decimal.new(1)
+
+      assert {:ok,
+              %{
+                position: position
+              }} =
+               Entries.create_entry(%{
+                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+                 account_id: account_id,
+                 originator_regular: %{
+                   description: "a description",
+                   category_id: category_id
+                 },
+                 value: 200
+               })
+
+      assert position == Decimal.new(2)
     end
 
     test "updates recurrency_entry if entry is parcel recurrency" do
@@ -1167,6 +1187,48 @@ defmodule Budget.EntriesTest do
                    ]}
                 ]}
              ] = Entries.list_categories_arranged()
+    end
+  end
+
+  describe "put_entry_before/2" do
+    test "reorder between 3 elements" do
+      entry_1 = %{id: id1} = entry_fixture()
+      entry_2 = %{id: id2} = entry_fixture()
+      entry_3 = %{id: id3} = entry_fixture()
+
+      assert Decimal.new(1) == entry_1.position
+      assert Decimal.new(2) == entry_2.position
+      assert Decimal.new(3) == entry_3.position
+
+      {:ok, updated} = Entries.put_entry_before(entry_3, entry_2)
+
+      assert Decimal.new("1.5") == updated.position
+
+      entries = Entries.entries_in_period([], Timex.today(), Timex.today())
+
+      assert [Decimal.new(1), Decimal.new("1.5"), Decimal.new(2)] ==
+               entries |> Enum.map(& &1.position)
+
+      assert [%{id: ^id1}, %{id: ^id3}, %{id: ^id2}] = entries
+
+      {:ok, updated} = Entries.put_entry_before(entry_1, entry_2)
+
+      assert Decimal.new("1.75") == updated.position
+
+      entries = Entries.entries_in_period([], Timex.today(), Timex.today())
+
+      assert [Decimal.new("1.5"), Decimal.new("1.75"), Decimal.new(2)] ==
+               entries |> Enum.map(& &1.position)
+
+      assert [%{id: ^id3}, %{id: ^id1}, %{id: ^id2}] = entries
+    end
+
+    test "error when reordering transactions in different dates" do
+      entry_1 = entry_fixture(%{date: Timex.today()})
+      entry_2 = entry_fixture(%{date: Timex.today() |> Timex.shift(days: 1)})
+
+      assert {:error, "Transcations with different dates can't be reordered"} ==
+               Entries.put_entry_before(entry_2, entry_1)
     end
   end
 end
