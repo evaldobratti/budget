@@ -214,8 +214,8 @@ defmodule Budget.Entries do
     recurrency = recurrency_entries_in_period(account_ids, date_start, date_end)
 
     (regular ++ recurrency)
-    |> Enum.sort_by(& Decimal.to_float(&1.position))
-    |> Enum.sort_by(& &1.date, & Timex.before?(&1, &2) || Timex.equal?(&1, &2))
+    |> Enum.sort_by(&Decimal.to_float(&1.position))
+    |> Enum.sort_by(& &1.date, &(Timex.before?(&1, &2) || Timex.equal?(&1, &2)))
   end
 
   defp entry_query() do
@@ -453,25 +453,70 @@ defmodule Budget.Entries do
     module.restore_for_recurrency(payload)
   end
 
-  def put_entry_before(%{date: date} = entry, %{date: date} = entry_reference) do
-    position = entry_reference.position
+  def put_entry_between(_entry, [nil, nil]) do
+    {:error, "no reference transaction provided"}
+  end
+
+  def put_entry_between(entry, [nil, entry_after]) do
+    position = entry_after.position
+
+    date = 
+      if entry.date == entry_after.date do
+        entry.date
+      else
+        entry_after.date
+      end
 
     before_position =
       from(
         e in Entry,
-        where: e.position < ^position,
+        where: e.position < ^position and e.date == ^date,
         order_by: [desc: e.position],
         limit: 1,
         select: e.position
       )
       |> Repo.one()
-      |> Kernel.||(Decimal.new(0))
+      |> case do
+        nil ->
+          Decimal.new(0)
 
-    update_entry(entry, %{position: Decimal.add(before_position, position) |> Decimal.div(2)})
+        val ->
+          val
+          
+      end
+
+    update_entry(entry, %{date: date, position: Decimal.add(before_position, position) |> Decimal.div(2)})
   end
 
-  def put_entry_before(_entry, _entry_reference) do
-    {:error, "Transcations with different dates can't be reordered"}
-  end
+  def put_entry_between(entry, [entry_before = %Entry{}, entry_after]) do
+    position = entry_before.position
 
+    date =
+      if entry.date !== entry_before.date && (
+        entry_after == nil || entry.date !== entry_after.date) do
+        entry_before.date
+      else
+        entry.date
+      end
+
+    after_position =
+      from(
+        e in Entry,
+        where: e.position > ^position and e.date == ^date,
+        order_by: e.position,
+        limit: 1,
+        select: e.position
+      )
+      |> Repo.one()
+      |> case do
+        nil ->
+          Decimal.add(entry_before.position, 1)
+
+        val ->
+          val
+          
+      end
+
+    update_entry(entry, %{date: date, position: Decimal.add(after_position, position) |> Decimal.div(2)})
+  end
 end

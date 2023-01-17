@@ -138,3 +138,7 @@
   height: 8px;
   transform: rotate(45deg);
 }
+
+.sortable-handle {
+  cursor: move;
+} 

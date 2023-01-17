@@ -1200,35 +1200,152 @@ defmodule Budget.EntriesTest do
       assert Decimal.new(2) == entry_2.position
       assert Decimal.new(3) == entry_3.position
 
-      {:ok, updated} = Entries.put_entry_before(entry_3, entry_2)
+      {:ok, updated} = Entries.put_entry_between(entry_3, [entry_1, entry_2])
 
       assert Decimal.new("1.5") == updated.position
 
       entries = Entries.entries_in_period([], Timex.today(), Timex.today())
 
-      assert [Decimal.new(1), Decimal.new("1.5"), Decimal.new(2)] ==
-               entries |> Enum.map(& &1.position)
+      assert [
+               {id1, Decimal.new(1)},
+               {id3, Decimal.new("1.5")},
+               {id2, Decimal.new(2)}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position})
 
-      assert [%{id: ^id1}, %{id: ^id3}, %{id: ^id2}] = entries
+      [entry_1, entry_3, entry_2] = entries
 
-      {:ok, updated} = Entries.put_entry_before(entry_1, entry_2)
+      {:ok, _} = Entries.put_entry_between(entry_1, [entry_3, entry_2])
 
-      assert Decimal.new("1.75") == updated.position
+      assert Decimal.new("1.5") == updated.position
 
       entries = Entries.entries_in_period([], Timex.today(), Timex.today())
 
-      assert [Decimal.new("1.5"), Decimal.new("1.75"), Decimal.new(2)] ==
-               entries |> Enum.map(& &1.position)
-
-      assert [%{id: ^id3}, %{id: ^id1}, %{id: ^id2}] = entries
+      assert [
+               {id3, Decimal.new("1.5")},
+               {id1, Decimal.new("1.75")},
+               {id2, Decimal.new(2)}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position})
     end
 
-    test "error when reordering transactions in different dates" do
-      entry_1 = entry_fixture(%{date: Timex.today()})
-      entry_2 = entry_fixture(%{date: Timex.today() |> Timex.shift(days: 1)})
+    test "reorder between 2 elements and it is put after the other" do
+      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
+      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-21]})
 
-      assert {:error, "Transcations with different dates can't be reordered"} ==
-               Entries.put_entry_before(entry_2, entry_1)
+      {:ok, _} = Entries.put_entry_between(entry_1, [entry_2, nil])
+
+      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-21])
+
+      assert [
+               {id2, Decimal.new(2), ~D[2023-01-21]},
+               {id1, Decimal.new("2.5"), ~D[2023-01-21]}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+    end
+
+    test "reorder between 2 elements and it is put before the other" do
+      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
+      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-21]})
+
+      {:ok, _} = Entries.put_entry_between(entry_2, [nil, entry_1])
+
+      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-21])
+
+      assert [
+               {id2, Decimal.new("0.5"), ~D[2023-01-17]},
+               {id1, Decimal.new(1), ~D[2023-01-17]}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+    end
+
+    test "reorder between 3 elements putting last in first updating date" do
+      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
+      _entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
+      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+
+      {:ok, _} = Entries.put_entry_between(entry_3, [nil, entry_1])
+
+      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+
+      assert [
+               {id3, Decimal.new("0.5"), ~D[2023-01-17]},
+               {id1, Decimal.new(1), ~D[2023-01-17]},
+               {id2, Decimal.new(2), ~D[2023-01-18]}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+    end
+
+    test "reorder between 3 elements putting last in middle updating date" do
+      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
+      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
+      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+
+      {:ok, _} = Entries.put_entry_between(entry_3, [entry_1, entry_2])
+
+      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+
+      assert [
+               {id1, Decimal.new(1), ~D[2023-01-17]},
+               {id3, Decimal.new("1.5"), ~D[2023-01-17]},
+               {id2, Decimal.new(2), ~D[2023-01-18]}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+    end
+
+    test "reorder between 3 elements putting first in middle updating date" do
+      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
+      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
+      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+
+      {:ok, _} = Entries.put_entry_between(entry_1, [entry_2, entry_3])
+
+      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+
+      assert [
+               {id2, Decimal.new(2), ~D[2023-01-18]},
+               {id1, Decimal.new("2.5"), ~D[2023-01-18]},
+               {id3, Decimal.new(3), ~D[2023-01-19]}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+    end
+
+    test "reorder between 3 elements putting first in last updating date" do
+      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
+      _entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
+      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+
+      {:ok, _} = Entries.put_entry_between(entry_1, [entry_3, nil])
+
+      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+
+      assert [
+               {id2, Decimal.new(2), ~D[2023-01-18]},
+               {id3, Decimal.new(3), ~D[2023-01-19]},
+               {id1, Decimal.new("3.5"), ~D[2023-01-19]}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+    end
+
+    test "reorder with different dates and various positions" do
+      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-01], position: "4.5"})
+      _entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-01], position: "4.75"})
+      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-13], position: "2"})
+      entry_4 = %{id: id4} = entry_fixture(%{date: ~D[2023-01-28], position: "1"})
+      _entry_5 = %{id: id5} = entry_fixture(%{date: ~D[2023-01-28], position: "5"})
+
+      {:ok, _} = Entries.put_entry_between(entry_1, [entry_3, entry_4])
+
+      entries = Entries.entries_in_period([], ~D[2023-01-01], ~D[2023-01-31])
+
+      assert [
+               {id2, Decimal.new("4.75"), ~D[2023-01-01]},
+               {id3, Decimal.new(2), ~D[2023-01-13]},
+               {id1, Decimal.new("2.5"), ~D[2023-01-13]},
+               {id4, Decimal.new("1"), ~D[2023-01-28]},
+               {id5, Decimal.new("5"), ~D[2023-01-28]}
+             ] ==
+               entries |> Enum.map(&{&1.id, &1.position, &1.date})
     end
   end
 end
