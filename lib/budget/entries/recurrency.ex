@@ -112,7 +112,8 @@ defmodule Budget.Entries.Recurrency do
         account: recurrency.account,
         account_id: recurrency.account_id,
         is_recurrency: true,
-        recurrency_entry: recurrency_entry
+        recurrency_entry: recurrency_entry,
+        position: Decimal.new(-1)
       }
       |> Map.merge(params)
     end)

@@ -29,6 +29,7 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import Alpine from 'alpinejs'
 import { offset, flip, shift, computePosition, autoUpdate, arrow } from "@floating-ui/dom"
+import Sortable from "sortablejs"
  
 window.Alpine = Alpine
 Alpine.start()
@@ -108,6 +109,7 @@ const setupTooltip = (tooltip) => {
 }
 
 
+
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
   dom: {
@@ -126,12 +128,28 @@ let liveSocket = new LiveSocket("/live", Socket, {
   params: {_csrf_token: csrfToken}, hooks: Hooks
 })
 
+const setupSortable = (el) => {
+    new Sortable(el, {
+      handle: ".sortable-handle",
+      animation: 150,
+      onEnd: ({oldIndex, newIndex}) => {
+        const offsetHeaderBalance = 2
+
+        liveSocket.owner(el, (view) => view.pushHookEvent(null, "reorder", {
+          oldIndex: oldIndex - offsetHeaderBalance, 
+          newIndex: newIndex - offsetHeaderBalance
+        }, () => {}))
+      }
+    })
+}
+
 // Show progress bar on live navigation and form submits
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", info => topbar.show())
 window.addEventListener("phx:page-loading-stop", info => topbar.hide())
 window.addEventListener("budget:tooltip-setup", event => setupTooltip(event.target))
 window.addEventListener("budget:tooltip-cleanup", event => console.info('cleanup', event))
+window.addEventListener("budget:sortable-setup", event => setupSortable(event.target))
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

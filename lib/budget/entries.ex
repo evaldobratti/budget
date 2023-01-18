@@ -214,7 +214,8 @@ defmodule Budget.Entries do
     recurrency = recurrency_entries_in_period(account_ids, date_start, date_end)
 
     (regular ++ recurrency)
-    |> Enum.sort(&Timex.before?(&1.date, &2.date))
+    |> Enum.sort_by(&Decimal.to_float(&1.position))
+    |> Enum.sort_by(& &1.date, &(Timex.before?(&1, &2) || Timex.equal?(&1, &2)))
   end
 
   defp entry_query() do
@@ -232,7 +233,7 @@ defmodule Budget.Entries do
         recurrency_entry: {re, recurrency: r},
         originator_regular: {regular, category: c}
       ],
-      order_by: [e.date, regular.description],
+      order_by: [e.date, e.position, regular.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}
     )
   end
@@ -292,9 +293,7 @@ defmodule Budget.Entries do
       any_future =
         entry.recurrency_entry.recurrency.recurrency_entries
         |> Enum.filter(& &1.entry_id)
-        |> Enum.any?(
-          &Timex.after?(&1.original_date, entry.date)
-        )
+        |> Enum.any?(&Timex.after?(&1.original_date, entry.date))
 
       if any_future do
         :recurrency_with_future
@@ -358,7 +357,9 @@ defmodule Budget.Entries do
 
     recurrency_change =
       entry.recurrency_entry.recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
+      |> change_recurrency(%{
+        date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)
+      })
 
     Ecto.Multi.new()
     |> Ecto.Multi.update_all(
@@ -377,7 +378,9 @@ defmodule Budget.Entries do
 
     recurrency_change =
       recurrency
-      |> change_recurrency(%{date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)})
+      |> change_recurrency(%{
+        date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)
+      })
 
     affected_recurrency_entries =
       from(
@@ -448,5 +451,84 @@ defmodule Budget.Entries do
     module = Entry.originator_module(payload)
 
     module.restore_for_recurrency(payload)
+  end
+
+  def update_order(old_index, new_index, entries) do
+    entry_to_update = Enum.at(entries, old_index)
+    list_wo_element = List.delete_at(entries, old_index)
+
+    new_order = List.insert_at(list_wo_element, new_index, entry_to_update)
+
+    entry_before = if new_index == 0, do: nil, else: Enum.at(new_order, new_index - 1)
+    entry_after = Enum.at(new_order, new_index + 1)
+
+    put_entry_between(entry_to_update, [entry_before, entry_after])
+  end
+
+  def put_entry_between(_entry, [nil, nil]) do
+    {:error, "no reference transaction given"}
+  end
+
+  def put_entry_between(entry, [nil, entry_after]) do
+    position = entry_after.position
+
+    date = 
+      if entry.date == entry_after.date do
+        entry.date
+      else
+        entry_after.date
+      end
+
+    before_position =
+      from(
+        e in Entry,
+        where: e.position < ^position and e.date == ^date,
+        order_by: [desc: e.position],
+        limit: 1,
+        select: e.position
+      )
+      |> Repo.one()
+      |> case do
+        nil ->
+          Decimal.new(0)
+
+        val ->
+          val
+          
+      end
+
+    update_entry(entry, %{date: date, position: Decimal.add(before_position, position) |> Decimal.div(2)})
+  end
+
+  def put_entry_between(entry, [entry_before = %Entry{}, entry_after]) do
+    position = entry_before.position
+
+    date =
+      if entry.date !== entry_before.date && (
+        entry_after == nil || entry.date !== entry_after.date) do
+        entry_before.date
+      else
+        entry.date
+      end
+
+    after_position =
+      from(
+        e in Entry,
+        where: e.position > ^position and e.date == ^date,
+        order_by: e.position,
+        limit: 1,
+        select: e.position
+      )
+      |> Repo.one()
+      |> case do
+        nil ->
+          Decimal.add(entry_before.position, 1)
+
+        val ->
+          val
+          
+      end
+
+    update_entry(entry, %{date: date, position: Decimal.add(after_position, position) |> Decimal.div(2)})
   end
 end

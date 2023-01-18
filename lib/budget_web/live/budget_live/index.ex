@@ -1,6 +1,8 @@
 defmodule BudgetWeb.BudgetLive.Index do
   use BudgetWeb, :live_view
 
+  alias Phoenix.LiveView.JS
+
   alias Budget.Entries
   alias Budget.Entries.Entry
 
@@ -59,7 +61,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def apply_action(socket, :edit_entry, %{"id" => id}) do
-    entry = 
+    entry =
       case id do
         "recurrency" <> _ ->
           Entries.encarnate_transient_entry(id)
@@ -110,7 +112,6 @@ defmodule BudgetWeb.BudgetLive.Index do
       |> reload_entries()
     }
   end
-
 
   def handle_event("month-next", _params, socket) do
     [date_start | _] = socket.assigns.dates
@@ -188,6 +189,28 @@ defmodule BudgetWeb.BudgetLive.Index do
     {:noreply, socket}
   end
 
+  def handle_event("reorder", %{"newIndex" => same, "oldIndex" => same}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("reorder", %{"newIndex" => new_index, "oldIndex" => old_index}, socket) do
+    case Entries.update_order(old_index, new_index, socket.assigns.entries) do
+      {:ok, _} ->
+        {
+          :noreply,
+          socket
+          |> reload_entries()
+        }
+
+      _ ->
+        {
+          :noreply,
+          socket
+          |> put_flash(:error, "Something went wrong when reordering.")
+        }
+    end
+  end
+
   defp reload_entries(socket) do
     accounts_ids = socket.assigns.accounts_selected_ids
     [date_start, date_end] = socket.assigns.dates
@@ -200,7 +223,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     socket
     |> assign(categories: Entries.list_categories_arranged())
     |> assign(accounts: Entries.list_accounts())
-    |> assign(entries: Enum.sort(entries, &Timex.before?(&1.date, &2.date)))
+    |> assign(entries: entries)
     |> assign(balances: [previous_balance, next_balance])
   end
 
@@ -236,6 +259,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     """
   end
 
+  @impl true
   def handle_info(:add_new_entry, socket) do
     {:noreply, socket |> push_patch(to: Routes.budget_index_path(socket, :new_entry))}
   end

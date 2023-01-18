@@ -1,6 +1,8 @@
 defmodule Budget.Entries.Entry do
   use Ecto.Schema
+
   import Ecto.Changeset
+  import Ecto.Query
 
   alias Budget.Entries.Recurrency
   alias Ecto.Changeset
@@ -13,6 +15,7 @@ defmodule Budget.Entries.Entry do
     field :date, :date
     field :is_carried_out, :boolean, default: false
     field :value, :decimal
+    field :position, :decimal
 
     belongs_to :account, Account
 
@@ -39,7 +42,8 @@ defmodule Budget.Entries.Entry do
       :value,
       :account_id,
       :is_recurrency,
-      :recurrency_apply_forward
+      :recurrency_apply_forward,
+      :position
     ])
     |> validate_required([:date, :is_carried_out, :value, :account_id])
     |> cast_assoc(:recurrency_entry)
@@ -48,6 +52,7 @@ defmodule Budget.Entries.Entry do
     |> validate_originator()
     |> put_initial_recurrency_payload()
     |> put_updated_recurrency_payload()
+    |> put_position()
   end
 
   defp put_initial_recurrency_payload(%Changeset{} = changeset) do
@@ -154,7 +159,6 @@ defmodule Budget.Entries.Entry do
     end
   end
 
-
   def originator_module(entry) do
     entry
     |> Enum.map(fn {key, _} -> key end)
@@ -164,5 +168,31 @@ defmodule Budget.Entries.Entry do
     |> String.capitalize()
     |> then(&("Elixir.Budget.Entries.Originator." <> &1))
     |> then(&String.to_existing_atom(&1))
+  end
+
+  def put_position(changeset) do
+    if get_field(changeset, :position) in [nil, Decimal.new(-1)] do
+      prepare_changes(changeset, fn changeset -> 
+        date = get_field(changeset, :date)
+
+        max_position =
+          from(
+            e in __MODULE__,
+            where: e.date == ^date,
+            select: max(e.position)
+          )
+          |> changeset.repo.one()
+          |> case do
+            nil ->
+              Decimal.new(0)
+            val ->
+              val
+          end
+
+        put_change(changeset, :position, Decimal.add(max_position, 1))
+      end)
+    else
+      changeset
+    end
   end
 end

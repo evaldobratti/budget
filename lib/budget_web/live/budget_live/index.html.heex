@@ -190,7 +190,7 @@
       </.dialog>
     <% end %>
 
-    <.box is_condensed class="my-2">
+    <.box is_condensed class="my-2 list-group" phx_mounted={JS.dispatch("budget:sortable-setup")}>
       <:header class="d-flex">
         <div class="col-1 px-1">
           Date 
@@ -228,7 +228,7 @@
         </div>
       </:row>
 
-      <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center">
+      <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center list-group-item">
         <div class="col-1 px-1">
           <%= format_date(entry.date) %> 
         </div>
@@ -261,6 +261,9 @@
             <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
               <.fa_icon icon="fa-trash" />
             <% end %>
+            <span class="sortable-handle btn-octicon">
+              <.fa_icon icon="fa-up-down" />
+            </span>
           </.tooltiped>
         </div>
       </:row>
