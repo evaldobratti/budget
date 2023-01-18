@@ -453,8 +453,20 @@ defmodule Budget.Entries do
     module.restore_for_recurrency(payload)
   end
 
+  def update_order(old_index, new_index, entries) do
+    entry_to_update = Enum.at(entries, old_index)
+    list_wo_element = List.delete_at(entries, old_index)
+
+    new_order = List.insert_at(list_wo_element, new_index, entry_to_update)
+
+    entry_before = if new_index == 0, do: nil, else: Enum.at(new_order, new_index - 1)
+    entry_after = Enum.at(new_order, new_index + 1)
+
+    put_entry_between(entry_to_update, [entry_before, entry_after])
+  end
+
   def put_entry_between(_entry, [nil, nil]) do
-    {:error, "no reference transaction provided"}
+    {:error, "no reference transaction given"}
   end
 
   def put_entry_between(entry, [nil, entry_after]) do

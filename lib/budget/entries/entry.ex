@@ -159,7 +159,6 @@ defmodule Budget.Entries.Entry do
     end
   end
 
-
   def originator_module(entry) do
     entry
     |> Enum.map(fn {key, _} -> key end)
@@ -174,9 +173,12 @@ defmodule Budget.Entries.Entry do
   def put_position(changeset) do
     if get_field(changeset, :position) in [nil, Decimal.new(-1)] do
       prepare_changes(changeset, fn changeset -> 
+        date = get_field(changeset, :date)
+
         max_position =
           from(
             e in __MODULE__,
+            where: e.date == ^date,
             select: max(e.position)
           )
           |> changeset.repo.one()

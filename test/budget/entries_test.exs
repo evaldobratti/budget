@@ -1238,8 +1238,8 @@ defmodule Budget.EntriesTest do
       entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-21])
 
       assert [
-               {id2, Decimal.new(2), ~D[2023-01-21]},
-               {id1, Decimal.new("2.5"), ~D[2023-01-21]}
+               {id2, Decimal.new(1), ~D[2023-01-21]},
+               {id1, Decimal.new("1.5"), ~D[2023-01-21]}
              ] ==
                entries |> Enum.map(&{&1.id, &1.position, &1.date})
     end
@@ -1271,7 +1271,7 @@ defmodule Budget.EntriesTest do
       assert [
                {id3, Decimal.new("0.5"), ~D[2023-01-17]},
                {id1, Decimal.new(1), ~D[2023-01-17]},
-               {id2, Decimal.new(2), ~D[2023-01-18]}
+               {id2, Decimal.new(1), ~D[2023-01-18]}
              ] ==
                entries |> Enum.map(&{&1.id, &1.position, &1.date})
     end
@@ -1288,7 +1288,7 @@ defmodule Budget.EntriesTest do
       assert [
                {id1, Decimal.new(1), ~D[2023-01-17]},
                {id3, Decimal.new("1.5"), ~D[2023-01-17]},
-               {id2, Decimal.new(2), ~D[2023-01-18]}
+               {id2, Decimal.new(1), ~D[2023-01-18]}
              ] ==
                entries |> Enum.map(&{&1.id, &1.position, &1.date})
     end
@@ -1303,9 +1303,9 @@ defmodule Budget.EntriesTest do
       entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
 
       assert [
-               {id2, Decimal.new(2), ~D[2023-01-18]},
-               {id1, Decimal.new("2.5"), ~D[2023-01-18]},
-               {id3, Decimal.new(3), ~D[2023-01-19]}
+               {id2, Decimal.new(1), ~D[2023-01-18]},
+               {id1, Decimal.new("1.5"), ~D[2023-01-18]},
+               {id3, Decimal.new(1), ~D[2023-01-19]}
              ] ==
                entries |> Enum.map(&{&1.id, &1.position, &1.date})
     end
@@ -1320,9 +1320,9 @@ defmodule Budget.EntriesTest do
       entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
 
       assert [
-               {id2, Decimal.new(2), ~D[2023-01-18]},
-               {id3, Decimal.new(3), ~D[2023-01-19]},
-               {id1, Decimal.new("3.5"), ~D[2023-01-19]}
+               {id2, Decimal.new(1), ~D[2023-01-18]},
+               {id3, Decimal.new(1), ~D[2023-01-19]},
+               {id1, Decimal.new("1.5"), ~D[2023-01-19]}
              ] ==
                entries |> Enum.map(&{&1.id, &1.position, &1.date})
     end
@@ -1346,6 +1346,22 @@ defmodule Budget.EntriesTest do
                {id5, Decimal.new("5"), ~D[2023-01-28]}
              ] ==
                entries |> Enum.map(&{&1.id, &1.position, &1.date})
+    end
+  end
+
+  describe "update_order/3" do
+    test "basic reorder" do
+      entry_1 = %{id: id1} = entry_fixture()
+      entry_2 = %{id: id2} = entry_fixture()
+      entry_3 = %{id: id3} = entry_fixture()
+      entry_4 = %{id: id4} = entry_fixture()
+      entry_5 = %{id: id5} = entry_fixture()
+
+      {:ok, _} = Entries.update_order(0, 2, [entry_1, entry_2, entry_3, entry_4, entry_5])
+
+      entries = Entries.entries_in_period([], Timex.today(), Timex.today())
+
+      assert [ id2, id3, id1, id4, id5 ] == entries |> Enum.map(& &1.id)
     end
   end
 end

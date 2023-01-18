@@ -66,7 +66,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           originator_regular: %{
             description: "a description",
-            category_id: category.id,
+            category_id: category.id
           },
           account_id: account.id,
           value: "200"
@@ -96,7 +96,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           originator_regular: %{
             description: "a description",
-            category_id: category.id,
+            category_id: category.id
           },
           account_id: account.id,
           value: "200"
@@ -402,7 +402,7 @@ defmodule BudgetWeb.BudgetLiveTest do
         entry: %{
           date: ~D[2020-06-13],
           originator_regular: %{
-            description: "a new description",
+            description: "a new description"
           },
           value: "420"
         }
@@ -610,5 +610,32 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     assert html =~ "Category updated successfully"
     assert html =~ "another category name"
+  end
+
+  test "reordering elements", %{
+    conn: conn,
+    category: %{id: category_id},
+    account: %{id: account_id}
+  } do
+    1..5
+    |> Enum.map(
+      &entry_fixture(%{
+        originator_regular: %{
+          description: "Transaction #{&1}",
+          category_id: category_id
+        },
+        account_id: account_id
+      })
+    )
+
+    {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+
+    assert html =~
+             ~r/Transaction 1[\s\S]*Transaction 2[\s\S]*Transaction 3[\s\S]*Transaction 4[\s\S]*Transaction 5/
+
+    render_hook(live, "reorder", %{"newIndex" => 1, "oldIndex" => 4})
+
+    assert render(live) =~
+             ~r/Transaction 1[\s\S]*Transaction 5[\s\S]*Transaction 2[\s\S]*Transaction 3[\s\S]*Transaction 4/
   end
 end
