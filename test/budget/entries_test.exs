@@ -968,6 +968,58 @@ defmodule Budget.EntriesTest do
       assert entry.recurrency_entry.parcel == 1
       assert entry.recurrency_entry.parcel_end == 6
     end
+
+    test "create transfer" do
+      %{id: from_account_id} = account_fixture()
+      %{id: to_account_id} = account_fixture()
+      %{id: category_id} = category_fixture()
+
+      assert {:ok, _} =
+               Entries.create_entry(%{
+                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+                 account_id: from_account_id,
+                 originator_transfer: %{
+                   other_account_id: to_account_id
+                 },
+                 value: 200
+               })
+
+      assert [
+               {from_account_id, Decimal.new(200)},
+               {to_account_id, Decimal.new(-200)}
+             ] ==
+               Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
+               |> Enum.map(&{&1.account_id, &1.value})
+    end
+  end
+
+  describe "update_entry/2" do
+    test "updating value from a transfer transaction" do
+      %{id: from_account_id} = account_fixture()
+      %{id: to_account_id} = account_fixture()
+      %{id: category_id} = category_fixture()
+
+      assert {:ok, %{id: id}} =
+               Entries.create_entry(%{
+                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+                 account_id: from_account_id,
+                 originator_transfer: %{
+                   other_account_id: to_account_id
+                 },
+                 value: 200
+               })
+
+      entry = Entries.get_entry!(id)
+
+      assert {:ok, _} = Entries.update_entry(entry, %{value: 400})
+
+      assert [
+               {from_account_id, Decimal.new(400), entry.originator_transfer_part_id, nil},
+               {to_account_id, Decimal.new(-400), nil, entry.originator_transfer_part_id}
+             ] ==
+               Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
+               |> Enum.map(&{&1.account_id, &1.value, &1.originator_transfer_part_id, &1.originator_transfer_counter_part_id})
+    end
   end
 
   describe "delete_entry_state/1" do
@@ -1361,7 +1413,7 @@ defmodule Budget.EntriesTest do
 
       entries = Entries.entries_in_period([], Timex.today(), Timex.today())
 
-      assert [ id2, id3, id1, id4, id5 ] == entries |> Enum.map(& &1.id)
+      assert [id2, id3, id1, id4, id5] == entries |> Enum.map(& &1.id)
     end
   end
 end

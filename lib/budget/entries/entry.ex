@@ -20,12 +20,15 @@ defmodule Budget.Entries.Entry do
     belongs_to :account, Account
 
     belongs_to :originator_regular, Regular, on_replace: :update
-    # belongs_to :originator_transfer, Transfer
+    belongs_to :originator_transfer_part, Transfer
+    belongs_to :originator_transfer_counter_part, Transfer
 
+    field :originator_transfer, :map, virtual: true
     field :is_recurrency, :boolean, virtual: true
+    field :is_transfer, :boolean, virtual: true
     field :recurrency_apply_forward, :boolean, virtual: true
 
-    has_one :recurrency_entry, RecurrencyEntry 
+    has_one :recurrency_entry, RecurrencyEntry
 
     timestamps()
   end
@@ -43,16 +46,18 @@ defmodule Budget.Entries.Entry do
       :account_id,
       :is_recurrency,
       :recurrency_apply_forward,
-      :position
+      :position,
+      :is_transfer,
+      :originator_transfer
     ])
     |> validate_required([:date, :is_carried_out, :value, :account_id])
     |> cast_assoc(:recurrency_entry)
     |> cast_assoc(:originator_regular)
-    # |> cast_assoc(:originator_transfer)
     |> validate_originator()
     |> put_initial_recurrency_payload()
     |> put_updated_recurrency_payload()
     |> put_position()
+    |> update_transfer()
   end
 
   defp put_initial_recurrency_payload(%Changeset{} = changeset) do
@@ -60,7 +65,9 @@ defmodule Budget.Entries.Entry do
     is_recurrency = get_field(changeset, :is_recurrency)
     valid? = changeset.valid?
     recurrency_entry_casted = get_change(changeset, :recurrency_entry)
-    recurrency_casted = recurrency_entry_casted && get_change(recurrency_entry_casted, :recurrency)
+
+    recurrency_casted =
+      recurrency_entry_casted && get_change(recurrency_entry_casted, :recurrency)
 
     if Enum.all?([new_entry, is_recurrency, valid?, recurrency_entry_casted, recurrency_casted]) do
       entry_date = get_field(changeset, :date)
@@ -73,12 +80,12 @@ defmodule Budget.Entries.Entry do
 
       payload = module.get_recurrency_payload(changeset)
 
-      changeset = 
+      changeset =
         update_change(changeset, :recurrency_entry, fn re_changeset ->
           update_change(re_changeset, :recurrency, fn r_changeset ->
             put_change(
-              r_changeset, 
-              :entry_payload, 
+              r_changeset,
+              :entry_payload,
               %{
                 Date.to_iso8601(entry_date) => payload
               }
@@ -123,19 +130,26 @@ defmodule Budget.Entries.Entry do
 
       recurrency = changeset.data.recurrency_entry.recurrency
 
-      recurrency_entry = 
+      recurrency_entry =
         changeset.data.recurrency_entry
         |> RecurrencyEntry.changeset(%{})
         |> put_change(
-          :recurrency, 
+          :recurrency,
           recurrency
           |> Recurrency.changeset(%{})
-          |> put_change(:entry_payload, Map.put(recurrency.entry_payload, Date.to_iso8601(get_field(changeset, :date)), payload))
+          |> put_change(
+            :entry_payload,
+            Map.put(
+              recurrency.entry_payload,
+              Date.to_iso8601(get_field(changeset, :date)),
+              payload
+            )
+          )
         )
         |> then(fn re_changeset ->
           if !re_changeset.data.id do
             %{re_changeset | action: :insert}
-          else 
+          else
             re_changeset
           end
         end)
@@ -150,10 +164,14 @@ defmodule Budget.Entries.Entry do
     regular = get_field(changeset, :originator_regular)
     transfer = get_field(changeset, :originator_transfer)
 
-    if !regular && !transfer do
+    transfer_part = changeset.data.originator_transfer_part_id
+    transfer_counter_part = changeset.data.originator_transfer_counter_part_id
+
+    if !regular && !transfer && !transfer_part && !transfer_counter_part do
       changeset
       |> add_error(:originator_regular, "either must be regular or transfer entry")
-      |> add_error(:originator_transfer, "either must be regular or transfer entry")
+      |> add_error(:originator_transfer_part, "either must be regular or transfer entry")
+      |> add_error(:originator_transfer_counter_part, "either must be regular or transfer entry")
     else
       changeset
     end
@@ -172,27 +190,57 @@ defmodule Budget.Entries.Entry do
 
   def put_position(changeset) do
     if get_field(changeset, :position) in [nil, Decimal.new(-1)] do
-      prepare_changes(changeset, fn changeset -> 
-        date = get_field(changeset, :date)
+      date = get_field(changeset, :date)
 
-        max_position =
-          from(
-            e in __MODULE__,
-            where: e.date == ^date,
-            select: max(e.position)
-          )
-          |> changeset.repo.one()
-          |> case do
-            nil ->
-              Decimal.new(0)
-            val ->
-              val
-          end
+      max_position =
+        from(
+          e in __MODULE__,
+          where: e.date == ^date,
+          select: max(e.position)
+        )
+        |> Budget.Repo.one()
+        |> case do
+          nil ->
+            Decimal.new(0)
 
-        put_change(changeset, :position, Decimal.add(max_position, 1))
-      end)
+          val ->
+            val
+        end
+
+      put_change(changeset, :position, Decimal.add(max_position, 1))
     else
       changeset
+    end
+  end
+
+  defp update_transfer(changeset) do
+    transfer = get_change(changeset, :originator_transfer)
+
+    if transfer do
+        [transaction_field, transfer_field] =
+            [:originator_transfer_part, :counter_part]
+          
+        put_assoc(changeset, transaction_field, Transfer.create_other_part(changeset, transfer, transfer_field))
+    else
+      value = get_change(changeset, :value)
+      
+      [transaction_field, transfer_field] =
+        if changeset.data.originator_transfer_part_id do
+          [:originator_transfer_part, :counter_part]
+        else
+          if changeset.data.originator_transfer_counter_part_id do
+            [:originator_transfer_counter_part, :part]
+          else
+            [nil, nil]
+          end
+        end
+
+      if value && transaction_field do
+        put_assoc(changeset, transaction_field, Transfer.update_other_part(changeset, transaction_field, transfer_field))
+      else
+        changeset
+      end
+
     end
   end
 end
