@@ -91,7 +91,6 @@ defmodule Budget.Entries.Entry do
               }
             )
             |> put_change(:date_start, entry_date)
-            |> put_change(:account_id, get_field(changeset, :account_id))
           end)
           |> put_change(:original_date, entry_date)
         end)

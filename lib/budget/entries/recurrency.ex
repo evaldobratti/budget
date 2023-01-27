@@ -16,8 +16,6 @@ defmodule Budget.Entries.Recurrency do
     field :parcel_start, :integer
     field :entry_payload, :map
 
-    belongs_to :account, Account
-
     has_many :recurrency_entries, RecurrencyEntry
 
     timestamps()
@@ -37,7 +35,6 @@ defmodule Budget.Entries.Recurrency do
         :parcel_start,
         :parcel_end,
         :is_parcel,
-        :account_id
       ])
       |> validate_required([
         :is_parcel,
@@ -109,8 +106,6 @@ defmodule Budget.Entries.Recurrency do
       %Entry{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
         date: date,
-        account: recurrency.account,
-        account_id: recurrency.account_id,
         is_recurrency: true,
         recurrency_entry: recurrency_entry,
         position: Decimal.new(-1)

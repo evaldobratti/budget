@@ -26,13 +26,21 @@ defmodule Budget.Entries.Originator.Regular do
       |> Map.get("category_id")
       |> Entries.get_category!()
 
+    account =
+      payload
+      |> Map.get("account_id")
+      |> Entries.get_account!()
+      
+
     %{
       originator_regular: %__MODULE__{
         description: Map.get(regular, "description"),
         category: category,
         category_id: category.id
       },
-      value: Decimal.new(Map.get(payload, "value"))
+      value: Decimal.new(Map.get(payload, "value")),
+      account_id: account.id,
+      account: account
     }
   end
 
@@ -45,7 +53,8 @@ defmodule Budget.Entries.Originator.Regular do
         description: description,
         category_id: category_id
       },
-      value: get_field(entry_changeset, :value)
+      value: get_field(entry_changeset, :value),
+      account_id: get_field(entry_changeset, :account_id)
     }
   end
 end

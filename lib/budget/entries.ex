@@ -166,10 +166,10 @@ defmodule Budget.Entries do
       |> Repo.one()
 
     recurrencies =
-      accounts_ids
-      |> find_recurrencies()
+      find_recurrencies()
       |> Enum.map(&recurrency_entries(&1, date))
       |> List.flatten()
+      |> Enum.filter(& &1.account_id in accounts_ids || accounts_ids == [])
       |> Enum.map(& &1.value)
       |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
 
@@ -198,14 +198,11 @@ defmodule Budget.Entries do
     Recurrency.entries(recurrency, until_date)
   end
 
-  def find_recurrencies(accounts_ids) do
+  def find_recurrencies() do
     from(
       r in Recurrency,
-      join: a in assoc(r, :account),
-      as: :account,
-      preload: [recurrency_entries: :entry, account: a]
+      preload: [recurrency_entries: :entry]
     )
-    |> where_account_in(accounts_ids)
     |> Repo.all()
   end
 
@@ -254,13 +251,14 @@ defmodule Budget.Entries do
   end
 
   defp recurrency_entries_in_period(account_ids, date_start, date_end) do
-    recurrencies = find_recurrencies(account_ids)
+    recurrencies = find_recurrencies()
 
     recurrencies
     |> Enum.reduce([], fn r, acc ->
       [Recurrency.entries(r, date_end) | acc]
     end)
     |> List.flatten()
+    |> Enum.filter(& &1.account_id in account_ids || account_ids == [])
     |> Enum.filter(&Timex.between?(&1.date, date_start, date_end, inclusive: true))
   end
 

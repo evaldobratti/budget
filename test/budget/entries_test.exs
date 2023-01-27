@@ -668,7 +668,7 @@ defmodule Budget.EntriesTest do
       {:ok, _} = Entries.create_entry(transient, %{value: 500, recurrency_apply_forward: true})
 
       entries =
-        recurrency.account_id
+        transient.account_id
         |> List.wrap()
         |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
 
@@ -722,7 +722,7 @@ defmodule Budget.EntriesTest do
       {:ok, _} = Entries.create_entry(transient, %{value: 500, recurrency_apply_forward: true})
 
       entries =
-        recurrency.account_id
+        transient.account_id
         |> List.wrap()
         |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
 
@@ -870,7 +870,7 @@ defmodule Budget.EntriesTest do
              } = Entries.get_recurrency!(recurrency.id).entry_payload
 
       entries =
-        recurrency.account_id
+        transient.account_id
         |> List.wrap()
         |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
 
