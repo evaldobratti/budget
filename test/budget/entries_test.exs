@@ -991,6 +991,36 @@ defmodule Budget.EntriesTest do
                Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
                |> Enum.map(&{&1.account_id, &1.value})
     end
+
+    # test "create recurrent transfer" do
+    #   %{id: from_account_id} = account_fixture()
+    #   %{id: to_account_id} = account_fixture()
+    #   %{id: category_id} = category_fixture()
+    #
+    #   assert {:ok, _} =
+    #            Entries.create_entry(%{
+    #              date: ~D[2022-01-01] |> Date.to_iso8601(),
+    #              account_id: from_account_id,
+    #              is_recurrency: true,
+    #              recurrency_entry: %{
+    #                recurrency: %{
+    #                  frequency: :monthly,
+    #                  is_forever: true
+    #                }
+    #              },
+    #              originator_transfer: %{
+    #                other_account_id: to_account_id
+    #              },
+    #              value: 200
+    #            })
+    #
+    #   assert [
+    #            {from_account_id, Decimal.new(200)},
+    #            {to_account_id, Decimal.new(-200)}
+    #          ] ==
+    #            Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+    #            |> Enum.map(&{&1.account_id, &1.value})
+    # end
   end
 
   describe "update_entry/2" do
@@ -1018,7 +1048,10 @@ defmodule Budget.EntriesTest do
                {to_account_id, Decimal.new(-400), nil, entry.originator_transfer_part_id}
              ] ==
                Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
-               |> Enum.map(&{&1.account_id, &1.value, &1.originator_transfer_part_id, &1.originator_transfer_counter_part_id})
+               |> Enum.map(
+                 &{&1.account_id, &1.value, &1.originator_transfer_part_id,
+                  &1.originator_transfer_counter_part_id}
+               )
     end
   end
 

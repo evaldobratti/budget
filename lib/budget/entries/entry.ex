@@ -54,10 +54,10 @@ defmodule Budget.Entries.Entry do
     |> cast_assoc(:recurrency_entry)
     |> cast_assoc(:originator_regular)
     |> validate_originator()
-    |> put_initial_recurrency_payload()
-    |> put_updated_recurrency_payload()
     |> put_position()
     |> update_transfer()
+    |> put_initial_recurrency_payload()
+    |> put_updated_recurrency_payload()
   end
 
   defp put_initial_recurrency_payload(%Changeset{} = changeset) do
@@ -179,10 +179,20 @@ defmodule Budget.Entries.Entry do
 
   def originator_module(entry) do
     entry
-    |> Enum.map(fn {key, _} -> key end)
+    |> Enum.filter(fn
+      {_key, %{__struct__: st}} ->
+        st !== Ecto.Association.NotLoaded
+        
+      _ -> true
+    end)
+    |> Enum.map(fn {key, _} ->
+      key 
+    end)
     |> Enum.map(&to_string/1)
-    |> Enum.find(&String.starts_with?(&1, "originator_"))
+    |> Enum.find(&String.starts_with?(&1, "originator_") && !String.ends_with?(&1, "_id"))
     |> String.replace("originator_", "")
+    |> String.replace("_part", "")
+    |> String.replace("_counter_part", "")
     |> String.capitalize()
     |> then(&("Elixir.Budget.Entries.Originator." <> &1))
     |> then(&String.to_existing_atom(&1))

@@ -41,5 +41,41 @@ defmodule Budget.Entries.Originator.Transfer do
 
     put_assoc(transfer_changeset, transfer_field, other_part_changeset)
   end
+
+  @behaviour Budget.Entries.Originator
+
+  def restore_for_recurrency(%{"originator_transfer_part" => transfer_part} = payload) do
+    other_account_id = 
+      transfer_part
+      |> Map.get("account_id")
+
+    %{
+      originator_transfer_part: %__MODULE__{
+        counter_part: %Entry{
+          date: Timex.today(),
+          value: Decimal.new(Map.get(payload, "value")) |> Decimal.negate(),
+          account_id: other_account_id,
+          is_carried_out: false,
+          position: 1
+        }
+      },
+      value: Decimal.new(Map.get(payload, "value"))
+    }
+  end
+
+  def get_recurrency_payload(entry_changeset) do
+    account_id =
+      entry_changeset
+      |> get_field(:originator_transfer_part)
+      |> Map.get(:counter_part)
+      |> Map.get(:account_id)
+
+    %{
+      originator_transfer_part: %{
+        account_id: account_id
+      },
+      value: get_field(entry_changeset, :value)
+    }
+  end
   
 end
