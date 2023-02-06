@@ -992,35 +992,133 @@ defmodule Budget.EntriesTest do
                |> Enum.map(&{&1.account_id, &1.value})
     end
 
-    # test "create recurrent transfer" do
-    #   %{id: from_account_id} = account_fixture()
-    #   %{id: to_account_id} = account_fixture()
-    #   %{id: category_id} = category_fixture()
-    #
-    #   assert {:ok, _} =
-    #            Entries.create_entry(%{
-    #              date: ~D[2022-01-01] |> Date.to_iso8601(),
-    #              account_id: from_account_id,
-    #              is_recurrency: true,
-    #              recurrency_entry: %{
-    #                recurrency: %{
-    #                  frequency: :monthly,
-    #                  is_forever: true
-    #                }
-    #              },
-    #              originator_transfer: %{
-    #                other_account_id: to_account_id
-    #              },
-    #              value: 200
-    #            })
-    #
-    #   assert [
-    #            {from_account_id, Decimal.new(200)},
-    #            {to_account_id, Decimal.new(-200)}
-    #          ] ==
-    #            Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
-    #            |> Enum.map(&{&1.account_id, &1.value})
-    # end
+    test "create recurrent transfer" do
+      %{id: from_account_id} = account_fixture()
+      %{id: to_account_id} = account_fixture()
+      %{id: category_id} = category_fixture()
+
+      assert {:ok, _} =
+               Entries.create_entry(%{
+                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+                 account_id: from_account_id,
+                 is_recurrency: true,
+                 recurrency_entry: %{
+                   recurrency: %{
+                     frequency: :monthly,
+                     is_forever: true
+                   }
+                 },
+                 originator_transfer: %{
+                   other_account_id: to_account_id
+                 },
+                 value: 200
+               })
+
+
+      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+
+      assert [
+               {~D[2022-01-01], from_account_id, Decimal.new(200)},
+               {~D[2022-01-01], to_account_id, Decimal.new(-200)},
+
+               {~D[2022-02-01], from_account_id, Decimal.new(200)},
+               {~D[2022-02-01], to_account_id, Decimal.new(-200)},
+
+               {~D[2022-03-01], from_account_id, Decimal.new(200)},
+               {~D[2022-03-01], to_account_id, Decimal.new(-200)},
+
+               {~D[2022-04-01], from_account_id, Decimal.new(200)},
+               {~D[2022-04-01], to_account_id, Decimal.new(-200)},
+             ] ==
+                entries
+               |> Enum.map(&{&1.date, &1.account_id, &1.value})
+
+      assert Enum.at(entries, 0).id |> is_integer()
+      assert Enum.at(entries, 1).id |> is_integer()
+      assert "recurrency-" <> _  = Enum.at(entries, 2).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 3).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 4).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 5).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 6).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 7).id 
+      
+      {:ok, persisted} = Entries.create_entry(Enum.at(entries, 2), %{})
+
+      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+
+      assert [
+               {~D[2022-01-01], from_account_id, Decimal.new(200)},
+               {~D[2022-01-01], to_account_id, Decimal.new(-200)},
+
+               {~D[2022-02-01], from_account_id, Decimal.new(200)},
+               {~D[2022-02-01], to_account_id, Decimal.new(-200)},
+
+               {~D[2022-03-01], from_account_id, Decimal.new(200)},
+               {~D[2022-03-01], to_account_id, Decimal.new(-200)},
+
+               {~D[2022-04-01], from_account_id, Decimal.new(200)},
+               {~D[2022-04-01], to_account_id, Decimal.new(-200)},
+             ] ==
+                entries
+               |> Enum.map(&{&1.date, &1.account_id, &1.value})
+
+      assert 4 == Budget.Repo.all(Entries.RecurrencyEntry) |> length()
+
+      assert Enum.at(entries, 0).id |> is_integer()
+      assert Enum.at(entries, 1).id |> is_integer()
+      assert Enum.at(entries, 2).id |> is_integer()
+      assert Enum.at(entries, 3).id |> is_integer()
+      assert "recurrency-" <> _  = Enum.at(entries, 4).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 5).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 6).id 
+      assert "recurrency-" <> _  = Enum.at(entries, 7).id 
+    end
+
+    test "persist recurrent transfer entry applying forward" do
+      %{id: from_account_id} = account_fixture()
+      %{id: to_account_id} = account_fixture()
+      %{id: category_id} = category_fixture()
+
+      assert {:ok, _} =
+               Entries.create_entry(%{
+                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+                 account_id: from_account_id,
+                 is_recurrency: true,
+                 recurrency_entry: %{
+                   recurrency: %{
+                     frequency: :monthly,
+                     is_forever: true
+                   }
+                 },
+                 originator_transfer: %{
+                   other_account_id: to_account_id
+                 },
+                 value: 200
+               })
+
+
+      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+
+      {:ok, persisted} = Entries.create_entry(Enum.at(entries, 2), %{value: 400, recurrency_apply_forward: true})
+
+      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+
+      assert [
+               {~D[2022-01-01], from_account_id, Decimal.new(200)},
+               {~D[2022-01-01], to_account_id, Decimal.new(-200)},
+
+               {~D[2022-02-01], from_account_id, Decimal.new(400)},
+               {~D[2022-02-01], to_account_id, Decimal.new(-400)},
+
+               {~D[2022-03-01], from_account_id, Decimal.new(400)},
+               {~D[2022-03-01], to_account_id, Decimal.new(-400)},
+
+               {~D[2022-04-01], from_account_id, Decimal.new(400)},
+               {~D[2022-04-01], to_account_id, Decimal.new(-400)},
+             ] ==
+                entries
+               |> Enum.map(&{&1.date, &1.account_id, &1.value})
+    end
   end
 
   describe "update_entry/2" do

@@ -130,9 +130,40 @@ defmodule Budget.Entries do
         end
 
       _ ->
-        %Entry{}
-        |> Entry.changeset(attrs)
-        |> Repo.insert()
+        Ecto.Multi.new()
+        |> Ecto.Multi.run(:entry, fn _repo, _changes ->
+          %Entry{}
+          |> Entry.changeset(attrs)
+          |> Repo.insert()
+        end)
+        |> Ecto.Multi.run(:originator_post_insert, fn _repo, changes ->
+          case changes.entry do
+            %{
+              originator_transfer_part: %{
+                counter_part: %Entry{} = counter_part
+              },
+              recurrency_entry: %RecurrencyEntry{} = recurrency_entry
+            } ->
+              Repo.insert(%RecurrencyEntry{
+                entry_id: counter_part.id,
+                recurrency_id: recurrency_entry.recurrency_id,
+                original_date: recurrency_entry.original_date,
+                parcel: recurrency_entry.parcel,
+                parcel_end: recurrency_entry.parcel_end
+              })
+
+            _ ->
+              {:ok, :nothing_done}
+          end
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{entry: entry}} ->
+            {:ok, entry}
+
+          error ->
+            error
+        end
     end
   end
 
@@ -169,7 +200,7 @@ defmodule Budget.Entries do
       find_recurrencies()
       |> Enum.map(&recurrency_entries(&1, date))
       |> List.flatten()
-      |> Enum.filter(& &1.account_id in accounts_ids || accounts_ids == [])
+      |> Enum.filter(&(&1.account_id in accounts_ids || accounts_ids == []))
       |> Enum.map(& &1.value)
       |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
 
@@ -258,7 +289,7 @@ defmodule Budget.Entries do
       [Recurrency.entries(r, date_end) | acc]
     end)
     |> List.flatten()
-    |> Enum.filter(& &1.account_id in account_ids || account_ids == [])
+    |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
     |> Enum.filter(&Timex.between?(&1.date, date_start, date_end, inclusive: true))
   end
 
@@ -476,7 +507,7 @@ defmodule Budget.Entries do
   def put_entry_between(entry, [nil, entry_after]) do
     position = entry_after.position
 
-    date = 
+    date =
       if entry.date == entry_after.date do
         entry.date
       else
@@ -498,18 +529,20 @@ defmodule Budget.Entries do
 
         val ->
           val
-          
       end
 
-    update_entry(entry, %{date: date, position: Decimal.add(before_position, position) |> Decimal.div(2)})
+    update_entry(entry, %{
+      date: date,
+      position: Decimal.add(before_position, position) |> Decimal.div(2)
+    })
   end
 
   def put_entry_between(entry, [entry_before = %Entry{}, entry_after]) do
     position = entry_before.position
 
     date =
-      if entry.date !== entry_before.date && (
-        entry_after == nil || entry.date !== entry_after.date) do
+      if entry.date !== entry_before.date &&
+           (entry_after == nil || entry.date !== entry_after.date) do
         entry_before.date
       else
         entry.date
@@ -530,9 +563,11 @@ defmodule Budget.Entries do
 
         val ->
           val
-          
       end
 
-    update_entry(entry, %{date: date, position: Decimal.add(after_position, position) |> Decimal.div(2)})
+    update_entry(entry, %{
+      date: date,
+      position: Decimal.add(after_position, position) |> Decimal.div(2)
+    })
   end
 end

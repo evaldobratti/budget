@@ -57,4 +57,10 @@ defmodule Budget.Entries.Originator.Regular do
       account_id: get_field(entry_changeset, :account_id)
     }
   end
+
+  def build_entries(recurrency_params, params) do
+    %Budget.Entries.Entry{}
+    |> Map.merge(recurrency_params)
+    |> Map.merge(params)
+  end
 end

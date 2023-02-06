@@ -179,10 +179,14 @@ defmodule Budget.Entries.Entry do
   def originator_module(entry) do
     entry
     |> Enum.filter(fn
-      {_key, %{__struct__: st}} ->
-        st !== Ecto.Association.NotLoaded
+      {_key, %st{}} ->
+        st != Ecto.Association.NotLoaded
         
-      _ -> true
+      {_key, nil} -> 
+        false
+
+      _ -> 
+        true
     end)
     |> Enum.map(fn {key, _} ->
       key 
@@ -190,8 +194,8 @@ defmodule Budget.Entries.Entry do
     |> Enum.map(&to_string/1)
     |> Enum.find(&String.starts_with?(&1, "originator_") && !String.ends_with?(&1, "_id"))
     |> String.replace("originator_", "")
-    |> String.replace("_part", "")
     |> String.replace("_counter_part", "")
+    |> String.replace("_part", "")
     |> String.capitalize()
     |> then(&("Elixir.Budget.Entries.Originator." <> &1))
     |> then(&String.to_existing_atom(&1))
@@ -249,7 +253,6 @@ defmodule Budget.Entries.Entry do
       else
         changeset
       end
-
     end
   end
 end
