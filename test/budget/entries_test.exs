@@ -849,10 +849,8 @@ defmodule Budget.EntriesTest do
 
       assert %{
                "2022-10-15" => %{
-                 "originator_regular" => %{
-                   "category_id" => _,
-                   "description" => "Entry description"
-                 },
+                 "category_id" => _,
+                 "description" => "Entry description",
                  "value" => "133"
                }
              } = recurrency.entry_payload
@@ -861,10 +859,8 @@ defmodule Budget.EntriesTest do
 
       assert %{
                "2022-10-15" => %{
-                 "originator_regular" => %{
-                   "category_id" => _,
-                   "description" => "Entry description"
-                 },
+                 "category_id" => _,
+                 "description" => "Entry description",
                  "value" => "133"
                }
              } = Entries.get_recurrency!(recurrency.id).entry_payload

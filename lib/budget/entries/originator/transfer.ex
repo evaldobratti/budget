@@ -44,13 +44,13 @@ defmodule Budget.Entries.Originator.Transfer do
 
   @behaviour Budget.Entries.Originator
 
-  def restore_for_recurrency(%{"originator_transfer_part" => transfer_part} = payload) do
+  def restore_for_recurrency(payload) do
     account_id = 
-      transfer_part
+      payload
       |> Map.get("part_account_id")
 
     other_account_id = 
-      transfer_part
+      payload
       |> Map.get("counter_part_account_id")
 
     %{
@@ -90,11 +90,10 @@ defmodule Budget.Entries.Originator.Transfer do
       counter_part.account_id
 
     %{
-      originator_transfer_part: %{
-        part_account_id: part_account_id,
-        counter_part_account_id: counter_part_account_id
-      },
-      value: get_field(entry_changeset, :value)
+      part_account_id: part_account_id,
+      counter_part_account_id: counter_part_account_id,
+      value: get_field(entry_changeset, :value),
+      originator: __MODULE__
     }
   end
 
@@ -150,7 +149,4 @@ defmodule Budget.Entries.Originator.Transfer do
       |> Map.put(:originator_regular, nil)
     ]
   end
-
-
-  
 end

@@ -176,29 +176,34 @@ defmodule Budget.Entries.Entry do
     end
   end
 
-  def originator_module(entry) do
-    entry
-    |> Enum.filter(fn
-      {_key, %st{}} ->
-        st != Ecto.Association.NotLoaded
-        
-      {_key, nil} -> 
-        false
+  defp originator_module(entry) do
+    originators = [
+      {:originator_regular, Regular},
+      {:originator_transfer_part, Transfer},
+      {:originator_transfer_counter_part, Transfer}
+    ]
 
-      _ -> 
-        true
-    end)
-    |> Enum.map(fn {key, _} ->
-      key 
-    end)
-    |> Enum.map(&to_string/1)
-    |> Enum.find(&String.starts_with?(&1, "originator_") && !String.ends_with?(&1, "_id"))
-    |> String.replace("originator_", "")
-    |> String.replace("_counter_part", "")
-    |> String.replace("_part", "")
-    |> String.capitalize()
-    |> then(&("Elixir.Budget.Entries.Originator." <> &1))
-    |> then(&String.to_existing_atom(&1))
+    through_fk = 
+      Enum.find(originators, fn {originator_field, _module} -> 
+        fk = to_string(originator_field) <> "_id" |> String.to_existing_atom()
+
+        Map.get(entry, fk) != nil
+      end) 
+
+    if through_fk do
+      elem(through_fk, 1)
+    else
+      through_field = 
+        Enum.find(originators, fn {originator_field, _module} -> 
+          Ecto.assoc_loaded?(Map.get(entry, originator_field)) && Map.get(entry, originator_field) != nil
+        end) 
+
+      if through_field do
+        elem(through_field, 1)
+      else
+        raise "ouch!"
+      end
+    end
   end
 
   def put_position(changeset) do

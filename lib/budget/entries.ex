@@ -482,12 +482,6 @@ defmodule Budget.Entries do
 
   def get_category!(id), do: Repo.get!(Category, id)
 
-  def restore_recurrency_params(payload) do
-    module = Entry.originator_module(payload)
-
-    module.restore_for_recurrency(payload)
-  end
-
   def update_order(old_index, new_index, entries) do
     entry_to_update = Enum.at(entries, old_index)
     list_wo_element = List.delete_at(entries, old_index)

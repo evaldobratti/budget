@@ -74,10 +74,17 @@ defmodule Budget.Entries.Recurrency do
 
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
+    originator = 
+      recurrency.entry_payload
+      |> Map.values()
+      |> Enum.random()
+      |> Map.get("originator")
+      |> String.to_existing_atom()
+
     payloads =
       recurrency.entry_payload
       |> Enum.map(fn {date, payload} ->
-        {Date.from_iso8601!(date), {Budget.Entries.Entry.originator_module(payload), Budget.Entries.restore_recurrency_params(payload)}}
+        {Date.from_iso8601!(date), originator.restore_for_recurrency(payload)}
       end)
       |> Enum.into(%{})
 
@@ -101,7 +108,7 @@ defmodule Budget.Entries.Recurrency do
           }
         end
 
-      {originator, params} = payload_at_date(payloads, date)
+      params = payload_at_date(payloads, date)
 
       originator.build_entries(%{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",

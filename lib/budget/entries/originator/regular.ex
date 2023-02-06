@@ -20,9 +20,9 @@ defmodule Budget.Entries.Originator.Regular do
 
   @behaviour Budget.Entries.Originator
 
-  def restore_for_recurrency(%{"originator_regular" => regular} = payload) do
+  def restore_for_recurrency(payload) do
     category =
-      regular
+      payload
       |> Map.get("category_id")
       |> Entries.get_category!()
 
@@ -34,7 +34,7 @@ defmodule Budget.Entries.Originator.Regular do
 
     %{
       originator_regular: %__MODULE__{
-        description: Map.get(regular, "description"),
+        description: Map.get(payload, "description"),
         category: category,
         category_id: category.id
       },
@@ -49,12 +49,11 @@ defmodule Budget.Entries.Originator.Regular do
       get_field(entry_changeset, :originator_regular)
 
     %{
-      originator_regular: %{
-        description: description,
-        category_id: category_id
-      },
+      description: description,
+      category_id: category_id,
       value: get_field(entry_changeset, :value),
-      account_id: get_field(entry_changeset, :account_id)
+      account_id: get_field(entry_changeset, :account_id),
+      originator: __MODULE__
     }
   end
 
