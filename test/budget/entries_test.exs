@@ -1143,37 +1143,6 @@ defmodule Budget.EntriesTest do
                   &1.originator_transfer_counter_part_id}
                )
     end
-
-    @tag :skip
-    test "updating other account from a transfer transaction" do
-      %{id: from_account_id} = account_fixture()
-      %{id: to_account_id} = account_fixture()
-      %{id: other_account_id} = account_fixture()
-
-      assert {:ok, %{id: id}} =
-               Entries.create_entry(%{
-                 date: ~D[2022-01-01] |> Date.to_iso8601(),
-                 account_id: from_account_id,
-                 originator_transfer: %{
-                   other_account_id: to_account_id
-                 },
-                 value: 200
-               })
-
-      entry = Entries.get_entry!(id)
-
-      assert {:ok, _} = Entries.update_entry(entry, %{originator_transfer_part: %{}})
-
-      assert [
-               {from_account_id, Decimal.new(400), entry.originator_transfer_part_id, nil},
-               {to_account_id, Decimal.new(-400), nil, entry.originator_transfer_part_id}
-             ] ==
-               Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
-               |> Enum.map(
-                 &{&1.account_id, &1.value, &1.originator_transfer_part_id,
-                  &1.originator_transfer_counter_part_id}
-               )
-    end
   end
 
   describe "delete_entry_state/1" do
