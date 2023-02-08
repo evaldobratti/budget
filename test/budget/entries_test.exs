@@ -717,7 +717,7 @@ defmodule Budget.EntriesTest do
       assert transient.originator_regular.description == "Entry description"
       assert transient.recurrency_entry.parcel == 3
       assert transient.recurrency_entry.parcel_end == 6
-      assert transient.position == Decimal.new(-1)
+      assert transient.position == Decimal.new(1)
 
       {:ok, _} = Entries.create_entry(transient, %{value: 500, recurrency_apply_forward: true})
 
@@ -968,7 +968,6 @@ defmodule Budget.EntriesTest do
     test "create transfer" do
       %{id: from_account_id} = account_fixture()
       %{id: to_account_id} = account_fixture()
-      %{id: category_id} = category_fixture()
 
       assert {:ok, _} =
                Entries.create_entry(%{
@@ -991,7 +990,6 @@ defmodule Budget.EntriesTest do
     test "create recurrent transfer" do
       %{id: from_account_id} = account_fixture()
       %{id: to_account_id} = account_fixture()
-      %{id: category_id} = category_fixture()
 
       assert {:ok, _} =
                Entries.create_entry(%{
@@ -1038,7 +1036,7 @@ defmodule Budget.EntriesTest do
       assert "recurrency-" <> _  = Enum.at(entries, 6).id 
       assert "recurrency-" <> _  = Enum.at(entries, 7).id 
       
-      {:ok, persisted} = Entries.create_entry(Enum.at(entries, 2), %{})
+      {:ok, _persisted} = Entries.create_entry(Enum.at(entries, 2), %{})
 
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
@@ -1073,7 +1071,6 @@ defmodule Budget.EntriesTest do
     test "persist recurrent transfer entry applying forward" do
       %{id: from_account_id} = account_fixture()
       %{id: to_account_id} = account_fixture()
-      %{id: category_id} = category_fixture()
 
       assert {:ok, _} =
                Entries.create_entry(%{
@@ -1095,7 +1092,7 @@ defmodule Budget.EntriesTest do
 
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
-      {:ok, persisted} = Entries.create_entry(Enum.at(entries, 2), %{value: 400, recurrency_apply_forward: true})
+      {:ok, _persisted} = Entries.create_entry(Enum.at(entries, 2), %{value: 400, recurrency_apply_forward: true})
 
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
@@ -1121,7 +1118,6 @@ defmodule Budget.EntriesTest do
     test "updating value from a transfer transaction" do
       %{id: from_account_id} = account_fixture()
       %{id: to_account_id} = account_fixture()
-      %{id: category_id} = category_fixture()
 
       assert {:ok, %{id: id}} =
                Entries.create_entry(%{
@@ -1136,6 +1132,37 @@ defmodule Budget.EntriesTest do
       entry = Entries.get_entry!(id)
 
       assert {:ok, _} = Entries.update_entry(entry, %{value: 400})
+
+      assert [
+               {from_account_id, Decimal.new(400), entry.originator_transfer_part_id, nil},
+               {to_account_id, Decimal.new(-400), nil, entry.originator_transfer_part_id}
+             ] ==
+               Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
+               |> Enum.map(
+                 &{&1.account_id, &1.value, &1.originator_transfer_part_id,
+                  &1.originator_transfer_counter_part_id}
+               )
+    end
+
+    @tag :skip
+    test "updating other account from a transfer transaction" do
+      %{id: from_account_id} = account_fixture()
+      %{id: to_account_id} = account_fixture()
+      %{id: other_account_id} = account_fixture()
+
+      assert {:ok, %{id: id}} =
+               Entries.create_entry(%{
+                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+                 account_id: from_account_id,
+                 originator_transfer: %{
+                   other_account_id: to_account_id
+                 },
+                 value: 200
+               })
+
+      entry = Entries.get_entry!(id)
+
+      assert {:ok, _} = Entries.update_entry(entry, %{originator_transfer_part: %{}})
 
       assert [
                {from_account_id, Decimal.new(400), entry.originator_transfer_part_id, nil},

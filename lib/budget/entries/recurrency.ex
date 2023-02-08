@@ -115,7 +115,7 @@ defmodule Budget.Entries.Recurrency do
         date: date,
         is_recurrency: true,
         recurrency_entry: recurrency_entry,
-        position: Decimal.new(-1)
+        position: Decimal.new(1)
       }, params)
     end)
     |> List.flatten()
