@@ -3,6 +3,7 @@ defmodule Budget.Entries.Entry.FormTest do
 
   import Budget.EntriesFixtures
 
+  alias Budget.Entries
   alias Budget.Entries.Entry.Form
   alias Budget.Entries.Entry
 
@@ -17,6 +18,7 @@ defmodule Budget.Entries.Entry.FormTest do
 
         %{originator_transfer_part_id: id} when is_integer(id) ->
           %{
+            date: transaction.originator_transfer_part.counter_part.date,
             other_account_id: transaction.originator_transfer_part.counter_part.account_id,
             other_value:
               transaction.originator_transfer_part.counter_part.value |> Decimal.to_float()
@@ -24,6 +26,7 @@ defmodule Budget.Entries.Entry.FormTest do
 
         %{originator_transfer_counter_part_id: id} when is_integer(id) ->
           %{
+            date: transaction.originator_transfer_counter_part.part.date,
             other_account_id: transaction.originator_transfer_counter_part.part.account_id,
             other_value:
               transaction.originator_transfer_counter_part.part.value |> Decimal.to_float()
@@ -32,11 +35,15 @@ defmodule Budget.Entries.Entry.FormTest do
 
     recurrency_data =
       case transaction.recurrency_entry do
-        %Ecto.Association.NotLoaded{} -> 
+        %Ecto.Association.NotLoaded{} ->
+          %{}
+
+        nil ->
           %{}
 
         _ ->
           recurrency = transaction.recurrency_entry.recurrency
+
           %{
             recurrency_entry: %{
               original_date: transaction.recurrency_entry.original_date,
@@ -68,11 +75,11 @@ defmodule Budget.Entries.Entry.FormTest do
     {:ok, simplify(transaction)}
   end
 
-  describe "insert_changeset/1" do
-    setup do
-      [account_id: account_fixture().id, category_id: category_fixture().id]
-    end
+  setup do
+    [account_id: account_fixture().id, category_id: category_fixture().id]
+  end
 
+  describe "insert_changeset/1" do
     test "invalid regular transaction" do
       changeset = Form.insert_changeset(%{})
 
@@ -335,6 +342,7 @@ defmodule Budget.Entries.Entry.FormTest do
                 date: ~D[2022-01-01],
                 value: 200.0,
                 originator: %{
+                  date: ~D[2022-01-01],
                   other_account_id: other_account_id,
                   other_value: -200.0
                 },
@@ -343,9 +351,9 @@ defmodule Budget.Entries.Entry.FormTest do
                   date_start: ~D[2022-01-01],
                   entry_payload: %{
                     "2022-01-01" => %{
-                      "originator" => "Elixir.Budget.Entries.Originator.Transfer", 
-                      "value" => "200", 
-                      "counter_part_account_id" => other_account_id, 
+                      "originator" => "Elixir.Budget.Entries.Originator.Transfer",
+                      "value" => "200",
+                      "counter_part_account_id" => other_account_id,
                       "part_account_id" => data.account_id
                     }
                   },
@@ -356,6 +364,246 @@ defmodule Budget.Entries.Entry.FormTest do
                 },
                 recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
               }} == Form.apply_insert(changeset) |> simplify()
+    end
+  end
+
+  describe "update_changeset/2" do
+    test "invalid regular transaction", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "regular",
+          regular: %{
+            category_id: data.category_id,
+            description: "Something"
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      form = Form.decorate(transaction)
+
+      assert %Budget.Entries.Entry.Form{
+               account_id: data.account_id,
+               date: ~D[2022-01-01],
+               id: nil,
+               is_carried_out: false,
+               is_recurrency: nil,
+               keep_adding: false,
+               originator: "regular",
+               recurrency: nil,
+               apply_forward: false,
+               regular: %Budget.Entries.Entry.Form.RegularForm{
+                 id: nil,
+                 category_id: data.category_id,
+                 description: "Something"
+               },
+               transfer: nil,
+               value: Decimal.new(200)
+             } == form
+
+      changeset =
+        Form.update_changeset(form, %{
+          date: nil,
+          account_id: nil,
+          is_carried_out: nil,
+          value: nil,
+          regular: %{
+            description: "",
+            category_id: nil
+          }
+        })
+
+      assert %{
+               account_id: ["can't be blank"],
+               date: ["can't be blank"],
+               is_carried_out: ["can't be blank"],
+               regular: %{category_id: ["can't be blank"], description: ["can't be blank"]},
+               value: ["can't be blank"]
+             } == errors_on(changeset)
+    end
+
+    test "invalid transfer transaction", data do
+      other_account_id = account_fixture().id
+
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "transfer",
+          transfer: %{
+            other_account_id: other_account_id
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      form = Form.decorate(transaction)
+
+      assert %Budget.Entries.Entry.Form{
+               account_id: data.account_id,
+               date: ~D[2022-01-01],
+               id: nil,
+               is_carried_out: false,
+               is_recurrency: nil,
+               keep_adding: false,
+               originator: "transfer",
+               recurrency: nil,
+               apply_forward: false,
+               transfer: %Budget.Entries.Entry.Form.TransferForm{
+                 other_account_id: other_account_id
+               },
+               value: Decimal.new(200)
+             } == form
+
+      changeset =
+        Form.update_changeset(form, %{
+          date: nil,
+          account_id: nil,
+          is_carried_out: nil,
+          value: nil,
+          transfer: %{
+            other_account_id: nil
+          }
+        })
+
+      assert %{
+               account_id: ["can't be blank"],
+               date: ["can't be blank"],
+               is_carried_out: ["can't be blank"],
+               transfer: %{other_account_id: ["can't be blank"]},
+               value: ["can't be blank"]
+             } == errors_on(changeset)
+    end
+
+    test "update valid regular transaction", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "regular",
+          regular: %{
+            category_id: data.category_id,
+            description: "Something"
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      other_account_id = account_fixture().id
+      other_category_id = category_fixture().id
+
+      {:ok, transaction} =
+        transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id,
+          value: 300,
+          regular: %{
+            category_id: other_category_id,
+            description: "Something updated"
+          }
+        })
+        |> Form.apply_update(transaction)
+
+      assert %{
+               account_id: other_account_id,
+               date: ~D[2022-02-02],
+               originator: %{category_id: other_category_id, description: "Something updated"},
+               value: 300.0
+             } == transaction |> simplify()
+    end
+
+    test "update valid transfer part transaction", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "transfer",
+          transfer: %{
+            other_account_id: data.account_id
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      other_account_id_part = account_fixture().id
+      other_account_id_counter_part = account_fixture().id
+
+      {:ok, transaction} =
+        transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id_part,
+          value: 300,
+          transfer: %{
+            other_account_id: other_account_id_counter_part
+          }
+        })
+        |> Form.apply_update(transaction)
+
+      assert %{
+               account_id: other_account_id_part,
+               date: ~D[2022-02-02],
+               originator: %{
+                 date: ~D[2022-02-02],
+                 other_account_id: other_account_id_counter_part,
+                 other_value: -300.0
+               },
+               value: 300.0
+             } == transaction |> simplify()
+    end
+
+    test "update valid transfer counter part transaction", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "transfer",
+          transfer: %{
+            other_account_id: data.account_id
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      counter_part_transaction =
+        Entries.get_entry!(transaction.originator_transfer_part.counter_part.id)
+
+      other_account_id_part = account_fixture().id
+      other_account_id_counter_part = account_fixture().id
+
+      {:ok, counter_part_transaction} =
+        counter_part_transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id_part,
+          value: 300,
+          transfer: %{
+            other_account_id: other_account_id_counter_part
+          }
+        })
+        |> Form.apply_update(counter_part_transaction)
+
+      assert %{
+               account_id: other_account_id_part,
+               date: ~D[2022-02-02],
+               originator: %{
+                 date: ~D[2022-02-02],
+                 other_account_id: other_account_id_counter_part,
+                 other_value: -300.0
+               },
+               value: 300.0
+             } == counter_part_transaction |> simplify()
     end
   end
 end

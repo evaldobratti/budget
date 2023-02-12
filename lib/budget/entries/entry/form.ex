@@ -11,33 +11,34 @@ defmodule Budget.Entries.Entry.Form do
   alias Budget.Entries.RecurrencyEntry
 
   embedded_schema do
-    field :date, :date
-    field :is_carried_out, :boolean, default: false
-    field :value, :decimal
-    field :account_id, :integer
+    field(:date, :date)
+    field(:is_carried_out, :boolean, default: false)
+    field(:value, :decimal)
+    field(:account_id, :integer)
 
-    field :originator, :string
-    field :is_recurrency, :boolean
+    field(:originator, :string)
+    field(:is_recurrency, :boolean)
 
-    field :keep_adding, :boolean
+    field(:keep_adding, :boolean, default: true)
 
-    embeds_one :regular, Regular do
-      field :category_id, :integer
-      field :description
+    field(:apply_forward, :boolean)
+
+    embeds_one :regular, RegularForm do
+      field(:category_id, :integer)
+      field(:description)
     end
 
-    embeds_one :transfer, Transfer do
-      field :other_account_id, :integer
+    embeds_one :transfer, TransferForm do
+      field(:other_account_id, :integer)
     end
 
-    embeds_one :recurrency, Recurrency do
-      field :apply_forward, :boolean
-      field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly]
-      field :is_parcel, :boolean
-      field :is_forever, :boolean
-      field :date_end, :date
-      field :parcel_start, :integer
-      field :parcel_end, :integer
+    embeds_one :recurrency, RecurrencyForm do
+      field(:frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly])
+      field(:is_parcel, :boolean)
+      field(:is_forever, :boolean)
+      field(:date_end, :date)
+      field(:parcel_start, :integer)
+      field(:parcel_end, :integer)
     end
   end
 
@@ -52,7 +53,8 @@ defmodule Budget.Entries.Entry.Form do
       :account_id,
       :originator,
       :is_recurrency,
-      :keep_adding
+      :keep_adding,
+      :apply_forward
     ])
     |> validate_required([:date, :value, :account_id, :originator])
     |> cast_embed(:regular, with: &changeset_regular/2, required: originator == "regular")
@@ -86,7 +88,6 @@ defmodule Budget.Entries.Entry.Form do
     changeset =
       recurrency
       |> cast(params, [
-        :apply_forward,
         :frequency,
         :is_parcel,
         :is_forever,
@@ -128,7 +129,7 @@ defmodule Budget.Entries.Entry.Form do
     |> flat_insert_transactions(changeset)
     |> case do
       {:ok, transactions} ->
-        {:ok, _recurrency} = 
+        {:ok, _recurrency} =
           %Recurrency{}
           |> change(%{
             date_start: get_field(changeset, :date),
@@ -139,7 +140,7 @@ defmodule Budget.Entries.Entry.Form do
             parcel_start: get_field(recurrency, :parcel_start),
             parcel_end: get_field(recurrency, :parcel_end),
             entry_payload: %{
-              get_field(changeset, :date) => 
+              get_field(changeset, :date) =>
                 case get_change(changeset, :originator) do
                   "regular" -> Regular.get_recurrency_payload(Enum.at(transactions, 0))
                   "transfer" -> Transfer.get_recurrency_payload(Enum.at(transactions, 0))
@@ -222,4 +223,135 @@ defmodule Budget.Entries.Entry.Form do
   end
 
   defp flat_insert_transactions(error, _changeset), do: error
+
+  def decorate(%Entry{} = transaction) do
+    base = %__MODULE__{
+      date: transaction.date,
+      is_carried_out: transaction.is_carried_out,
+      account_id: transaction.account_id,
+      value: transaction.value,
+      keep_adding: false,
+      apply_forward: false
+    }
+
+    regular_data =
+      if transaction.originator_regular_id do
+        %__MODULE__.RegularForm{
+          description: transaction.originator_regular.description,
+          category_id: transaction.originator_regular.category_id
+        }
+      else
+        nil
+      end
+
+    transfer_data =
+      if transaction.originator_transfer_part_id do
+        %__MODULE__.TransferForm{
+          other_account_id: transaction.originator_transfer_part.counter_part.account_id
+        }
+      else
+        if transaction.originator_transfer_counter_part_id do
+          %__MODULE__.TransferForm{
+            other_account_id: transaction.originator_transfer_counter_part.part.account_id
+          }
+        else
+          nil
+        end
+      end
+
+    originator = if regular_data, do: "regular", else: "transfer"
+
+    %{
+      base
+      | originator: originator,
+        regular: regular_data,
+        transfer: transfer_data
+    }
+  end
+
+  def update_changeset(form, params) do
+    originator = form.originator
+
+    form
+    |> cast(params, [
+      :date,
+      :account_id,
+      :is_carried_out,
+      :value,
+      :apply_forward
+    ])
+    |> validate_required([
+      :date,
+      :account_id,
+      :is_carried_out,
+      :value
+    ])
+    |> cast_embed(:regular, with: &changeset_regular/2, required: originator == "regular")
+    |> cast_embed(:transfer, with: &changeset_transfer/2, required: originator == "transfer")
+  end
+
+  def apply_update(
+        %Ecto.Changeset{valid?: true, data: %{originator: "regular"}} = changeset,
+        transaction
+      ) do
+    regular = get_field(changeset, :regular)
+
+    transaction
+    |> change(%{
+      date: get_field(changeset, :date),
+      account_id: get_field(changeset, :account_id),
+      value: get_field(changeset, :value)
+    })
+    |> put_assoc(
+      :originator_regular,
+      transaction.originator_regular
+      |> change(
+        category_id: regular.category_id,
+        description: regular.description
+      )
+    )
+    |> Budget.Repo.update()
+  end
+
+  def apply_update(
+        %Ecto.Changeset{valid?: true, data: %{originator: "transfer"}} = changeset,
+        transaction
+      ) do
+    transfer = get_field(changeset, :transfer)
+
+    changeset =
+      transaction
+      |> change(%{
+        date: get_field(changeset, :date),
+        account_id: get_field(changeset, :account_id),
+        value: get_field(changeset, :value)
+      })
+
+    {entry_transfer_field, transfer_field} =
+      if transaction.originator_transfer_part_id do
+        {:originator_transfer_part, :counter_part}
+      else
+        {:originator_transfer_counter_part, :part}
+      end
+
+    changeset
+    |> put_assoc(
+      entry_transfer_field,
+      transaction
+      |> Map.get(entry_transfer_field)
+      |> change()
+      |> put_assoc(
+        transfer_field,
+        transaction
+        |> Map.get(entry_transfer_field)
+        |> Map.get(transfer_field)
+        |> change(
+          date: get_field(changeset, :date),
+          account_id: transfer.other_account_id,
+          value: get_field(changeset, :value) |> Decimal.negate()
+        )
+      )
+    )
+    |> Budget.Repo.update()
+  end
 end
