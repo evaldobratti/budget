@@ -290,11 +290,13 @@ defmodule Budget.Entries.Entry.FormTest do
                   date_end: ~D[2022-12-01],
                   date_start: ~D[2022-01-01],
                   entry_payload: %{
-                    "account_id" => data.account_id,
-                    "category_id" => data.category_id,
-                    "description" => "Something",
-                    "originator" => "Elixir.Budget.Entries.Originator.Regular",
-                    "value" => "200"
+                    "2022-01-01" => %{
+                      "account_id" => data.account_id,
+                      "category_id" => data.category_id,
+                      "description" => "Something",
+                      "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                      "value" => "200"
+                    }
                   },
                   frequency: :monthly,
                   is_parcel: false,
@@ -340,10 +342,12 @@ defmodule Budget.Entries.Entry.FormTest do
                   date_end: ~D[2022-12-01],
                   date_start: ~D[2022-01-01],
                   entry_payload: %{
-                    "originator" => "Elixir.Budget.Entries.Originator.Transfer", 
-                    "value" => "200", 
-                    "counter_part_account_id" => other_account_id, 
-                    "part_account_id" => data.account_id
+                    "2022-01-01" => %{
+                      "originator" => "Elixir.Budget.Entries.Originator.Transfer", 
+                      "value" => "200", 
+                      "counter_part_account_id" => other_account_id, 
+                      "part_account_id" => data.account_id
+                    }
                   },
                   frequency: :monthly,
                   is_parcel: false,

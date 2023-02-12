@@ -138,11 +138,13 @@ defmodule Budget.Entries.Entry.Form do
             is_parcel: get_field(recurrency, :is_parcel),
             parcel_start: get_field(recurrency, :parcel_start),
             parcel_end: get_field(recurrency, :parcel_end),
-            entry_payload:
-              case get_change(changeset, :originator) do
-                "regular" -> Regular.get_recurrency_payload(Enum.at(transactions, 0))
-                "transfer" -> Transfer.get_recurrency_payload(Enum.at(transactions, 0))
-              end
+            entry_payload: %{
+              get_field(changeset, :date) => 
+                case get_change(changeset, :originator) do
+                  "regular" -> Regular.get_recurrency_payload(Enum.at(transactions, 0))
+                  "transfer" -> Transfer.get_recurrency_payload(Enum.at(transactions, 0))
+                end
+            }
           })
           |> put_assoc(
             :recurrency_entries,
