@@ -44,15 +44,15 @@ defmodule Budget.Entries.Originator.Regular do
     }
   end
 
-  def get_recurrency_payload(entry_changeset) do
+  def get_recurrency_payload(transaction) do
     %{description: description, category_id: category_id} =
-      get_field(entry_changeset, :originator_regular)
+      transaction.originator_regular
 
     %{
       description: description,
       category_id: category_id,
-      value: get_field(entry_changeset, :value),
-      account_id: get_field(entry_changeset, :account_id),
+      value: transaction.value,
+      account_id: transaction.account_id,
       originator: __MODULE__
     }
   end

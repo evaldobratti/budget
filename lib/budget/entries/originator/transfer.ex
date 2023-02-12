@@ -67,32 +67,24 @@ defmodule Budget.Entries.Originator.Transfer do
     }
   end
 
-  def get_recurrency_payload(entry_changeset) do
-    entry = apply_action!(entry_changeset, :insert)
-
-    part_account_id = entry.account_id
-
-    transfer = 
-      if Ecto.assoc_loaded?(entry.originator_transfer_part) && entry.originator_transfer_part != nil do
-        entry.originator_transfer_part
+  def get_recurrency_payload(transaction) do
+    {part_account_id, counter_part_account_id} = 
+      if transaction.originator_transfer_part_id do
+        {
+          transaction.account_id,
+          transaction.originator_transfer_part.counter_part.account_id
+        }
       else
-        entry.originator_transfer_counter_part
+        {
+          transaction.originator_transfer_counter_part.part.account_id,
+          transaction.account_id
+        }
       end
-
-    counter_part = 
-      if Ecto.assoc_loaded?(transfer.part) do
-        transfer.part
-      else
-        transfer.counter_part
-      end
-
-    counter_part_account_id =
-      counter_part.account_id
 
     %{
       part_account_id: part_account_id,
       counter_part_account_id: counter_part_account_id,
-      value: get_field(entry_changeset, :value),
+      value: transaction.value,
       originator: __MODULE__
     }
   end
