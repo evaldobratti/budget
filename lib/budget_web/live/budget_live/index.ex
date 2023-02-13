@@ -263,4 +263,30 @@ defmodule BudgetWeb.BudgetLive.Index do
   def handle_info(:add_new_entry, socket) do
     {:noreply, socket |> push_patch(to: Routes.budget_index_path(socket, :new_entry))}
   end
+
+  def description(entry) do
+    if entry.originator_regular_id do
+      entry.originator_regular.description
+    else
+      {entry_field, transfer_field} =
+        if entry.originator_transfer_part_id do
+          {:originator_transfer_part, :counter_part}
+        else
+          {:originator_transfer_counter_part, :part}
+        end
+
+      {from, to} = 
+        if Decimal.negative?(entry.value) do
+          {entry.account, entry |> Map.get(entry_field) |> Map.get(transfer_field) |> Map.get(:account)}
+        else
+          {entry |> Map.get(entry_field) |> Map.get(transfer_field) |> Map.get(:account), entry.account}
+        end
+
+      if entry.value |> Decimal.negative?() do
+        "Transfer to '#{to.name}'"
+      else
+        "Transfer from '#{from.name}'"
+      end
+    end
+  end
 end

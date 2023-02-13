@@ -44,21 +44,24 @@ defmodule Budget.Entries.Entry.Form do
   end
 
   def insert_changeset(params) do
-    originator = Map.get(params, :originator, "regular")
+    changeset = 
+      %__MODULE__{}
+      |> cast(params, [
+        :date,
+        :is_carried_out,
+        :value,
+        :account_id,
+        :position,
+        :originator,
+        :is_recurrency,
+        :keep_adding,
+        :apply_forward
+      ])
+      |> validate_required([:date, :value, :account_id, :originator])
 
-    %__MODULE__{}
-    |> cast(params, [
-      :date,
-      :is_carried_out,
-      :value,
-      :account_id,
-      :position,
-      :originator,
-      :is_recurrency,
-      :keep_adding,
-      :apply_forward
-    ])
-    |> validate_required([:date, :value, :account_id, :originator])
+    originator = get_change(changeset, :originator) || "regular"
+
+    changeset
     |> cast_embed(:regular, with: &changeset_regular/2, required: originator == "regular")
     |> cast_embed(:transfer, with: &changeset_transfer/2, required: originator == "transfer")
     |> cast_embed(:recurrency, with: &changeset_recurrency/2)
@@ -229,7 +232,7 @@ defmodule Budget.Entries.Entry.Form do
   end
 
   def apply_insert(%Ecto.Changeset{valid?: false} = changeset) do
-    {:error, changeset}
+    {:error, Map.put(changeset, :action, :insert)}
   end
 
   def apply_insert(params) when is_map(params) do
@@ -252,6 +255,7 @@ defmodule Budget.Entries.Entry.Form do
 
   def decorate(%Entry{} = transaction) do
     base = %__MODULE__{
+      id: transaction.id,
       date: transaction.date,
       is_carried_out: transaction.is_carried_out,
       account_id: transaction.account_id,
@@ -451,6 +455,13 @@ defmodule Budget.Entries.Entry.Form do
       )
     )
     |> Budget.Repo.update()
+  end
+
+  def apply_update(
+        %Ecto.Changeset{valid?: false} = changeset,
+        _transaction
+      ) do
+    {:error, Map.put(changeset, :action, :update)}
   end
 
   def apply_update(transaction, params) when is_map(params) do

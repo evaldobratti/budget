@@ -7,31 +7,48 @@
     phx-change="validate"
     phx-submit="save"
   >
-    <% [regular_form] = inputs_for f, :originator_regular %>
+    <% entry_loaded = @changeset.data.id %>
+    <% [regular_form] = inputs_for f, :regular %>
+    <% [transfer_form] = inputs_for f, :transfer %>
 
-    <%= if Ecto.get_meta(regular_form.data, :state) == :loaded do %>
-      <%= hidden_input regular_form, :id %>
+    <%= if !entry_loaded do %>
+      <div class="d-flex flex-justify-center">
+        <.radio_button form={f} field={:originator} value="regular" class="mr-4" />
+        <.radio_button form={f} field={:originator} value="transfer" />
+      </div>
     <% end %>
-
-    <% entry_loaded = Ecto.get_meta(@changeset.data, :state) == :loaded || (@changeset.data.id && String.starts_with?(@changeset.data.id, "recurrency")) %>
 
     <div class="d-flex">
       <.form_group form={f} field={:date} class="flex-1">
         <.text_input form={f} field={:date} type="date" autocomplete="off" />
       </.form_group>
 
-      <.form_group form={regular_form} field={:category_id} class="flex-1">
-        <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" />
-      </.form_group>
+      <%= if input_value(f, :originator) == "regular" do %>
+        <.form_group form={regular_form} field={:category_id} class="flex-1">
+          <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" />
+        </.form_group>
 
-      <.form_group form={f} field={:account_id} class="flex-1">
-        <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
-      </.form_group>
+        <.form_group form={f} field={:account_id} class="flex-1">
+          <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
+        </.form_group>
+      <% end %>
+
+      <%= if input_value(f, :originator) == "transfer" do %>
+        <.form_group form={f} field={:account_id} class="flex-1">
+          <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
+        </.form_group>
+
+        <.form_group form={transfer_form} field={:other_account_id} class="flex-1">
+          <.select form={transfer_form} field={:other_account_id} options={Enum.map(@accounts, &{&1.name, &1.id})} />
+        </.form_group>
+      <% end %>
     </div>
 
-    <.form_group form={regular_form} field={:description} >
-      <.text_input form={regular_form} field={:description} autocomplete="off" />
-    </.form_group>
+    <%= if input_value(f, :originator) == "regular" do %>
+      <.form_group form={regular_form} field={:description} >
+        <.text_input form={regular_form} field={:description} autocomplete="off" />
+      </.form_group>
+    <% end %>
 
     <.form_group form={f} field={:value}>
       <.text_input form={f} field={:value} type="number" autocomplete="off" />
@@ -40,19 +57,18 @@
     <div class="d-flex">
       <.checkbox form={f} field={:is_carried_out} class="flex-1" />
       <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
-      <.checkbox :if={!entry_loaded} name={:keep_adding} value={true} class="flex-1"> 
+      <.checkbox :if={!entry_loaded} form={f} name={:keep_adding} value={true} class="flex-1"> 
         <:label>Keep adding</:label>
       </.checkbox>
     </div>
 
-    <% [recurrency_entry_form] = inputs_for f, :recurrency_entry %>
-    <% [recurrency_form] = inputs_for recurrency_entry_form, :recurrency %>
+    <% [recurrency_form] = inputs_for f, :recurrency %>
 
     <%= if entry_loaded && @changeset.data.recurrency_entry do %>
-      <.checkbox form={f} field={:recurrency_apply_forward} />
+      <.checkbox form={f} field={:apply_forward} />
     <% end %>
 
-    <%= if Ecto.Changeset.get_field(@changeset, :is_recurrency) && !entry_loaded do %>
+    <%= if Ecto.Changeset.get_field(@changeset, :recurrency) && !entry_loaded do %>
 
       <.form_group form={recurrency_form} field={:frequency}>
         <.select form={recurrency_form} field={:frequency} options={Ecto.Enum.mappings(Recurrency, :frequency)} />

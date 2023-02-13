@@ -265,14 +265,16 @@ defmodule Budget.Entries do
       left_join: c in assoc(regular, :category),
       left_join: tp in assoc(e, :originator_transfer_part),
       left_join: tpe in assoc(tp, :counter_part),
+      left_join: tpea in assoc(tpe, :account),
       left_join: tcp in assoc(e, :originator_transfer_counter_part),
       left_join: tcpe in assoc(tcp, :part),
+      left_join: tcpea in assoc(tcpe, :account),
       preload: [
         account: a,
         recurrency_entry: {re, recurrency: r},
         originator_regular: {regular, category: c},
-        originator_transfer_part: {tp, counter_part: tpe},
-        originator_transfer_counter_part: {tcp, part: tcpe}
+        originator_transfer_part: {tp, counter_part: {tpe, account: tpea}},
+        originator_transfer_counter_part: {tcp, part: {tcpe, account: tcpea}}
       ],
       order_by: [e.date, e.position, regular.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}

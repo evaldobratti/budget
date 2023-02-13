@@ -233,7 +233,7 @@
           <%= format_date(entry.date) %> 
         </div>
         <div class="flex-1 px-1 d-flex">
-          <%= live_patch entry.originator_regular.description, to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
+          <%= live_patch description(entry), to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
           <div class="ml-auto">
             <%= if entry.recurrency_entry && entry.recurrency_entry.parcel do %>
               <span>
@@ -248,7 +248,7 @@
           </div>
         </div>
         <div class="col-2 px-1">
-          <%= entry.originator_regular.category.name %>
+          <%= if entry.originator_regular_id, do: entry.originator_regular.category.name %>
         </div>
         <div class="col-2 px-1">
           <%= entry.account.name %>
