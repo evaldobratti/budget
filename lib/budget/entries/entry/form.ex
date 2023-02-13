@@ -235,7 +235,8 @@ defmodule Budget.Entries.Entry.Form do
     }
 
     regular_data =
-      if transaction.originator_regular_id do
+      if (Ecto.assoc_loaded?(transaction.originator_regular) && transaction.originator_regular) ||
+           transaction.originator_regular_id do
         %__MODULE__.RegularForm{
           description: transaction.originator_regular.description,
           category_id: transaction.originator_regular.category_id
@@ -288,6 +289,49 @@ defmodule Budget.Entries.Entry.Form do
     ])
     |> cast_embed(:regular, with: &changeset_regular/2, required: originator == "regular")
     |> cast_embed(:transfer, with: &changeset_transfer/2, required: originator == "transfer")
+  end
+
+  def apply_update(
+        %Ecto.Changeset{valid?: true} = changeset,
+        %{id: "recurrency" <> _} = transaction
+      ) do
+    {:ok, inserted} =
+      transaction
+      |> Map.put(:id, nil)
+      |> Budget.Repo.insert()
+
+    apply_update(changeset, inserted)
+  end
+
+  def apply_update(
+        %Ecto.Changeset{valid?: true, changes: %{apply_forward: true}} = changeset,
+        transaction
+      ) do
+    changeset
+    |> change(apply_forward: false)
+    |> apply_update(transaction)
+    |> case do
+      {:ok, transaction} ->
+        {:ok, _recurrency} =
+          transaction.recurrency_entry.recurrency
+          |> change(
+            entry_payload:
+              Map.put(
+                transaction.recurrency_entry.recurrency.entry_payload,
+                transaction.recurrency_entry.original_date |> Date.to_iso8601(),
+                case get_field(changeset, :originator) do
+                  "regular" -> Regular.get_recurrency_payload(transaction)
+                  "transfer" -> Transfer.get_recurrency_payload(transaction)
+                end
+              )
+          )
+          |> Budget.Repo.update()
+
+        {:ok, Entries.get_entry!(transaction.id)}
+
+      error ->
+        error
+    end
   end
 
   def apply_update(

@@ -605,5 +605,345 @@ defmodule Budget.Entries.Entry.FormTest do
                value: 300.0
              } == counter_part_transaction |> simplify()
     end
+
+    test "update valid recurrency regular transaction not applying forward", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "regular",
+          regular: %{
+            category_id: data.category_id,
+            description: "Something"
+          },
+          recurrency: %{
+            is_parcel: false,
+            is_forever: false,
+            date_end: ~D[2022-12-01],
+            frequency: :monthly
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      other_account_id = account_fixture().id
+      other_category_id = category_fixture().id
+
+      {:ok, transaction} =
+        transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id,
+          value: 300,
+          apply_forward: false,
+          regular: %{
+            category_id: other_category_id,
+            description: "Something updated"
+          }
+        })
+        |> Form.apply_update(transaction)
+
+      assert %{
+               account_id: other_account_id,
+               date: ~D[2022-02-02],
+               originator: %{category_id: other_category_id, description: "Something updated"},
+               value: 300.0,
+               recurrency: %{
+                 date_end: ~D[2022-12-01],
+                 date_start: ~D[2022-01-01],
+                 entry_payload: %{
+                   "2022-01-01" => %{
+                     "account_id" => data.account_id,
+                     "category_id" => data.category_id,
+                     "description" => "Something",
+                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "value" => "200"
+                   }
+                 },
+                 frequency: :monthly,
+                 is_parcel: false,
+                 parcel_end: nil,
+                 parcel_start: nil
+               },
+               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+             } == transaction |> simplify()
+    end
+
+    test "update valid recurrency regular transaction applying forward", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "regular",
+          regular: %{
+            category_id: data.category_id,
+            description: "Something"
+          },
+          recurrency: %{
+            is_parcel: false,
+            is_forever: false,
+            date_end: ~D[2022-12-01],
+            frequency: :monthly
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      other_account_id = account_fixture().id
+      other_category_id = category_fixture().id
+
+      {:ok, transaction} =
+        transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id,
+          value: 300,
+          apply_forward: true,
+          regular: %{
+            category_id: other_category_id,
+            description: "Something updated"
+          }
+        })
+        |> Form.apply_update(transaction)
+
+      assert %{
+               account_id: other_account_id,
+               date: ~D[2022-02-02],
+               originator: %{category_id: other_category_id, description: "Something updated"},
+               value: 300.0,
+               recurrency: %{
+                 date_end: ~D[2022-12-01],
+                 date_start: ~D[2022-01-01],
+                 entry_payload: %{
+                   "2022-01-01" => %{
+                     "account_id" => other_account_id,
+                     "category_id" => other_category_id,
+                     "description" => "Something updated",
+                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "value" => "300"
+                   }
+                 },
+                 frequency: :monthly,
+                 is_parcel: false,
+                 parcel_end: nil,
+                 parcel_start: nil
+               },
+               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+             } == transaction |> simplify()
+    end
+
+    test "update valid transfer part transaction applying forward", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "transfer",
+          transfer: %{
+            other_account_id: data.account_id
+          },
+          recurrency: %{
+            is_parcel: false,
+            is_forever: false,
+            date_end: ~D[2022-12-01],
+            frequency: :monthly
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      other_account_id_part = account_fixture().id
+      other_account_id_counter_part = account_fixture().id
+
+      {:ok, transaction} =
+        transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id_part,
+          value: 300,
+          apply_forward: true,
+          transfer: %{
+            other_account_id: other_account_id_counter_part
+          }
+        })
+        |> Form.apply_update(transaction)
+
+      assert %{
+               account_id: other_account_id_part,
+               date: ~D[2022-02-02],
+               originator: %{
+                 date: ~D[2022-02-02],
+                 other_account_id: other_account_id_counter_part,
+                 other_value: -300.0
+               },
+               value: 300.0,
+               recurrency: %{
+                 date_end: ~D[2022-12-01],
+                 date_start: ~D[2022-01-01],
+                 entry_payload: %{
+                   "2022-01-01" => %{
+                     "counter_part_account_id" => other_account_id_counter_part,
+                     "originator" => "Elixir.Budget.Entries.Originator.Transfer",
+                     "part_account_id" => other_account_id_part,
+                     "value" => "300"
+                   }
+                 },
+                 frequency: :monthly,
+                 is_parcel: false,
+                 parcel_end: nil,
+                 parcel_start: nil
+               },
+               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+             } == transaction |> simplify()
+    end
+
+    test "update valid transfer counter part transaction applying forward", data do
+      {:ok, transaction} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "transfer",
+          transfer: %{
+            other_account_id: data.account_id
+          },
+          recurrency: %{
+            is_parcel: false,
+            is_forever: false,
+            date_end: ~D[2022-12-01],
+            frequency: :monthly
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      counter_part_transaction =
+        Entries.get_entry!(transaction.originator_transfer_part.counter_part.id)
+
+      other_account_id_part = account_fixture().id
+      other_account_id_counter_part = account_fixture().id
+
+      {:ok, counter_part_transaction} =
+        counter_part_transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id_part,
+          value: 300,
+          apply_forward: true,
+          transfer: %{
+            other_account_id: other_account_id_counter_part
+          }
+        })
+        |> Form.apply_update(counter_part_transaction)
+
+      assert %{
+               account_id: other_account_id_part,
+               date: ~D[2022-02-02],
+               originator: %{
+                 date: ~D[2022-02-02],
+                 other_account_id: other_account_id_counter_part,
+                 other_value: -300.0
+               },
+               value: 300.0,
+               recurrency: %{
+                 date_end: ~D[2022-12-01],
+                 date_start: ~D[2022-01-01],
+                 entry_payload: %{
+                   "2022-01-01" => %{
+                     "counter_part_account_id" => other_account_id_part,
+                     "originator" => "Elixir.Budget.Entries.Originator.Transfer",
+                     "part_account_id" => other_account_id_counter_part,
+                     "value" => "300"
+                   }
+                 },
+                 frequency: :monthly,
+                 is_parcel: false,
+                 parcel_end: nil,
+                 parcel_start: nil
+               },
+               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+             } == counter_part_transaction |> simplify()
+    end
+
+    test "update valid recurrency regular transaction applying forward in a transient transaction",
+         data do
+      {:ok, _} =
+        %{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: 200,
+          originator: "regular",
+          regular: %{
+            category_id: data.category_id,
+            description: "Something"
+          },
+          recurrency: %{
+            is_parcel: false,
+            is_forever: false,
+            date_end: ~D[2022-12-01],
+            frequency: :monthly
+          }
+        }
+        |> Form.insert_changeset()
+        |> Form.apply_insert()
+
+      [transaction] = Entries.entries_in_period([], ~D[2022-02-01], ~D[2022-02-01])
+
+      other_account_id = account_fixture().id
+      other_category_id = category_fixture().id
+
+      {:ok, transaction} =
+        transaction
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: ~D[2022-02-02],
+          account_id: other_account_id,
+          value: 300,
+          apply_forward: true,
+          regular: %{
+            category_id: other_category_id,
+            description: "Something updated"
+          }
+        })
+        |> Form.apply_update(transaction)
+
+      assert %{
+               account_id: other_account_id,
+               date: ~D[2022-02-02],
+               originator: %{category_id: other_category_id, description: "Something updated"},
+               value: 300.0,
+               recurrency: %{
+                 date_end: ~D[2022-12-01],
+                 date_start: ~D[2022-01-01],
+                 entry_payload: %{
+                   "2022-01-01" => %{
+                     "account_id" => data.account_id,
+                     "category_id" => data.category_id,
+                     "description" => "Something",
+                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "value" => "200"
+                   },
+                   "2022-02-01" => %{
+                     "account_id" => other_account_id,
+                     "category_id" => other_category_id,
+                     "description" => "Something updated",
+                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "value" => "300"
+                   }
+                 },
+                 frequency: :monthly,
+                 is_parcel: false,
+                 parcel_end: nil,
+                 parcel_start: nil
+               },
+               recurrency_entry: %{original_date: ~D[2022-02-01], parcel: nil, parcel_end: nil}
+             } == transaction |> simplify()
+    end
   end
 end
