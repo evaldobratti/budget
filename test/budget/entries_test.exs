@@ -141,17 +141,15 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
-          originator_regular: %{
+          regular: %{
             description: "Some description",
             category_id: category_fixture().id
           },
           value: 200,
-          recurrency_entry: %{
-            recurrency: %{
-              is_forever: false,
-              frequency: :monthly,
-              date_end: ~D[2019-03-31]
-            }
+          recurrency: %{
+            is_forever: false,
+            frequency: :monthly,
+            date_end: ~D[2019-03-31]
           }
         })
 
@@ -201,18 +199,16 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
-          originator_regular: %{
+          regular: %{
             description: "Some description",
             category_id: category_fixture().id
           },
           value: 200,
-          recurrency_entry: %{
-            recurrency: %{
-              is_forever: false,
-              frequency: :weekly,
-              value: 200,
-              date_end: ~D[2019-01-31]
-            }
+          recurrency: %{
+            is_forever: false,
+            frequency: :weekly,
+            value: 200,
+            date_end: ~D[2019-01-31]
           }
         })
 
@@ -266,12 +262,10 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-31],
-          recurrency_entry: %{
-            recurrency: %{
-              is_forever: false,
-              frequency: :monthly,
-              date_end: ~D[2020-01-31]
-            }
+          recurrency: %{
+            is_forever: false,
+            frequency: :monthly,
+            date_end: ~D[2020-01-31]
           }
         })
 
@@ -292,19 +286,17 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
-          originator_regular: %{
+          regular: %{
             description: "Some description",
             category_id: category_fixture().id
           },
           value: 200,
-          recurrency_entry: %{
-            recurrency: %{
-              is_forever: false,
-              is_parcel: true,
-              frequency: :weekly,
-              parcel_start: 1,
-              parcel_end: 6
-            }
+          recurrency: %{
+            is_forever: false,
+            is_parcel: true,
+            frequency: :weekly,
+            parcel_start: 1,
+            parcel_end: 6
           }
         })
 
@@ -395,19 +387,17 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
-          originator_regular: %{
+          regular: %{
             description: "Some description",
             category_id: category_fixture().id
           },
           value: 200,
-          recurrency_entry: %{
-            recurrency: %{
-              is_forever: false,
-              is_parcel: true,
-              frequency: :weekly,
-              parcel_start: 3,
-              parcel_end: 6
-            }
+          recurrency: %{
+            is_forever: false,
+            is_parcel: true,
+            frequency: :weekly,
+            parcel_start: 3,
+            parcel_end: 6
           }
         })
 
@@ -445,14 +435,12 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
-          recurrency_entry: %{
-            recurrency: %{
-              is_forever: false,
-              description: "Some description",
-              frequency: :monthly,
-              value: 200,
-              date_end: ~D[2019-03-01]
-            }
+          recurrency: %{
+            is_forever: false,
+            description: "Some description",
+            frequency: :monthly,
+            value: 200,
+            date_end: ~D[2019-03-01]
           }
         })
 
@@ -470,9 +458,10 @@ defmodule Budget.EntriesTest do
       category = category_fixture()
 
       {:ok, _} =
-        Entries.create_entry(%{
+        Entry.Form.apply_insert(%{
           date: ~D[2020-02-01],
-          originator_regular: %{
+          originator: "regular",
+          regular: %{
             description: "Description1",
             category_id: category.id
           },
@@ -481,9 +470,10 @@ defmodule Budget.EntriesTest do
         })
 
       {:ok, _} =
-        Entries.create_entry(%{
+        Entry.Form.apply_insert(%{
           date: ~D[2020-01-31],
-          originator_regular: %{
+          originator: "regular",
+          regular: %{
             description: "Description2",
             category_id: category.id
           },
@@ -492,9 +482,10 @@ defmodule Budget.EntriesTest do
         })
 
       {:ok, _} =
-        Entries.create_entry(%{
+        Entry.Form.apply_insert(%{
           date: ~D[2020-02-10],
-          originator_regular: %{
+          originator: "regular",
+          regular: %{
             description: "Description3",
             category_id: category.id
           },
@@ -503,9 +494,10 @@ defmodule Budget.EntriesTest do
         })
 
       {:ok, _} =
-        Entries.create_entry(%{
+        Entry.Form.apply_insert(%{
           date: ~D[2020-02-11],
-          originator_regular: %{
+          originator: "regular",
+          regular: %{
             description: "Description4",
             category_id: category.id
           },
@@ -526,24 +518,22 @@ defmodule Budget.EntriesTest do
       category = category_fixture()
 
       {:ok, _entry} =
-        Entries.create_entry(%{
+        Entry.Form.apply_insert(%{
           date: ~D[2020-02-01],
           account_id: account.id,
-          is_recurrency: true,
-          originator_regular: %{
+          originator: "regular",
+          regular: %{
             description: "Description1",
             category_id: category.id
           },
           value: 200,
-          recurrency_entry: %{
-            original_date: ~D[2020-02-01],
-            recurrency: %{
-              date_start: ~D[2020-02-01],
-              date_end: ~D[2021-02-01],
-              frequency: :monthly,
-              is_forever: false,
-              account_id: account.id
-            }
+          recurrency: %{
+            is_parcel: false,
+            date_start: ~D[2020-02-01],
+            date_end: ~D[2021-02-01],
+            frequency: :monthly,
+            is_forever: false,
+            account_id: account.id
           }
         })
 
@@ -582,9 +572,10 @@ defmodule Budget.EntriesTest do
 
     test "balance with entries", %{account1: account1, account2: account2} do
       {:ok, _} =
-        Entries.create_entry(%{
+        Entry.Form.apply_insert(%{
           date: ~D[2020-01-05],
-          originator_regular: %{
+          originator: "regular",
+          regular: %{
             description: "Description",
             category_id: category_fixture().id
           },
@@ -643,7 +634,7 @@ defmodule Budget.EntriesTest do
 
       assert length(transient_entries) == 3
 
-      {:ok, created} = Entries.create_entry(Enum.at(transient_entries, 1), %{})
+      {:ok, created} = Entry.Form.apply_update(Enum.at(transient_entries, 1), %{})
 
       assert created.recurrency_entry.original_date == Timex.today() |> Timex.shift(months: 2)
 
@@ -665,7 +656,7 @@ defmodule Budget.EntriesTest do
       assert transient.value == Decimal.new(133)
       assert transient.originator_regular.category_id > 0
 
-      {:ok, _} = Entries.create_entry(transient, %{value: 500, recurrency_apply_forward: true})
+      {:ok, _} = Entry.Form.apply_update(transient, %{value: 500, apply_forward: true})
 
       entries =
         transient.account_id
@@ -698,14 +689,11 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2022-10-15],
-          recurrency_entry: %{
-            recurrency: %{
-              date_start: ~D[2022-10-15],
-              is_forever: false,
-              is_parcel: true,
-              parcel_start: 1,
-              parcel_end: 6
-            }
+          recurrency: %{
+            is_forever: false,
+            is_parcel: true,
+            parcel_start: 1,
+            parcel_end: 6
           }
         })
 
@@ -719,7 +707,7 @@ defmodule Budget.EntriesTest do
       assert transient.recurrency_entry.parcel_end == 6
       assert transient.position == Decimal.new(1)
 
-      {:ok, _} = Entries.create_entry(transient, %{value: 500, recurrency_apply_forward: true})
+      {:ok, _} = Entry.Form.apply_update(transient, %{value: 500, apply_forward: true})
 
       entries =
         transient.account_id
@@ -829,14 +817,12 @@ defmodule Budget.EntriesTest do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2022-10-15],
-          recurrency_entry: %{
-            recurrency: %{
-              date_start: ~D[2022-10-15],
-              is_forever: false,
-              is_parcel: true,
-              parcel_start: 1,
-              parcel_end: 6
-            }
+          recurrency: %{
+            date_start: ~D[2022-10-15],
+            is_forever: false,
+            is_parcel: true,
+            parcel_start: 1,
+            parcel_end: 6
           }
         })
 
@@ -855,7 +841,7 @@ defmodule Budget.EntriesTest do
                }
              } = recurrency.entry_payload
 
-      {:ok, _} = Entries.create_entry(transient, %{value: 500, recurrency_apply_forward: false})
+      {:ok, _} = Entry.Form.apply_update(transient, %{value: 500, apply_forward: false})
 
       assert %{
                "2022-10-15" => %{
@@ -896,10 +882,11 @@ defmodule Budget.EntriesTest do
                 },
                 position: position
               }} =
-               Entries.create_entry(%{
-                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+               Entry.Form.apply_insert(%{
+                 date: ~D[2022-01-01],
                  account_id: account_id,
-                 originator_regular: %{
+                 originator: "regular",
+                 regular: %{
                    description: "a description",
                    category_id: category_id
                  },
@@ -912,10 +899,11 @@ defmodule Budget.EntriesTest do
               %{
                 position: position
               }} =
-               Entries.create_entry(%{
+               Entry.Form.apply_insert(%{
                  date: ~D[2022-01-01] |> Date.to_iso8601(),
                  account_id: account_id,
-                 originator_regular: %{
+                 originator: "regular",
+                 regular: %{
                    description: "a description",
                    category_id: category_id
                  },
@@ -931,34 +919,23 @@ defmodule Budget.EntriesTest do
 
       entry = %{
         date: ~D[2020-06-01],
-        is_recurrency: true,
         account_id: account.id,
-        originator_regular: %{
+        originator: "regular",
+        regular: %{
           description: "a description",
           category_id: category.id
         },
         value: 200,
-        recurrency_entry: %{
-          original_date: ~D[2020-06-01],
-          recurrency: %{
-            date_start: ~D[2020-06-01],
-            is_parcel: true,
-            parcel_start: 1,
-            parcel_end: 6,
-            account_id: account.id,
-            frequency: :monthly,
-            entry_payload: %{
-              originator_regular: %{
-                description: "a description",
-                category_id: category.id
-              },
-              value: 200
-            }
-          }
+        recurrency: %{
+          is_forever: false,
+          is_parcel: true,
+          parcel_start: 1,
+          parcel_end: 6,
+          frequency: :monthly
         }
       }
 
-      {:ok, entry} = Entries.create_entry(entry)
+      {:ok, entry} = Entry.Form.apply_insert(entry)
 
       assert entry.originator_regular.description == "a description"
       assert entry.recurrency_entry.parcel == 1
@@ -970,10 +947,11 @@ defmodule Budget.EntriesTest do
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, _} =
-               Entries.create_entry(%{
-                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+               Entry.Form.apply_insert(%{
+                 date: ~D[2022-01-01],
                  account_id: from_account_id,
-                 originator_transfer: %{
+                 originator: "transfer",
+                 transfer: %{
                    other_account_id: to_account_id
                  },
                  value: 200
@@ -992,50 +970,45 @@ defmodule Budget.EntriesTest do
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, _} =
-               Entries.create_entry(%{
+               Entry.Form.apply_insert(%{
                  date: ~D[2022-01-01] |> Date.to_iso8601(),
                  account_id: from_account_id,
                  is_recurrency: true,
-                 recurrency_entry: %{
-                   recurrency: %{
-                     frequency: :monthly,
-                     is_forever: true
-                   }
+                 recurrency: %{
+                   frequency: :monthly,
+                   is_forever: true
                  },
-                 originator_transfer: %{
+                 originator: "transfer",
+                 transfer: %{
                    other_account_id: to_account_id
                  },
                  value: 200
                })
-
 
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
                {~D[2022-01-01], to_account_id, Decimal.new(-200)},
-
                {~D[2022-02-01], from_account_id, Decimal.new(200)},
                {~D[2022-02-01], to_account_id, Decimal.new(-200)},
-
                {~D[2022-03-01], from_account_id, Decimal.new(200)},
                {~D[2022-03-01], to_account_id, Decimal.new(-200)},
-
                {~D[2022-04-01], from_account_id, Decimal.new(200)},
-               {~D[2022-04-01], to_account_id, Decimal.new(-200)},
+               {~D[2022-04-01], to_account_id, Decimal.new(-200)}
              ] ==
-                entries
+               entries
                |> Enum.map(&{&1.date, &1.account_id, &1.value})
 
       assert Enum.at(entries, 0).id |> is_integer()
       assert Enum.at(entries, 1).id |> is_integer()
-      assert "recurrency-" <> _  = Enum.at(entries, 2).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 3).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 4).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 5).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 6).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 7).id 
-      
+      assert "recurrency-" <> _ = Enum.at(entries, 2).id
+      assert "recurrency-" <> _ = Enum.at(entries, 3).id
+      assert "recurrency-" <> _ = Enum.at(entries, 4).id
+      assert "recurrency-" <> _ = Enum.at(entries, 5).id
+      assert "recurrency-" <> _ = Enum.at(entries, 6).id
+      assert "recurrency-" <> _ = Enum.at(entries, 7).id
+
       {:ok, _persisted} = Entries.create_entry(Enum.at(entries, 2), %{})
 
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
@@ -1043,17 +1016,14 @@ defmodule Budget.EntriesTest do
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
                {~D[2022-01-01], to_account_id, Decimal.new(-200)},
-
                {~D[2022-02-01], from_account_id, Decimal.new(200)},
                {~D[2022-02-01], to_account_id, Decimal.new(-200)},
-
                {~D[2022-03-01], from_account_id, Decimal.new(200)},
                {~D[2022-03-01], to_account_id, Decimal.new(-200)},
-
                {~D[2022-04-01], from_account_id, Decimal.new(200)},
-               {~D[2022-04-01], to_account_id, Decimal.new(-200)},
+               {~D[2022-04-01], to_account_id, Decimal.new(-200)}
              ] ==
-                entries
+               entries
                |> Enum.map(&{&1.date, &1.account_id, &1.value})
 
       assert 4 == Budget.Repo.all(Entries.RecurrencyEntry) |> length()
@@ -1062,10 +1032,10 @@ defmodule Budget.EntriesTest do
       assert Enum.at(entries, 1).id |> is_integer()
       assert Enum.at(entries, 2).id |> is_integer()
       assert Enum.at(entries, 3).id |> is_integer()
-      assert "recurrency-" <> _  = Enum.at(entries, 4).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 5).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 6).id 
-      assert "recurrency-" <> _  = Enum.at(entries, 7).id 
+      assert "recurrency-" <> _ = Enum.at(entries, 4).id
+      assert "recurrency-" <> _ = Enum.at(entries, 5).id
+      assert "recurrency-" <> _ = Enum.at(entries, 6).id
+      assert "recurrency-" <> _ = Enum.at(entries, 7).id
     end
 
     test "persist recurrent transfer entry applying forward" do
@@ -1073,43 +1043,66 @@ defmodule Budget.EntriesTest do
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, _} =
-               Entries.create_entry(%{
-                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+               Entry.Form.apply_insert(%{
+                 date: ~D[2022-01-01],
                  account_id: from_account_id,
-                 is_recurrency: true,
-                 recurrency_entry: %{
-                   recurrency: %{
-                     frequency: :monthly,
-                     is_forever: true
-                   }
+                 recurrency: %{
+                   frequency: :monthly,
+                   is_forever: true
                  },
-                 originator_transfer: %{
+                 originator: "transfer",
+                 transfer: %{
                    other_account_id: to_account_id
                  },
                  value: 200
                })
 
-
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
-      {:ok, _persisted} = Entries.create_entry(Enum.at(entries, 2), %{value: 400, recurrency_apply_forward: true})
+      assert [
+               {~D[2022-01-01], from_account_id, Decimal.new(200), "part"},
+               {~D[2022-01-01], to_account_id, Decimal.new(-200), "counter-part"},
+               {~D[2022-02-01], from_account_id, Decimal.new(200), "part"},
+               {~D[2022-02-01], to_account_id, Decimal.new(-200), "counter-part"},
+               {~D[2022-03-01], from_account_id, Decimal.new(200), "part"},
+               {~D[2022-03-01], to_account_id, Decimal.new(-200), "counter-part"},
+               {~D[2022-04-01], from_account_id, Decimal.new(200), "part"},
+               {~D[2022-04-01], to_account_id, Decimal.new(-200), "counter-part"}
+             ] ==
+               entries
+               |> Enum.map(
+                 &{
+                   &1.date,
+                   &1.account_id,
+                   &1.value,
+                   if(
+                     Ecto.assoc_loaded?(&1.originator_transfer_part) &&
+                       &1.originator_transfer_part != nil,
+                     do: "part",
+                     else: "counter-part"
+                   )
+                 }
+               )
+
+      {:ok, _persisted} =
+        Entry.Form.apply_update(Enum.at(entries, 2), %{
+          value: 400,
+          apply_forward: true
+        })
 
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
                {~D[2022-01-01], to_account_id, Decimal.new(-200)},
-
                {~D[2022-02-01], from_account_id, Decimal.new(400)},
                {~D[2022-02-01], to_account_id, Decimal.new(-400)},
-
                {~D[2022-03-01], from_account_id, Decimal.new(400)},
                {~D[2022-03-01], to_account_id, Decimal.new(-400)},
-
                {~D[2022-04-01], from_account_id, Decimal.new(400)},
-               {~D[2022-04-01], to_account_id, Decimal.new(-400)},
+               {~D[2022-04-01], to_account_id, Decimal.new(-400)}
              ] ==
-                entries
+               entries
                |> Enum.map(&{&1.date, &1.account_id, &1.value})
     end
   end
@@ -1120,10 +1113,11 @@ defmodule Budget.EntriesTest do
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, %{id: id}} =
-               Entries.create_entry(%{
-                 date: ~D[2022-01-01] |> Date.to_iso8601(),
+               Entry.Form.apply_insert(%{
+                 date: ~D[2022-01-01],
                  account_id: from_account_id,
-                 originator_transfer: %{
+                 originator: "transfer",
+                 transfer: %{
                    other_account_id: to_account_id
                  },
                  value: 200
@@ -1131,7 +1125,7 @@ defmodule Budget.EntriesTest do
 
       entry = Entries.get_entry!(id)
 
-      assert {:ok, _} = Entries.update_entry(entry, %{value: 400})
+      assert {:ok, _} = Entry.Form.apply_update(entry, %{value: 400})
 
       assert [
                {from_account_id, Decimal.new(400), entry.originator_transfer_part_id, nil},
@@ -1167,7 +1161,7 @@ defmodule Budget.EntriesTest do
         recurrency
         |> Entries.recurrency_entries(Timex.today() |> Timex.shift(months: 1))
         |> Enum.at(0)
-        |> Entries.create_entry(%{})
+        |> Entry.Form.apply_update(%{})
 
       entry = Enum.at(recurrency.recurrency_entries, 0).entry
 
@@ -1182,7 +1176,7 @@ defmodule Budget.EntriesTest do
       {:ok, _} =
         entries
         |> Enum.at(3)
-        |> Entries.create_entry(%{})
+        |> Entry.Form.apply_update(%{})
 
       assert :recurrency_with_future == Entries.delete_entry_state(Enum.at(entries, 1).id)
     end
@@ -1195,7 +1189,7 @@ defmodule Budget.EntriesTest do
       {:ok, entry} =
         entries
         |> Enum.at(3)
-        |> Entries.create_entry(%{})
+        |> Entry.Form.apply_update(%{})
 
       {:ok, _} = Entries.delete_entry(entry.id, "entry")
 
@@ -1228,7 +1222,7 @@ defmodule Budget.EntriesTest do
       [transient] =
         Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 1))
 
-      {:ok, persisted} = Entries.create_entry(transient, %{})
+      {:ok, persisted} = Entry.Form.apply_update(transient, %{})
 
       assert {:ok,
               %{
@@ -1251,7 +1245,7 @@ defmodule Budget.EntriesTest do
       [transient] =
         Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 1))
 
-      {:ok, persisted} = Entries.create_entry(transient, %{})
+      {:ok, persisted} = Entry.Form.apply_update(transient, %{})
 
       assert {:ok,
               %{
@@ -1285,7 +1279,7 @@ defmodule Budget.EntriesTest do
       [transient, future] =
         Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 2))
 
-      {:ok, persisted} = Entries.create_entry(future, %{})
+      {:ok, persisted} = Entry.Form.apply_update(future, %{})
 
       assert {:ok,
               %{
@@ -1318,7 +1312,7 @@ defmodule Budget.EntriesTest do
       [transient, future] =
         Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 2))
 
-      {:ok, persisted} = Entries.create_entry(future, %{})
+      {:ok, persisted} = Entry.Form.apply_update(future, %{})
 
       assert {:ok, _} = Entries.delete_entry(persisted.id, "entry")
 

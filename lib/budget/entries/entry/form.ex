@@ -15,6 +15,7 @@ defmodule Budget.Entries.Entry.Form do
     field(:is_carried_out, :boolean, default: false)
     field(:value, :decimal)
     field(:account_id, :integer)
+    field(:position, :decimal)
 
     field(:originator, :string)
     field(:is_recurrency, :boolean)
@@ -34,7 +35,7 @@ defmodule Budget.Entries.Entry.Form do
 
     embeds_one :recurrency, RecurrencyForm do
       field(:frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly])
-      field(:is_parcel, :boolean)
+      field(:is_parcel, :boolean, default: false)
       field(:is_forever, :boolean)
       field(:date_end, :date)
       field(:parcel_start, :integer)
@@ -51,6 +52,7 @@ defmodule Budget.Entries.Entry.Form do
       :is_carried_out,
       :value,
       :account_id,
+      :position,
       :originator,
       :is_recurrency,
       :keep_adding,
@@ -97,8 +99,7 @@ defmodule Budget.Entries.Entry.Form do
       ])
       |> validate_required([
         :is_forever,
-        :frequency,
-        :is_parcel
+        :frequency
       ])
 
     if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
@@ -190,7 +191,10 @@ defmodule Budget.Entries.Entry.Form do
     |> change(%{
       date: get_change(changeset, :date),
       value: get_change(changeset, :value),
-      account_id: get_change(changeset, :account_id)
+      account_id: get_change(changeset, :account_id),
+      position:
+        get_change(changeset, :position) ||
+          Entries.next_position_for_date(get_change(changeset, :date))
     })
     |> put_assoc(:originator_regular, originator)
     |> Budget.Repo.insert()
@@ -205,17 +209,33 @@ defmodule Budget.Entries.Entry.Form do
       |> put_assoc(:counter_part, %Entry{
         date: get_change(changeset, :date),
         value: get_change(changeset, :value) |> Decimal.negate(),
-        account_id: get_change(transfer, :other_account_id)
+        account_id: get_change(transfer, :other_account_id),
+        position:
+          get_change(changeset, :position) ||
+            Entries.next_position_for_date(get_change(changeset, :date))
       })
 
     %Entry{}
     |> change(%{
       date: get_change(changeset, :date),
       value: get_change(changeset, :value),
-      account_id: get_change(changeset, :account_id)
+      account_id: get_change(changeset, :account_id),
+      position:
+        get_change(changeset, :position) ||
+          Entries.next_position_for_date(get_change(changeset, :date))
     })
     |> put_assoc(:originator_transfer_part, originator)
     |> Budget.Repo.insert()
+  end
+
+  def apply_insert(%Ecto.Changeset{valid?: false} = changeset) do
+    {:error, changeset}
+  end
+
+  def apply_insert(params) when is_map(params) do
+    params
+    |> insert_changeset()
+    |> apply_insert()
   end
 
   defp flat_insert_transactions(transaction, %Ecto.Changeset{
@@ -237,7 +257,8 @@ defmodule Budget.Entries.Entry.Form do
       account_id: transaction.account_id,
       value: transaction.value,
       keep_adding: false,
-      apply_forward: false
+      apply_forward: false,
+      position: transaction.position
     }
 
     regular_data =
@@ -284,6 +305,7 @@ defmodule Budget.Entries.Entry.Form do
       :date,
       :account_id,
       :is_carried_out,
+      :position,
       :value,
       :apply_forward
     ])
@@ -293,8 +315,8 @@ defmodule Budget.Entries.Entry.Form do
       :is_carried_out,
       :value
     ])
-    |> cast_embed(:regular, with: &changeset_regular/2, required: originator == "regular")
-    |> cast_embed(:transfer, with: &changeset_transfer/2, required: originator == "transfer")
+    |> cast_embed(:regular, with: &changeset_regular/2)
+    |> cast_embed(:transfer, with: &changeset_transfer/2)
   end
 
   def apply_update(
@@ -368,7 +390,8 @@ defmodule Budget.Entries.Entry.Form do
     |> change(%{
       date: get_field(changeset, :date),
       account_id: get_field(changeset, :account_id),
-      value: get_field(changeset, :value)
+      value: get_field(changeset, :value),
+      position: get_field(changeset, :position)
     })
     |> put_assoc(
       :originator_regular,
@@ -392,7 +415,8 @@ defmodule Budget.Entries.Entry.Form do
       |> change(%{
         date: get_field(changeset, :date),
         account_id: get_field(changeset, :account_id),
-        value: get_field(changeset, :value)
+        value: get_field(changeset, :value),
+        position: get_field(changeset, :position)
       })
 
     {entry_transfer_field, transfer_field} =
@@ -401,6 +425,11 @@ defmodule Budget.Entries.Entry.Form do
       else
         {:originator_transfer_counter_part, :part}
       end
+
+    current_counter_part =
+      transaction
+      |> Map.get(entry_transfer_field)
+      |> Map.get(transfer_field)
 
     changeset
     |> put_assoc(
@@ -415,11 +444,19 @@ defmodule Budget.Entries.Entry.Form do
         |> Map.get(transfer_field)
         |> change(
           date: get_field(changeset, :date),
-          account_id: transfer.other_account_id,
+          account_id:
+            Map.get(transfer || %{}, :other_account_id, current_counter_part.account_id),
           value: get_field(changeset, :value) |> Decimal.negate()
         )
       )
     )
     |> Budget.Repo.update()
+  end
+
+  def apply_update(transaction, params) when is_map(params) do
+    transaction
+    |> decorate()
+    |> update_changeset(params)
+    |> apply_update(transaction)
   end
 end

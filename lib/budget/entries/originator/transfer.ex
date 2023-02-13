@@ -91,8 +91,8 @@ defmodule Budget.Entries.Originator.Transfer do
 
   def build_entries(recurrency_params, params) do
     part_params = %{
-      originator_transfer_counter_part: %__MODULE__{
-        part: %Entry{
+      originator_transfer_part: %__MODULE__{
+        counter_part: %Entry{
           date: recurrency_params.date,
           value: params.originator_transfer_part.counter_part.value,
           account_id: params.originator_transfer_part.counter_part.account_id,

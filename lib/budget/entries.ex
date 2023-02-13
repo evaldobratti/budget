@@ -21,7 +21,7 @@ defmodule Budget.Entries do
 
   """
   def list_accounts do
-    Repo.all(from p in Account, order_by: p.name)
+    Repo.all(from(p in Account, order_by: p.name))
   end
 
   @doc """
@@ -242,8 +242,15 @@ defmodule Budget.Entries do
     recurrency = recurrency_entries_in_period(account_ids, date_start, date_end)
 
     (regular ++ recurrency)
+    |> Enum.sort_by(
+      & &1.value,
+      &(Decimal.gt?(&1, &2) || Decimal.eq?(&1, &2))
+    )
     |> Enum.sort_by(&Decimal.to_float(&1.position))
-    |> Enum.sort_by(& &1.date, &(Timex.before?(&1, &2) || Timex.equal?(&1, &2)))
+    |> Enum.sort_by(
+      & &1.date,
+      &(Timex.before?(&1, &2) || Timex.equal?(&1, &2))
+    )
   end
 
   defp entry_query() do
@@ -525,7 +532,7 @@ defmodule Budget.Entries do
           val
       end
 
-    update_entry(entry, %{
+    Entry.Form.apply_update(entry, %{
       date: date,
       position: Decimal.add(before_position, position) |> Decimal.div(2)
     })
@@ -559,9 +566,28 @@ defmodule Budget.Entries do
           val
       end
 
-    update_entry(entry, %{
+    Entry.Form.apply_update(entry, %{
       date: date,
       position: Decimal.add(after_position, position) |> Decimal.div(2)
     })
+  end
+
+  def next_position_for_date(date) do
+    max_position =
+      from(
+        e in Entry,
+        where: e.date == ^date,
+        select: max(e.position)
+      )
+      |> Budget.Repo.one()
+      |> case do
+        nil ->
+          Decimal.new(0)
+
+        val ->
+          val
+      end
+
+    Decimal.add(max_position, 1)
   end
 end

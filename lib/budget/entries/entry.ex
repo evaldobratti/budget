@@ -12,23 +12,23 @@ defmodule Budget.Entries.Entry do
   alias Budget.Entries.Originator.Regular
 
   schema "entries" do
-    field :date, :date
-    field :is_carried_out, :boolean, default: false
-    field :value, :decimal
-    field :position, :decimal
+    field(:date, :date)
+    field(:is_carried_out, :boolean, default: false)
+    field(:value, :decimal)
+    field(:position, :decimal)
 
-    belongs_to :account, Account
+    belongs_to(:account, Account)
 
-    belongs_to :originator_regular, Regular, on_replace: :update
-    belongs_to :originator_transfer_part, Transfer
-    belongs_to :originator_transfer_counter_part, Transfer
+    belongs_to(:originator_regular, Regular, on_replace: :update)
+    belongs_to(:originator_transfer_part, Transfer)
+    belongs_to(:originator_transfer_counter_part, Transfer)
 
-    field :originator_transfer, :map, virtual: true
-    field :is_recurrency, :boolean, virtual: true
-    field :is_transfer, :boolean, virtual: true
-    field :recurrency_apply_forward, :boolean, virtual: true
+    field(:originator_transfer, :map, virtual: true)
+    field(:is_recurrency, :boolean, virtual: true)
+    field(:is_transfer, :boolean, virtual: true)
+    field(:recurrency_apply_forward, :boolean, virtual: true)
 
-    has_one :recurrency_entry, RecurrencyEntry
+    has_one(:recurrency_entry, RecurrencyEntry)
 
     timestamps()
   end
@@ -183,20 +183,21 @@ defmodule Budget.Entries.Entry do
       {:originator_transfer_counter_part, Transfer}
     ]
 
-    through_fk = 
-      Enum.find(originators, fn {originator_field, _module} -> 
-        fk = to_string(originator_field) <> "_id" |> String.to_existing_atom()
+    through_fk =
+      Enum.find(originators, fn {originator_field, _module} ->
+        fk = (to_string(originator_field) <> "_id") |> String.to_existing_atom()
 
         Map.get(entry, fk) != nil
-      end) 
+      end)
 
     if through_fk do
       elem(through_fk, 1)
     else
-      through_field = 
-        Enum.find(originators, fn {originator_field, _module} -> 
-          Ecto.assoc_loaded?(Map.get(entry, originator_field)) && Map.get(entry, originator_field) != nil
-        end) 
+      through_field =
+        Enum.find(originators, fn {originator_field, _module} ->
+          Ecto.assoc_loaded?(Map.get(entry, originator_field)) &&
+            Map.get(entry, originator_field) != nil
+        end)
 
       if through_field do
         elem(through_field, 1)
@@ -235,13 +236,16 @@ defmodule Budget.Entries.Entry do
     transfer = get_change(changeset, :originator_transfer)
 
     if transfer do
-        [transaction_field, transfer_field] =
-            [:originator_transfer_part, :counter_part]
-          
-        put_assoc(changeset, transaction_field, Transfer.create_other_part(changeset, transfer, transfer_field))
+      [transaction_field, transfer_field] = [:originator_transfer_part, :counter_part]
+
+      put_assoc(
+        changeset,
+        transaction_field,
+        Transfer.create_other_part(changeset, transfer, transfer_field)
+      )
     else
       value = get_change(changeset, :value)
-      
+
       [transaction_field, transfer_field] =
         if changeset.data.originator_transfer_part_id do
           [:originator_transfer_part, :counter_part]
@@ -254,7 +258,11 @@ defmodule Budget.Entries.Entry do
         end
 
       if value && transaction_field do
-        put_assoc(changeset, transaction_field, Transfer.update_other_part(changeset, transaction_field, transfer_field))
+        put_assoc(
+          changeset,
+          transaction_field,
+          Transfer.update_other_part(changeset, transaction_field, transfer_field)
+        )
       else
         changeset
       end
