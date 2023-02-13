@@ -123,47 +123,55 @@ defmodule Budget.Entries.Entry.Form do
   def apply_insert(%Ecto.Changeset{valid?: true, changes: %{recurrency: _recurrency}} = changeset) do
     recurrency = get_change(changeset, :recurrency)
 
-    changeset
-    |> put_embed(:recurrency, nil)
-    |> apply_insert()
-    |> flat_insert_transactions(changeset)
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:transaction, fn _repo, _changes ->
+      changeset
+      |> put_embed(:recurrency, nil)
+      |> apply_insert()
+    end)
+    |> Ecto.Multi.run(:recurrency, fn _repo, %{transaction: transaction} ->
+      transactions = flat_insert_transactions(transaction, changeset)
+
+      %Recurrency{}
+      |> change(%{
+        date_start: get_field(changeset, :date),
+        date_end: get_field(recurrency, :date_end),
+        frequency: get_field(recurrency, :frequency),
+        is_forever: get_field(recurrency, :is_forever),
+        is_parcel: get_field(recurrency, :is_parcel),
+        parcel_start: get_field(recurrency, :parcel_start),
+        parcel_end: get_field(recurrency, :parcel_end),
+        entry_payload: %{
+          get_field(changeset, :date) =>
+            case get_change(changeset, :originator) do
+              "regular" -> Regular.get_recurrency_payload(Enum.at(transactions, 0))
+              "transfer" -> Transfer.get_recurrency_payload(Enum.at(transactions, 0))
+            end
+        }
+      })
+      |> put_assoc(
+        :recurrency_entries,
+        Enum.map(
+          transactions,
+          &%RecurrencyEntry{
+            original_date: get_field(changeset, :date),
+            entry_id: &1.id,
+            parcel: get_field(recurrency, :parcel_start),
+            parcel_end: get_field(recurrency, :parcel_end)
+          }
+        )
+      )
+      |> Budget.Repo.insert()
+    end)
+    |> Ecto.Multi.run(:result, fn _repo, %{transaction: transaction} ->
+      refreshed = Entries.get_entry!(transaction.id)
+
+      {:ok, refreshed}
+    end)
+    |> Budget.Repo.transaction()
     |> case do
-      {:ok, transactions} ->
-        {:ok, _recurrency} =
-          %Recurrency{}
-          |> change(%{
-            date_start: get_field(changeset, :date),
-            date_end: get_field(recurrency, :date_end),
-            frequency: get_field(recurrency, :frequency),
-            is_forever: get_field(recurrency, :is_forever),
-            is_parcel: get_field(recurrency, :is_parcel),
-            parcel_start: get_field(recurrency, :parcel_start),
-            parcel_end: get_field(recurrency, :parcel_end),
-            entry_payload: %{
-              get_field(changeset, :date) =>
-                case get_change(changeset, :originator) do
-                  "regular" -> Regular.get_recurrency_payload(Enum.at(transactions, 0))
-                  "transfer" -> Transfer.get_recurrency_payload(Enum.at(transactions, 0))
-                end
-            }
-          })
-          |> put_assoc(
-            :recurrency_entries,
-            Enum.map(
-              transactions,
-              &%RecurrencyEntry{
-                original_date: get_field(changeset, :date),
-                entry_id: &1.id,
-                parcel: get_field(recurrency, :parcel_start),
-                parcel_end: get_field(recurrency, :parcel_end)
-              }
-            )
-          )
-          |> Budget.Repo.insert()
-
-        refreshed = Entries.get_entry!(Enum.at(transactions, 0).id)
-
-        {:ok, refreshed}
+      {:ok, %{result: result}} ->
+        {:ok, result}
 
       error ->
         error
@@ -210,19 +218,17 @@ defmodule Budget.Entries.Entry.Form do
     |> Budget.Repo.insert()
   end
 
-  defp flat_insert_transactions({:ok, transaction}, %Ecto.Changeset{
+  defp flat_insert_transactions(transaction, %Ecto.Changeset{
          changes: %{originator: "regular"}
        }) do
-    {:ok, [transaction]}
+    [transaction]
   end
 
-  defp flat_insert_transactions({:ok, transaction}, %Ecto.Changeset{
+  defp flat_insert_transactions(transaction, %Ecto.Changeset{
          changes: %{originator: "transfer"}
        }) do
-    {:ok, [transaction, transaction.originator_transfer_part.counter_part]}
+    [transaction, transaction.originator_transfer_part.counter_part]
   end
-
-  defp flat_insert_transactions(error, _changeset), do: error
 
   def decorate(%Entry{} = transaction) do
     base = %__MODULE__{
@@ -295,39 +301,57 @@ defmodule Budget.Entries.Entry.Form do
         %Ecto.Changeset{valid?: true} = changeset,
         %{id: "recurrency" <> _} = transaction
       ) do
-    {:ok, inserted} =
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:inserted, fn _repo, _changes ->
       transaction
       |> Map.put(:id, nil)
       |> Budget.Repo.insert()
+    end)
+    |> Ecto.Multi.run(:result, fn _repo, %{inserted: inserted} ->
+      apply_update(changeset, inserted)
+    end)
+    |> Budget.Repo.transaction()
+    |> case do
+      {:ok, %{result: result}} ->
+        {:ok, result}
 
-    apply_update(changeset, inserted)
+      error ->
+        error
+    end
   end
 
   def apply_update(
         %Ecto.Changeset{valid?: true, changes: %{apply_forward: true}} = changeset,
         transaction
       ) do
-    changeset
-    |> change(apply_forward: false)
-    |> apply_update(transaction)
-    |> case do
-      {:ok, transaction} ->
-        {:ok, _recurrency} =
-          transaction.recurrency_entry.recurrency
-          |> change(
-            entry_payload:
-              Map.put(
-                transaction.recurrency_entry.recurrency.entry_payload,
-                transaction.recurrency_entry.original_date |> Date.to_iso8601(),
-                case get_field(changeset, :originator) do
-                  "regular" -> Regular.get_recurrency_payload(transaction)
-                  "transfer" -> Transfer.get_recurrency_payload(transaction)
-                end
-              )
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:transaction, fn _repo, _changes ->
+      changeset
+      |> change(apply_forward: false)
+      |> apply_update(transaction)
+    end)
+    |> Ecto.Multi.run(:recurrency, fn _repo, %{transaction: transaction} ->
+      transaction.recurrency_entry.recurrency
+      |> change(
+        entry_payload:
+          Map.put(
+            transaction.recurrency_entry.recurrency.entry_payload,
+            transaction.recurrency_entry.original_date |> Date.to_iso8601(),
+            case get_field(changeset, :originator) do
+              "regular" -> Regular.get_recurrency_payload(transaction)
+              "transfer" -> Transfer.get_recurrency_payload(transaction)
+            end
           )
-          |> Budget.Repo.update()
-
-        {:ok, Entries.get_entry!(transaction.id)}
+      )
+      |> Budget.Repo.update()
+    end)
+    |> Ecto.Multi.run(:result, fn _repo, %{transaction: transaction} ->
+      {:ok, Entries.get_entry!(transaction.id)}
+    end)
+    |> Budget.Repo.transaction()
+    |> case do
+      {:ok, %{result: result}} ->
+        {:ok, result}
 
       error ->
         error
