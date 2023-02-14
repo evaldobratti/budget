@@ -3,6 +3,7 @@ defmodule Budget.Entries.Originator.Transfer do
 
   import Ecto.Changeset
 
+  alias Budget.Entries
   alias Budget.Entries.Entry
 
   schema "originators_transfer" do
@@ -45,24 +46,28 @@ defmodule Budget.Entries.Originator.Transfer do
   @behaviour Budget.Entries.Originator
 
   def restore_for_recurrency(payload) do
-    account_id =
+    account =
       payload
       |> Map.get("part_account_id")
+      |> Entries.get_account!()
 
-    other_account_id =
+    other_account =
       payload
       |> Map.get("counter_part_account_id")
+      |> Entries.get_account!()
 
     %{
       originator_transfer_part: %__MODULE__{
         counter_part: %Entry{
           value: Decimal.new(Map.get(payload, "value")) |> Decimal.negate(),
-          account_id: other_account_id,
+          account_id: other_account.id,
+          account: other_account,
           is_carried_out: false,
           position: 1
         }
       },
-      account_id: account_id,
+      account_id: account.id,
+      account: account,
       value: Decimal.new(Map.get(payload, "value"))
     }
   end
@@ -96,6 +101,7 @@ defmodule Budget.Entries.Originator.Transfer do
           date: recurrency_params.date,
           value: params.originator_transfer_part.counter_part.value,
           account_id: params.originator_transfer_part.counter_part.account_id,
+          account: params.originator_transfer_part.counter_part.account,
           is_carried_out: false,
           position: Decimal.new(1),
           recurrency_entry: recurrency_params.recurrency_entry
@@ -103,10 +109,12 @@ defmodule Budget.Entries.Originator.Transfer do
       },
       date: recurrency_params.date,
       account_id: params.account_id,
+      account: params.account,
       is_carried_out: false,
       position: Decimal.new(1),
       recurrency_entry: recurrency_params.recurrency_entry,
-      value: params.value
+      value: params.value,
+      id: recurrency_params.id <> "-0"
     }
 
     counter_params = %{
@@ -115,6 +123,7 @@ defmodule Budget.Entries.Originator.Transfer do
           date: recurrency_params.date,
           value: params.value,
           account_id: params.account_id,
+          account: params.account,
           is_carried_out: false,
           recurrency_entry: recurrency_params.recurrency_entry,
           position: Decimal.new(1)
@@ -122,10 +131,12 @@ defmodule Budget.Entries.Originator.Transfer do
       },
       date: recurrency_params.date,
       account_id: params.originator_transfer_part.counter_part.account_id,
+      account: params.originator_transfer_part.counter_part.account,
       is_carried_out: false,
       position: Decimal.new(1),
       recurrency_entry: recurrency_params.recurrency_entry,
-      value: params.originator_transfer_part.counter_part.value
+      value: params.originator_transfer_part.counter_part.value,
+      id: recurrency_params.id <> "-1"
     }
 
     [

@@ -350,7 +350,7 @@ defmodule Budget.Entries do
   end
 
   def encarnate_transient_entry(entry_id) do
-    [_, recurrency_id, year, month, day] = String.split(entry_id, "-")
+    [_, recurrency_id, year, month, day | maybe_ix_tail] = String.split(entry_id, "-")
 
     {:ok, date} =
       Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day))
@@ -358,7 +358,13 @@ defmodule Budget.Entries do
     recurrency_id
     |> get_recurrency!()
     |> recurrency_entries(date)
-    |> Enum.find(&(&1.date == date))
+    |> Enum.filter(&(&1.date == date))
+    |> then(fn 
+      [e] -> e
+      list -> 
+        [ix] = maybe_ix_tail
+        Enum.at(list, String.to_integer(ix))
+    end)
   end
 
   def delete_entry(entry_id, mode)
@@ -591,5 +597,29 @@ defmodule Budget.Entries do
       end
 
     Decimal.add(max_position, 1)
+  end
+
+  def originator(%Entry{} = transaction) do
+    [
+      transaction.originator_regular,
+      transaction.originator_transfer_part,
+      transaction.originator_transfer_counter_part
+    ]
+    |> Enum.find(& Ecto.assoc_loaded?(&1) && &1 != nil)
+  end
+
+  def get_counter_part(%Entry{} = transaction) do
+    originator = originator(transaction)
+
+    cond do
+      transaction.originator_transfer_part == originator ->
+        transaction.originator_transfer_part.counter_part 
+
+      transaction.originator_transfer_counter_part == originator ->
+        transaction.originator_transfer_counter_part.part 
+
+      true ->
+        raise "not a transfer transaction"
+    end
   end
 end

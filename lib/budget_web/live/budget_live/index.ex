@@ -265,28 +265,18 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def description(entry) do
-    if entry.originator_regular_id do
-      entry.originator_regular.description
-    else
-      {entry_field, transfer_field} =
-        if entry.originator_transfer_part_id do
-          {:originator_transfer_part, :counter_part}
-        else
-          {:originator_transfer_counter_part, :part}
-        end
+    case Entries.originator(entry) do
+      %Entries.Originator.Regular{} = regular ->
+        regular.description
 
-      {from, to} = 
-        if Decimal.negative?(entry.value) do
-          {entry.account, entry |> Map.get(entry_field) |> Map.get(transfer_field) |> Map.get(:account)}
-        else
-          {entry |> Map.get(entry_field) |> Map.get(transfer_field) |> Map.get(:account), entry.account}
-        end
+      %Entries.Originator.Transfer{} ->
+        other_part = Entries.get_counter_part(entry)
 
-      if entry.value |> Decimal.negative?() do
-        "Transfer to '#{to.name}'"
-      else
-        "Transfer from '#{from.name}'"
-      end
+        if entry.value |> Decimal.negative?() do
+          "Transfer to '#{other_part.account.name}'"
+        else
+          "Transfer from '#{entry.account.name}'"
+        end
     end
   end
 end

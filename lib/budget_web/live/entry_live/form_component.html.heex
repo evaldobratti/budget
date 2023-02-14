@@ -55,7 +55,7 @@
     </.form_group>
 
     <div class="d-flex">
-      <.checkbox form={f} field={:is_carried_out} class="flex-1" />
+      <.checkbox form={f} field={:is_carried_out} cass="flex-1" />
       <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
       <.checkbox :if={!entry_loaded} form={f} name={:keep_adding} value={true} class="flex-1"> 
         <:label>Keep adding</:label>
@@ -64,11 +64,11 @@
 
     <% [recurrency_form] = inputs_for f, :recurrency %>
 
-    <%= if entry_loaded && @changeset.data.recurrency_entry do %>
+    <%= if @changeset.data.is_recurrency do %>
       <.checkbox form={f} field={:apply_forward} />
     <% end %>
 
-    <%= if Ecto.Changeset.get_field(@changeset, :recurrency) && !entry_loaded do %>
+    <%= if Ecto.Changeset.get_field(@changeset, :is_recurrency) && !entry_loaded do %>
 
       <.form_group form={recurrency_form} field={:frequency}>
         <.select form={recurrency_form} field={:frequency} options={Ecto.Enum.mappings(Recurrency, :frequency)} />

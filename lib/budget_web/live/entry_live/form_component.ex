@@ -96,7 +96,6 @@ defmodule BudgetWeb.EntryLive.FormComponent do
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
-      IO.inspect(changeset)
         {:noreply, assign(socket, changeset: changeset)}
     end
   end

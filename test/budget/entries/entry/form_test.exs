@@ -140,9 +140,7 @@ defmodule Budget.Entries.Entry.FormTest do
                regular: ["can't be blank"],
                recurrency: %{
                  date_end: ["can't be blank"],
-                 is_parcel: ["can't be blank"],
                  is_forever: ["can't be blank"],
-                 frequency: ["can't be blank"]
                }
              } == errors_on(changeset)
 
@@ -161,8 +159,6 @@ defmodule Budget.Entries.Entry.FormTest do
                regular: ["can't be blank"],
                recurrency: %{
                  date_end: ["can't be blank"],
-                 is_parcel: ["can't be blank"],
-                 frequency: ["can't be blank"]
                }
              } == errors_on(changeset)
 
@@ -183,7 +179,6 @@ defmodule Budget.Entries.Entry.FormTest do
                recurrency: %{
                  parcel_end: ["can't be blank"],
                  parcel_start: ["can't be blank"],
-                 frequency: ["can't be blank"]
                }
              } == errors_on(changeset)
 
@@ -202,7 +197,6 @@ defmodule Budget.Entries.Entry.FormTest do
                value: ["can't be blank"],
                regular: ["can't be blank"],
                recurrency: %{
-                 frequency: ["can't be blank"],
                  date_end: ["can't be blank"]
                }
              } == errors_on(changeset)
@@ -388,9 +382,9 @@ defmodule Budget.Entries.Entry.FormTest do
       assert %Budget.Entries.Entry.Form{
                account_id: data.account_id,
                date: ~D[2022-01-01],
-               id: nil,
+               id: transaction.id,
                is_carried_out: false,
-               is_recurrency: nil,
+               is_recurrency: false,
                keep_adding: false,
                originator: "regular",
                recurrency: nil,
@@ -401,7 +395,8 @@ defmodule Budget.Entries.Entry.FormTest do
                  description: "Something"
                },
                transfer: nil,
-               value: Decimal.new(200)
+               value: Decimal.new(200),
+               position: Decimal.new(1)
              } == form
 
       changeset =
@@ -446,9 +441,9 @@ defmodule Budget.Entries.Entry.FormTest do
       assert %Budget.Entries.Entry.Form{
                account_id: data.account_id,
                date: ~D[2022-01-01],
-               id: nil,
+               id: transaction.id,
                is_carried_out: false,
-               is_recurrency: nil,
+               is_recurrency: false,
                keep_adding: false,
                originator: "transfer",
                recurrency: nil,
@@ -456,7 +451,8 @@ defmodule Budget.Entries.Entry.FormTest do
                transfer: %Budget.Entries.Entry.Form.TransferForm{
                  other_account_id: other_account_id
                },
-               value: Decimal.new(200)
+               value: Decimal.new(200),
+               position: Decimal.new(1)
              } == form
 
       changeset =

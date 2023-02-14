@@ -34,7 +34,7 @@ defmodule Budget.Entries.Entry.Form do
     end
 
     embeds_one :recurrency, RecurrencyForm do
-      field(:frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly])
+      field(:frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly], default: :monthly)
       field(:is_parcel, :boolean, default: false)
       field(:is_forever, :boolean)
       field(:date_end, :date)
@@ -297,13 +297,15 @@ defmodule Budget.Entries.Entry.Form do
       base
       | originator: originator,
         regular: regular_data,
-        transfer: transfer_data
+        transfer: transfer_data,
+        is_recurrency: (
+          transaction.recurrency_entry &&
+          transaction.recurrency_entry.__struct__ == Budget.Entries.RecurrencyEntry
+        )
     }
   end
 
   def update_changeset(form, params) do
-    originator = form.originator
-
     form
     |> cast(params, [
       :date,

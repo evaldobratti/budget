@@ -242,13 +242,21 @@
             <% end %>
             <%= if entry.recurrency_entry do %>
               <.tooltiped tooltip="Recurrency">
-                <.fa_icon icon="fa-money-bill-transfer" />
+                <.fa_icon icon="fa-repeat" />
               </.tooltiped>
             <% end %>
           </div>
         </div>
         <div class="col-2 px-1">
-          <%= if entry.originator_regular_id, do: entry.originator_regular.category.name %>
+          <% originator = Entries.originator(entry) %>
+
+          <%= if originator && originator.__struct__ == Budget.Entries.Originator.Regular, do: entry.originator_regular.category.name %>
+
+          <%= if originator && originator.__struct__ == Budget.Entries.Originator.Transfer do %>
+            <.tooltiped tooltip="Transfer">
+              <.fa_icon icon="fa-money-bill-transfer" />
+            </.tooltiped>
+          <% end %>
         </div>
         <div class="col-2 px-1">
           <%= entry.account.name %>
@@ -261,6 +269,8 @@
             <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
               <.fa_icon icon="fa-trash" />
             <% end %>
+          </.tooltiped>
+          <.tooltiped tooltip="Sort">
             <span class="sortable-handle btn-octicon">
               <.fa_icon icon="fa-up-down" />
             </span>
