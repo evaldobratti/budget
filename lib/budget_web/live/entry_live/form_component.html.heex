@@ -13,8 +13,10 @@
 
     <%= if !entry_loaded do %>
       <div class="d-flex flex-justify-center mb-3">
-        <.radio_button form={f} field={:originator} value="regular" class="mr-4" />
-        <.radio_button form={f} field={:originator} value="transfer" />
+        <.radio_group>
+          <:radio_button name={input_name(f, :originator)} value="regular" checked={input_value(f, :originator) == "regular"}></:radio_button>
+          <:radio_button name={input_name(f, :originator)} value="transfer" checked={input_value(f, :originator) == "transfer"}></:radio_button>
+        </.radio_group>
       </div>
     <% end %>
 
