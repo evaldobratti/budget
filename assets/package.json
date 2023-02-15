@@ -2,7 +2,7 @@
   "dependencies": {
     "@floating-ui/dom": "^1.1.0",
     "alpinejs": "^3.10.5",
-    "primer-live": "^0.1.26",
+    "primer-live": "file:../deps/primer_live"
     "sortablejs": "^1.15.0"
   }
 }

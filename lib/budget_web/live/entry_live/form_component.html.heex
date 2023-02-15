@@ -12,7 +12,7 @@
     <% [transfer_form] = inputs_for f, :transfer %>
 
     <%= if !entry_loaded do %>
-      <div class="d-flex flex-justify-center">
+      <div class="d-flex flex-justify-center mb-3">
         <.radio_button form={f} field={:originator} value="regular" class="mr-4" />
         <.radio_button form={f} field={:originator} value="transfer" />
       </div>
@@ -54,7 +54,7 @@
       <.text_input form={f} field={:value} type="number" autocomplete="off" />
     </.form_group>
 
-    <div class="d-flex">
+    <div class="d-flex mb-3">
       <.checkbox form={f} field={:is_carried_out} cass="flex-1" />
       <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
       <.checkbox :if={!entry_loaded} form={f} name={:keep_adding} class="flex-1"> 

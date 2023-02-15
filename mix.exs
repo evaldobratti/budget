@@ -52,7 +52,7 @@ defmodule Budget.MixProject do
       {:timex, "~> 3.7.9"},
       {:number, "~> 1.0.3"},
       {:ecto_materialized_trail, "~> 0.3.0"},
-      {:primer_live, "~> 0.1.12"},
+      {:primer_live, "~> 0.2.2"},
       {:fraction, github: "lermannen/elixir-fraction"}
     ]
   end
