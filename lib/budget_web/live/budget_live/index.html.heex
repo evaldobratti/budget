@@ -269,6 +269,9 @@
             <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
               <.fa_icon icon="fa-trash" />
             <% end %>
+            <span class="sortable-handle btn-octicon">
+              <.fa_icon icon="fa-up-down" />
+            </span>
           </.tooltiped>
           <.tooltiped tooltip="Sort">
             <span class="sortable-handle btn-octicon">
