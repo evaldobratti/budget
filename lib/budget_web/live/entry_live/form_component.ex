@@ -18,6 +18,7 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       params
       |> Map.put_new("date", Timex.today())
       |> Map.put_new("originator", "regular")
+      |> Map.put_new("keep_adding", true)
 
     Entry.Form.insert_changeset(params)
   end
@@ -40,7 +41,6 @@ defmodule BudgetWeb.EntryLive.FormComponent do
       socket.assigns
       |> changeset(form_params)
       |> Map.put(:action, :validate)
-      |> IO.inspect()
 
     {:noreply, assign(socket, :changeset, changeset)}
   end
@@ -71,7 +71,6 @@ defmodule BudgetWeb.EntryLive.FormComponent do
   def save_entry(socket, :new_entry, changeset) do
     case Entry.Form.apply_insert(changeset) do
       {:ok, _entry} ->
-      IO.inspect("oxe")
         return_to =
           if Ecto.Changeset.get_change(changeset, :keep_adding) do
             uri = URI.parse(socket.assigns.return_to)

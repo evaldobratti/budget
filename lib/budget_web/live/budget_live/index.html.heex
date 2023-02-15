@@ -198,10 +198,10 @@
         <div class="flex-1 px-1">
           Description
         </div>
-        <div class="col-2 px-1">
+        <div class="col-2 px-1 text-center">
           Category
         </div>
-        <div class="col-2 px-1">
+        <div class="col-2 px-1 text-center">
           Account
         </div>
 
@@ -247,7 +247,7 @@
             <% end %>
           </div>
         </div>
-        <div class="col-2 px-1">
+        <div class="col-2 px-1 text-center">
           <% originator = Entries.originator(entry) %>
 
           <%= if originator && originator.__struct__ == Budget.Entries.Originator.Regular, do: entry.originator_regular.category.name %>
@@ -258,7 +258,7 @@
             </.tooltiped>
           <% end %>
         </div>
-        <div class="col-2 px-1">
+        <div class="col-2 px-1 text-center">
           <%= entry.account.name %>
         </div>
         <div class={"col-2 text-right px-1"}>

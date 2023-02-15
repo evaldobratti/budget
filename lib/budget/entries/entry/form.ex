@@ -20,7 +20,7 @@ defmodule Budget.Entries.Entry.Form do
     field(:originator, :string)
     field(:is_recurrency, :boolean)
 
-    field(:keep_adding, :boolean, default: true)
+    field(:keep_adding, :boolean)
 
     field(:apply_forward, :boolean)
 

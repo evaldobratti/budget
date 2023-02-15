@@ -62,9 +62,9 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
+        form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          originator_regular: %{
+          regular: %{
             description: "a description",
             category_id: category.id
           },
@@ -92,9 +92,9 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
+        form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          originator_regular: %{
+          regular: %{
             description: "a description",
             category_id: category.id
           },
@@ -123,8 +123,8 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
-          originator_regular: %{description: "a new description"},
+        form: %{
+          regular: %{description: "a new description"},
           value: "400"
         }
       )
@@ -243,9 +243,9 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
+        form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          originator_regular: %{
+          regular: %{
             description: "a description",
             category_id: category.id
           },
@@ -258,20 +258,18 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
+        form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
-          originator_regular: %{
+          regular: %{
             description: "a description",
             category_id: category.id
           },
           account_id: account.id,
           value: "200",
           is_recurrency: true,
-          recurrency_entry: %{
-            recurrency: %{
-              is_forever: true,
-              frequency: :monthly
-            }
+          recurrency: %{
+            is_forever: true,
+            frequency: :monthly
           }
         }
       )
@@ -312,8 +310,8 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
-          originator_regular: %{
+        form: %{
+          regular: %{
             description: "a new description"
           },
           value: "420"
@@ -349,9 +347,9 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
+        form: %{
           date: ~D[2020-06-13],
-          originator_regular: %{
+          regular: %{
             description: "a new description",
             category_id: another_category.id
           },
@@ -399,9 +397,9 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       live
       |> form("#entry-form",
-        entry: %{
+        form: %{
           date: ~D[2020-06-13],
-          originator_regular: %{
+          regular: %{
             description: "a new description"
           },
           value: "420"
@@ -620,7 +618,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     1..5
     |> Enum.map(
       &entry_fixture(%{
-        originator_regular: %{
+        regular: %{
           description: "Transaction #{&1}",
           category_id: category_id
         },
