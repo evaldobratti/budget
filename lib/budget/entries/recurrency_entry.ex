@@ -15,10 +15,4 @@ defmodule Budget.Entries.RecurrencyEntry do
 
     timestamps()
   end
-
-  def changeset(recurrency_entry, attrs) do
-    recurrency_entry
-    |> cast(attrs, [:original_date, :recurrency_id])
-    |> cast_assoc(:recurrency)
-  end
 end

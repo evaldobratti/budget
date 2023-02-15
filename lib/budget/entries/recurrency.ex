@@ -2,8 +2,6 @@ defmodule Budget.Entries.Recurrency do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Budget.Entries.Account
-  alias Budget.Entries.Entry
   alias Budget.Entries.RecurrencyEntry
 
   schema "recurrencies" do
@@ -15,8 +13,6 @@ defmodule Budget.Entries.Recurrency do
     field :parcel_end, :integer
     field :parcel_start, :integer
     field :entry_payload, :map
-
-    belongs_to :account, Account
 
     has_many :recurrency_entries, RecurrencyEntry
 
@@ -37,7 +33,6 @@ defmodule Budget.Entries.Recurrency do
         :parcel_start,
         :parcel_end,
         :is_parcel,
-        :account_id
       ])
       |> validate_required([
         :is_parcel,
@@ -77,10 +72,17 @@ defmodule Budget.Entries.Recurrency do
 
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
+    originator = 
+      recurrency.entry_payload
+      |> Map.values()
+      |> Enum.random()
+      |> Map.get("originator")
+      |> String.to_existing_atom()
+
     payloads =
       recurrency.entry_payload
       |> Enum.map(fn {date, payload} ->
-        {Date.from_iso8601!(date), Budget.Entries.restore_recurrency_params(payload)}
+        {Date.from_iso8601!(date), originator.restore_for_recurrency(payload)}
       end)
       |> Enum.into(%{})
 
@@ -106,17 +108,15 @@ defmodule Budget.Entries.Recurrency do
 
       params = payload_at_date(payloads, date)
 
-      %Entry{
+      originator.build_entries(%{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
         date: date,
-        account: recurrency.account,
-        account_id: recurrency.account_id,
         is_recurrency: true,
         recurrency_entry: recurrency_entry,
-        position: Decimal.new(-1)
-      }
-      |> Map.merge(params)
+        position: Decimal.new(1)
+      }, params)
     end)
+    |> List.flatten()
     |> Enum.filter(
       &(!Enum.any?(recurrency.recurrency_entries, fn re ->
           re.original_date == &1.recurrency_entry.original_date
@@ -148,13 +148,9 @@ defmodule Budget.Entries.Recurrency do
     end
   end
 
-  def recurrency_shift(:monthly) do
-    :months
-  end
-
-  def recurrency_shift(:weekly) do
-    :weeks
-  end
+  def recurrency_shift(:monthly), do: :months
+  def recurrency_shift(:weekly), do: :weeks
+  def recurrency_shift(:yearly), do: :years
 
   defp parcel_end_date(%__MODULE__{} = recurrency) do
     parcel_end_date(recurrency, 0, recurrency.date_start, recurrency.parcel_start)

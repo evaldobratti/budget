@@ -21,7 +21,7 @@ defmodule Budget.Entries do
 
   """
   def list_accounts do
-    Repo.all(from p in Account, order_by: p.name)
+    Repo.all(from(p in Account, order_by: p.name))
   end
 
   @doc """
@@ -102,40 +102,6 @@ defmodule Budget.Entries do
     Account.changeset(account, attrs)
   end
 
-  def change_entry(%Entry{} = entry, attrs \\ %{}) do
-    Entry.changeset(entry, attrs)
-  end
-
-  def update_entry(%Entry{} = entry, attrs) do
-    entry
-    |> Entry.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def create_entry(entry \\ %Entry{}, attrs) do
-    case entry.id do
-      "recurrency" <> _ ->
-        Ecto.Multi.new()
-        |> Ecto.Multi.insert(:entry, Map.put(entry, :id, nil))
-        |> Ecto.Multi.update(:entry_update, fn %{entry: entry} ->
-          Entry.changeset(entry, attrs)
-        end)
-        |> Repo.transaction()
-        |> case do
-          {:ok, %{entry_update: entry_update}} ->
-            {:ok, entry_update}
-
-          error ->
-            error
-        end
-
-      _ ->
-        %Entry{}
-        |> Entry.changeset(attrs)
-        |> Repo.insert()
-    end
-  end
-
   def get_entry!("recurrency" <> _ = id) do
     {:error, {:query_for_transient_entry, id}}
   end
@@ -166,10 +132,10 @@ defmodule Budget.Entries do
       |> Repo.one()
 
     recurrencies =
-      accounts_ids
-      |> find_recurrencies()
+      find_recurrencies()
       |> Enum.map(&recurrency_entries(&1, date))
       |> List.flatten()
+      |> Enum.filter(&(&1.account_id in accounts_ids || accounts_ids == []))
       |> Enum.map(& &1.value)
       |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
 
@@ -198,14 +164,11 @@ defmodule Budget.Entries do
     Recurrency.entries(recurrency, until_date)
   end
 
-  def find_recurrencies(accounts_ids) do
+  def find_recurrencies() do
     from(
       r in Recurrency,
-      join: a in assoc(r, :account),
-      as: :account,
-      preload: [recurrency_entries: :entry, account: a]
+      preload: [recurrency_entries: :entry]
     )
-    |> where_account_in(accounts_ids)
     |> Repo.all()
   end
 
@@ -214,8 +177,15 @@ defmodule Budget.Entries do
     recurrency = recurrency_entries_in_period(account_ids, date_start, date_end)
 
     (regular ++ recurrency)
+    |> Enum.sort_by(
+      & &1.value,
+      &(Decimal.gt?(&1, &2) || Decimal.eq?(&1, &2))
+    )
     |> Enum.sort_by(&Decimal.to_float(&1.position))
-    |> Enum.sort_by(& &1.date, &(Timex.before?(&1, &2) || Timex.equal?(&1, &2)))
+    |> Enum.sort_by(
+      & &1.date,
+      &(Timex.before?(&1, &2) || Timex.equal?(&1, &2))
+    )
   end
 
   defp entry_query() do
@@ -227,11 +197,19 @@ defmodule Budget.Entries do
       left_join: re in assoc(e, :recurrency_entry),
       left_join: r in assoc(re, :recurrency),
       left_join: regular in assoc(e, :originator_regular),
-      join: c in assoc(regular, :category),
+      left_join: c in assoc(regular, :category),
+      left_join: tp in assoc(e, :originator_transfer_part),
+      left_join: tpe in assoc(tp, :counter_part),
+      left_join: tpea in assoc(tpe, :account),
+      left_join: tcp in assoc(e, :originator_transfer_counter_part),
+      left_join: tcpe in assoc(tcp, :part),
+      left_join: tcpea in assoc(tcpe, :account),
       preload: [
         account: a,
         recurrency_entry: {re, recurrency: r},
-        originator_regular: {regular, category: c}
+        originator_regular: {regular, category: c},
+        originator_transfer_part: {tp, counter_part: {tpe, account: tpea}},
+        originator_transfer_counter_part: {tcp, part: {tcpe, account: tcpea}}
       ],
       order_by: [e.date, e.position, regular.description],
       select_merge: %{is_recurrency: not is_nil(r.id)}
@@ -248,13 +226,14 @@ defmodule Budget.Entries do
   end
 
   defp recurrency_entries_in_period(account_ids, date_start, date_end) do
-    recurrencies = find_recurrencies(account_ids)
+    recurrencies = find_recurrencies()
 
     recurrencies
     |> Enum.reduce([], fn r, acc ->
       [Recurrency.entries(r, date_end) | acc]
     end)
     |> List.flatten()
+    |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
     |> Enum.filter(&Timex.between?(&1.date, date_start, date_end, inclusive: true))
   end
 
@@ -306,7 +285,7 @@ defmodule Budget.Entries do
   end
 
   def encarnate_transient_entry(entry_id) do
-    [_, recurrency_id, year, month, day] = String.split(entry_id, "-")
+    [_, recurrency_id, year, month, day | maybe_ix_tail] = String.split(entry_id, "-")
 
     {:ok, date} =
       Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day))
@@ -314,7 +293,15 @@ defmodule Budget.Entries do
     recurrency_id
     |> get_recurrency!()
     |> recurrency_entries(date)
-    |> Enum.find(&(&1.date == date))
+    |> Enum.filter(&(&1.date == date))
+    |> then(fn
+      [e] ->
+        e
+
+      list ->
+        [ix] = maybe_ix_tail
+        Enum.at(list, String.to_integer(ix))
+    end)
   end
 
   def delete_entry(entry_id, mode)
@@ -324,7 +311,7 @@ defmodule Budget.Entries do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:entry, fn _repo, _changes ->
-      create_entry(transient, %{})
+      Entry.Form.apply_update(transient, %{})
     end)
     |> Ecto.Multi.run(:actions, fn _repo, %{entry: entry} ->
       delete_entry(entry.id, mode)
@@ -447,12 +434,6 @@ defmodule Budget.Entries do
 
   def get_category!(id), do: Repo.get!(Category, id)
 
-  def restore_recurrency_params(payload) do
-    module = Entry.originator_module(payload)
-
-    module.restore_for_recurrency(payload)
-  end
-
   def update_order(old_index, new_index, entries) do
     entry_to_update = Enum.at(entries, old_index)
     list_wo_element = List.delete_at(entries, old_index)
@@ -472,7 +453,7 @@ defmodule Budget.Entries do
   def put_entry_between(entry, [nil, entry_after]) do
     position = entry_after.position
 
-    date = 
+    date =
       if entry.date == entry_after.date do
         entry.date
       else
@@ -494,18 +475,20 @@ defmodule Budget.Entries do
 
         val ->
           val
-          
       end
 
-    update_entry(entry, %{date: date, position: Decimal.add(before_position, position) |> Decimal.div(2)})
+    Entry.Form.apply_update(entry, %{
+      date: date,
+      position: Decimal.add(before_position, position) |> Decimal.div(2)
+    })
   end
 
   def put_entry_between(entry, [entry_before = %Entry{}, entry_after]) do
     position = entry_before.position
 
     date =
-      if entry.date !== entry_before.date && (
-        entry_after == nil || entry.date !== entry_after.date) do
+      if entry.date !== entry_before.date &&
+           (entry_after == nil || entry.date !== entry_after.date) do
         entry_before.date
       else
         entry.date
@@ -526,9 +509,54 @@ defmodule Budget.Entries do
 
         val ->
           val
-          
       end
 
-    update_entry(entry, %{date: date, position: Decimal.add(after_position, position) |> Decimal.div(2)})
+    Entry.Form.apply_update(entry, %{
+      date: date,
+      position: Decimal.add(after_position, position) |> Decimal.div(2)
+    })
+  end
+
+  def next_position_for_date(date) do
+    max_position =
+      from(
+        e in Entry,
+        where: e.date == ^date,
+        select: max(e.position)
+      )
+      |> Budget.Repo.one()
+      |> case do
+        nil ->
+          Decimal.new(0)
+
+        val ->
+          val
+      end
+
+    Decimal.add(max_position, 1)
+  end
+
+  def originator(%Entry{} = transaction) do
+    [
+      transaction.originator_regular,
+      transaction.originator_transfer_part,
+      transaction.originator_transfer_counter_part
+    ]
+    |> Enum.find(&(Ecto.assoc_loaded?(&1) && &1 != nil))
+  end
+
+  def get_counter_part(%Entry{} = transaction) do
+    originator = originator(transaction)
+
+    cond do
+      transaction.originator_transfer_part == originator ->
+        transaction.originator_transfer_part.counter_part
+
+      transaction.originator_transfer_counter_part == originator ->
+        transaction.originator_transfer_counter_part.part
+
+      true ->
+        raise "not a transfer transaction"
+    end
   end
 end

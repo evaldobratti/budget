@@ -12,11 +12,8 @@ defmodule Budget.Repo.Migrations.CreateRecurrencies do
       add :parcel_start, :integer
       add :parcel_end, :integer
       add :is_parcel, :boolean, default: false, null: false
-      add :account_id, references(:accounts, on_delete: :nothing)
 
       timestamps()
     end
-
-    create index(:recurrencies, [:account_id])
   end
 end

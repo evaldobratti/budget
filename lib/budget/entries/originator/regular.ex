@@ -12,40 +12,48 @@ defmodule Budget.Entries.Originator.Regular do
     timestamps()
   end
 
-  def changeset(regular, attrs) do
-    regular
-    |> cast(attrs, [:description, :category_id])
-    |> validate_required([:description, :category_id])
-  end
-
   @behaviour Budget.Entries.Originator
 
-  def restore_for_recurrency(%{"originator_regular" => regular} = payload) do
+  def restore_for_recurrency(payload) do
     category =
-      regular
+      payload
       |> Map.get("category_id")
       |> Entries.get_category!()
 
+    account =
+      payload
+      |> Map.get("account_id")
+      |> Entries.get_account!()
+      
+
     %{
       originator_regular: %__MODULE__{
-        description: Map.get(regular, "description"),
+        description: Map.get(payload, "description"),
         category: category,
         category_id: category.id
       },
-      value: Decimal.new(Map.get(payload, "value"))
+      value: Decimal.new(Map.get(payload, "value")),
+      account_id: account.id,
+      account: account
     }
   end
 
-  def get_recurrency_payload(entry_changeset) do
+  def get_recurrency_payload(transaction) do
     %{description: description, category_id: category_id} =
-      get_field(entry_changeset, :originator_regular)
+      transaction.originator_regular
 
     %{
-      originator_regular: %{
-        description: description,
-        category_id: category_id
-      },
-      value: get_field(entry_changeset, :value)
+      description: description,
+      category_id: category_id,
+      value: transaction.value,
+      account_id: transaction.account_id,
+      originator: __MODULE__
     }
+  end
+
+  def build_entries(recurrency_params, params) do
+    %Budget.Entries.Entry{}
+    |> Map.merge(recurrency_params)
+    |> Map.merge(params)
   end
 end
