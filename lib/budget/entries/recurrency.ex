@@ -2,8 +2,6 @@ defmodule Budget.Entries.Recurrency do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Budget.Entries.Account
-  alias Budget.Entries.Entry
   alias Budget.Entries.RecurrencyEntry
 
   schema "recurrencies" do
@@ -150,13 +148,9 @@ defmodule Budget.Entries.Recurrency do
     end
   end
 
-  def recurrency_shift(:monthly) do
-    :months
-  end
-
-  def recurrency_shift(:weekly) do
-    :weeks
-  end
+  def recurrency_shift(:monthly), do: :months
+  def recurrency_shift(:weekly), do: :weeks
+  def recurrency_shift(:yearly), do: :years
 
   defp parcel_end_date(%__MODULE__{} = recurrency) do
     parcel_end_date(recurrency, 0, recurrency.date_start, recurrency.parcel_start)

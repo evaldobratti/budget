@@ -1009,7 +1009,7 @@ defmodule Budget.EntriesTest do
       assert "recurrency-" <> _ = Enum.at(entries, 6).id
       assert "recurrency-" <> _ = Enum.at(entries, 7).id
 
-      {:ok, _persisted} = Entries.create_entry(Enum.at(entries, 2), %{})
+      {:ok, _persisted} = Entry.Form.apply_update(Enum.at(entries, 2), %{})
 
       entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 

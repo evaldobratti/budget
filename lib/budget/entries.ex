@@ -102,71 +102,6 @@ defmodule Budget.Entries do
     Account.changeset(account, attrs)
   end
 
-  def change_entry(%Entry{} = entry, attrs \\ %{}) do
-    Entry.changeset(entry, attrs)
-  end
-
-  def update_entry(%Entry{} = entry, attrs) do
-    entry
-    |> Entry.changeset(attrs)
-    |> Repo.update()
-  end
-
-  def create_entry(entry \\ %Entry{}, attrs) do
-    case entry.id do
-      "recurrency" <> _ ->
-        Ecto.Multi.new()
-        |> Ecto.Multi.insert(:entry, Map.put(entry, :id, nil))
-        |> Ecto.Multi.update(:entry_update, fn %{entry: entry} ->
-          Entry.changeset(entry, attrs)
-        end)
-        |> Repo.transaction()
-        |> case do
-          {:ok, %{entry_update: entry_update}} ->
-            {:ok, entry_update}
-
-          error ->
-            error
-        end
-
-      _ ->
-        Ecto.Multi.new()
-        |> Ecto.Multi.run(:entry, fn _repo, _changes ->
-          %Entry{}
-          |> Entry.changeset(attrs)
-          |> Repo.insert()
-        end)
-        |> Ecto.Multi.run(:originator_post_insert, fn _repo, changes ->
-          case changes.entry do
-            %{
-              originator_transfer_part: %{
-                counter_part: %Entry{} = counter_part
-              },
-              recurrency_entry: %RecurrencyEntry{} = recurrency_entry
-            } ->
-              Repo.insert(%RecurrencyEntry{
-                entry_id: counter_part.id,
-                recurrency_id: recurrency_entry.recurrency_id,
-                original_date: recurrency_entry.original_date,
-                parcel: recurrency_entry.parcel,
-                parcel_end: recurrency_entry.parcel_end
-              })
-
-            _ ->
-              {:ok, :nothing_done}
-          end
-        end)
-        |> Repo.transaction()
-        |> case do
-          {:ok, %{entry: entry}} ->
-            {:ok, entry}
-
-          error ->
-            error
-        end
-    end
-  end
-
   def get_entry!("recurrency" <> _ = id) do
     {:error, {:query_for_transient_entry, id}}
   end
@@ -359,9 +294,11 @@ defmodule Budget.Entries do
     |> get_recurrency!()
     |> recurrency_entries(date)
     |> Enum.filter(&(&1.date == date))
-    |> then(fn 
-      [e] -> e
-      list -> 
+    |> then(fn
+      [e] ->
+        e
+
+      list ->
         [ix] = maybe_ix_tail
         Enum.at(list, String.to_integer(ix))
     end)
@@ -374,7 +311,7 @@ defmodule Budget.Entries do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:entry, fn _repo, _changes ->
-      create_entry(transient, %{})
+      Entry.Form.apply_update(transient, %{})
     end)
     |> Ecto.Multi.run(:actions, fn _repo, %{entry: entry} ->
       delete_entry(entry.id, mode)
@@ -605,7 +542,7 @@ defmodule Budget.Entries do
       transaction.originator_transfer_part,
       transaction.originator_transfer_counter_part
     ]
-    |> Enum.find(& Ecto.assoc_loaded?(&1) && &1 != nil)
+    |> Enum.find(&(Ecto.assoc_loaded?(&1) && &1 != nil))
   end
 
   def get_counter_part(%Entry{} = transaction) do
@@ -613,10 +550,10 @@ defmodule Budget.Entries do
 
     cond do
       transaction.originator_transfer_part == originator ->
-        transaction.originator_transfer_part.counter_part 
+        transaction.originator_transfer_part.counter_part
 
       transaction.originator_transfer_counter_part == originator ->
-        transaction.originator_transfer_counter_part.part 
+        transaction.originator_transfer_counter_part.part
 
       true ->
         raise "not a transfer transaction"

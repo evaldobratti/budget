@@ -380,7 +380,7 @@ defmodule BudgetWeb.BudgetLiveTest do
         |> Entries.get_recurrency!()
         |> Entries.recurrency_entries(Timex.today() |> Timex.shift(months: 3))
         |> Enum.at(0)
-        |> Entries.create_entry(%{})
+        |> Entries.Entry.Form.apply_update(%{})
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 

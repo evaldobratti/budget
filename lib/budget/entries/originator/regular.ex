@@ -12,12 +12,6 @@ defmodule Budget.Entries.Originator.Regular do
     timestamps()
   end
 
-  def changeset(regular, attrs) do
-    regular
-    |> cast(attrs, [:description, :category_id])
-    |> validate_required([:description, :category_id])
-  end
-
   @behaviour Budget.Entries.Originator
 
   def restore_for_recurrency(payload) do
