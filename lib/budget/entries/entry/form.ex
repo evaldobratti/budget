@@ -397,7 +397,8 @@ defmodule Budget.Entries.Entry.Form do
       date: get_field(changeset, :date),
       account_id: get_field(changeset, :account_id),
       value: get_field(changeset, :value),
-      position: get_field(changeset, :position)
+      position: get_field(changeset, :position),
+      is_carried_out: get_field(changeset, :is_carried_out)
     })
     |> put_assoc(
       :originator_regular,
@@ -422,7 +423,8 @@ defmodule Budget.Entries.Entry.Form do
         date: get_field(changeset, :date),
         account_id: get_field(changeset, :account_id),
         value: get_field(changeset, :value),
-        position: get_field(changeset, :position)
+        position: get_field(changeset, :position),
+        is_carried_out: get_field(changeset, :is_carried_out)
       })
 
     {entry_transfer_field, transfer_field} =
@@ -452,7 +454,8 @@ defmodule Budget.Entries.Entry.Form do
           date: get_field(changeset, :date),
           account_id:
             Map.get(transfer || %{}, :other_account_id, current_counter_part.account_id),
-          value: get_field(changeset, :value) |> Decimal.negate()
+          value: get_field(changeset, :value) |> Decimal.negate(),
+          is_carried_out: get_field(changeset, :is_carried_out)
         )
       )
     )
