@@ -1,6 +1,8 @@
 defmodule Budget.EntriesTest do
   use Budget.DataCase, async: true
 
+  alias Budget.Entries.Originator.Transfer
+  alias Budget.Entries.Originator.Regular
   alias Budget.Entries
   alias Budget.Entries.Recurrency
   alias Budget.Entries.Entry
@@ -1197,127 +1199,281 @@ defmodule Budget.EntriesTest do
     end
   end
 
+  def delete_entry_payload("regular") do
+    account_id = account_fixture().id
+    category_id = category_fixture().id
+
+    %{
+      date: ~D[2020-01-01],
+      originator: "regular",
+      account_id: account_id,
+      regular: %{
+        description: "something",
+        category_id: category_id
+      },
+      value: 200,
+      recurrency: %{
+        is_forever: true,
+        frequency: :monthly
+      }
+    }
+    |> Entry.Form.apply_insert()
+  end
+
+  def delete_entry_payload(Regular) do
+    category_id = category_fixture().id
+
+    %{
+      originator: "regular",
+      regular: %{
+        description: "something",
+        category_id: category_id
+      }
+    }
+  end
+
+  def delete_entry_payload(Transfer) do
+    account_id2 = account_fixture().id
+
+    %{
+      originator: "transfer",
+      transfer: %{
+        other_account_id: account_id2
+      },
+    }
+  end
+
   describe "delete_entry/2" do
-    test "delete_entry mode entry for an alone entry" do
-      entry = entry_fixture()
+    Enum.each(
+      [Regular, Transfer],
+      fn originator ->
+        test "delete_entry mode entry for an alone entry #{originator}" do
+          account_id = account_fixture().id
 
-      assert {:ok, %{delete_entry: _entry, nulify_recurrency_entry: {0, nil}}} =
-               Entries.delete_entry(entry.id, "entry")
-    end
+          {:ok, entry} = 
+            unquote(originator)
+            |> delete_entry_payload()
+            |> Map.merge(%{
+              date: ~D[2020-01-01],
+              account_id: account_id,
+              value: 200
+            })
+            |> Entry.Form.apply_insert()
 
-    test "delete_entry mode entry for a recurrency entry" do
-      recurrency = recurrency_fixture()
-      entry = Enum.at(recurrency.recurrency_entries, 0).entry
+          assert {:ok, _} = Entries.delete_entry(entry.id, "entry")
 
-      assert {:ok, %{delete_entry: {1, nil}, nulify_recurrency_entry: {1, nil}}} =
-               Entries.delete_entry(entry.id, "entry")
+          assert 0 == Budget.Repo.all(Budget.Entries.Entry) |> length()
+          assert 0 == Budget.Repo.all(unquote(originator)) |> length()
+        end
 
-      assert is_nil(Entries.get_recurrency!(recurrency.id).date_end)
-    end
+        test "delete_entry mode entry for a recurrent #{originator}" do
+          account_id = account_fixture().id
 
-    test "delete_entry mode recurrency-keep-future for a recurrency entry" do
-      recurrency = recurrency_fixture()
-      entry = Enum.at(recurrency.recurrency_entries, 0).entry
+          {:ok, entry} =
+            unquote(originator)
+            |> delete_entry_payload()
+            |> Map.merge(%{
+              date: ~D[2020-01-01],
+              account_id: account_id,
+              value: 200,
+              recurrency: %{
+                frequency: :monthly,
+                is_forever: true
+              }
+            })
+            |> Entry.Form.apply_insert()
 
-      [transient] =
-        Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 1))
+          assert {:ok, _} = Entries.delete_entry(entry.id, "entry")
 
-      {:ok, persisted} = Entry.Form.apply_update(transient, %{})
+          assert 0 == Budget.Repo.all(Budget.Entries.Entry) |> length()
+          assert 0 == Budget.Repo.all(unquote(originator)) |> length()
+        end
 
-      assert {:ok,
-              %{
-                delete_entry: {1, nil},
-                nulify_recurrency_entry: {1, nil},
-                recurrency: %Entries.Recurrency{}
-              }} = Entries.delete_entry(entry.id, "recurrency-keep-future")
+        test "delete_entry mode recurrency-keep-future for a recurrency entry #{originator}" do
+          account_id = account_fixture().id
 
-      assert Entries.get_recurrency!(recurrency.id).date_end ==
-               Timex.today() |> Timex.shift(days: -1)
+          {:ok, entry} =
+            unquote(originator)
+            |> delete_entry_payload()
+            |> Map.merge(%{
+              date: ~D[2020-01-01],
+              account_id: account_id,
+              value: 200,
+              recurrency: %{
+                frequency: :monthly,
+                is_forever: true
+              }
+            })
+            |> Entry.Form.apply_insert()
 
-      assert Entries.get_entry!(persisted.id)
-      refute Entries.get_entry!(entry.id)
-    end
+          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
 
-    test "delete_entry mode recurrency-all for a recurrency entry" do
-      recurrency = recurrency_fixture()
-      entry = Enum.at(recurrency.recurrency_entries, 0).entry
+          [transient | _] =
+            Entries.recurrency_entries(recurrency, ~D[2020-02-01])
 
-      [transient] =
-        Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 1))
+          {:ok, _} = Entry.Form.apply_update(transient, %{})
 
-      {:ok, persisted} = Entry.Form.apply_update(transient, %{})
+          assert {:ok, _} = Entries.delete_entry(entry.id, "recurrency-keep-future")
 
-      assert {:ok,
-              %{
-                delete_entry: {2, nil},
-                nulify_recurrency_entry: {2, nil},
-                recurrency: %Entries.Recurrency{}
-              }} = Entries.delete_entry(entry.id, "recurrency-all")
+          assert Entries.get_recurrency!(recurrency.id).date_end ==
+                   ~D[2019-12-31]
 
-      assert Entries.get_recurrency!(recurrency.id).date_end ==
-               Timex.today() |> Timex.shift(days: -1)
+          assert Budget.Repo.all(Budget.Entries.Entry) |> length() > 0
+          assert Budget.Repo.all(unquote(originator)) |> length() > 0
+        end
 
-      refute Entries.get_entry!(persisted.id)
-      refute Entries.get_entry!(entry.id)
-    end
+        test "delete_entry mode recurrency-all for a recurrency entry #{originator}" do
+          account_id = account_fixture().id
 
-    test "delete_entry mode entry for a transient recurrency entry" do
-      recurrency = recurrency_fixture()
+          {:ok, entry} =
+            unquote(originator)
+            |> delete_entry_payload()
+            |> Map.merge(%{
+              date: ~D[2020-01-01],
+              account_id: account_id,
+              value: 200,
+              recurrency: %{
+                frequency: :monthly,
+                is_forever: true
+              }
+            })
+            |> Entry.Form.apply_insert()
 
-      [transient] =
-        Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 1))
+          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
 
-      assert {:ok, %{delete_entry: {1, nil}, nulify_recurrency_entry: {1, nil}, entry: %{id: id}}} =
-               Entries.delete_entry(transient.id, "entry")
+          [transient | _] =
+            Entries.recurrency_entries(recurrency, ~D[2020-02-01])
 
-      assert is_integer(id)
-    end
+          {:ok, _} = Entry.Form.apply_update(transient, %{})
 
-    test "delete_entry mode recurrency-keep-future for a transient recurrency entry" do
-      recurrency = recurrency_fixture()
+          assert {:ok,_} = Entries.delete_entry(entry.id, "recurrency-all")
 
-      [transient, future] =
-        Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 2))
+          assert Entries.get_recurrency!(recurrency.id).date_end ==
+                   ~D[2019-12-31]
 
-      {:ok, persisted} = Entry.Form.apply_update(future, %{})
+          assert Budget.Repo.all(Budget.Entries.Entry) |> length() == 0
+          assert Budget.Repo.all(unquote(originator)) |> length() == 0
+        end
 
-      assert {:ok,
-              %{
-                delete_entry: {1, nil},
-                nulify_recurrency_entry: {1, nil},
-                recurrency: %Entries.Recurrency{}
-              }} = Entries.delete_entry(transient.id, "recurrency-keep-future")
+        test "delete_entry mode entry for a transient recurrency entry #{originator}" do
+          account_id = account_fixture().id
 
-      recurrency = Entries.get_recurrency!(recurrency.id)
+          {:ok, entry} =
+            unquote(originator)
+            |> delete_entry_payload()
+            |> Map.merge(%{
+              date: ~D[2020-01-01],
+              account_id: account_id,
+              value: 200,
+              recurrency: %{
+                frequency: :monthly,
+                is_forever: true
+              }
+            })
+            |> Entry.Form.apply_insert()
 
-      assert recurrency.date_end ==
-               Timex.today() |> Timex.shift(months: 1) |> Timex.shift(days: -1)
+          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
 
-      assert Entries.get_entry!(persisted.id)
+          [transient | _] = Entries.recurrency_entries(recurrency, ~D[2020-02-01])
 
-      assert [
-               %{entry_id: true, original_date: Timex.today()},
-               %{entry_id: true, original_date: Timex.today() |> Timex.shift(months: 2)},
-               %{entry_id: false, original_date: Timex.today() |> Timex.shift(months: 1)}
-             ] ==
-               Enum.map(
-                 recurrency.recurrency_entries,
-                 &%{entry_id: not is_nil(&1.entry_id), original_date: &1.original_date}
-               )
-    end
+          assert {:ok, _} = Entries.delete_entry(transient.id, "entry")
 
-    test "delete_entry mode recurrency-all when there is already a deleted entry in the future" do
-      recurrency = recurrency_fixture()
+          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
 
-      [transient, future] =
-        Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 2))
+          assert [] == Entries.recurrency_entries(recurrency, ~D[2020-02-01])
+        end
 
-      {:ok, persisted} = Entry.Form.apply_update(future, %{})
+        test "delete_entry mode recurrency-keep-future for a transient recurrency entry #{originator}" do
+          account_id = account_fixture().id
 
-      assert {:ok, _} = Entries.delete_entry(persisted.id, "entry")
+          {:ok, entry} =
+            unquote(originator)
+            |> delete_entry_payload()
+            |> Map.merge(%{
+              date: ~D[2020-01-01],
+              account_id: account_id,
+              value: 200,
+              recurrency: %{
+                frequency: :monthly,
+                is_forever: true
+              }
+            })
+            |> Entry.Form.apply_insert()
 
-      assert {:ok, _} = Entries.delete_entry(transient.id, "recurrency-all")
-    end
+          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+
+          [transient | _] = Entries.entries_in_period([], ~D[2020-02-01], ~D[2020-02-01])
+
+          [future | _] = Entries.entries_in_period([], ~D[2020-03-01], ~D[2020-03-01])
+
+          {:ok, persisted} = Entry.Form.apply_update(future, %{})
+
+          assert {:ok, _} = Entries.delete_entry(transient.id, "recurrency-keep-future")
+
+          recurrency = Entries.get_recurrency!(recurrency.id)
+
+          assert recurrency.date_end == ~D[2020-01-31]
+
+          assert Entries.get_entry!(persisted.id)
+
+          assert [
+                   %{has_entry_id: true, original_date: ~D[2020-01-01]},
+                   %{has_entry_id: false, original_date: ~D[2020-02-01]},
+                   %{has_entry_id: true, original_date: ~D[2020-03-01]},
+                 ] ==
+                   Enum.map(
+                     recurrency.recurrency_entries,
+                     &%{has_entry_id: not is_nil(&1.entry_id), original_date: &1.original_date}
+                   )
+                   |> Enum.sort_by(& &1.original_date, &Timex.before?/2)
+                   |> Enum.uniq()
+        end
+
+        test "delete_entry mode recurrency-all when there is already a deleted entry in the future #{originator}" do
+          account_id = account_fixture().id
+
+          {:ok, entry} =
+            unquote(originator)
+            |> delete_entry_payload()
+            |> Map.merge(%{
+              date: ~D[2020-01-01],
+              account_id: account_id,
+              value: 200,
+              recurrency: %{
+                frequency: :monthly,
+                is_forever: true
+              }
+            })
+            |> Entry.Form.apply_insert()
+
+          [transient | _] = Entries.entries_in_period([], ~D[2020-02-01], ~D[2020-02-01])
+          [future | _] = Entries.entries_in_period([], ~D[2020-03-01], ~D[2020-03-01])
+
+          {:ok, persisted} = Entry.Form.apply_update(future, %{})
+
+          assert {:ok, _} = Entries.delete_entry(persisted.id, "entry")
+
+          assert {:ok, _} = Entries.delete_entry(transient.id, "recurrency-all")
+
+          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+
+          assert recurrency.date_end == ~D[2020-01-31]
+
+          assert [
+                   %{has_entry_id: true, original_date: ~D[2020-01-01]},
+                   %{has_entry_id: false, original_date: ~D[2020-02-01]},
+                   %{has_entry_id: false, original_date: ~D[2020-03-01]},
+                 ] ==
+                   Enum.map(
+                     recurrency.recurrency_entries,
+                     &%{has_entry_id: not is_nil(&1.entry_id), original_date: &1.original_date}
+                   )
+                   |> Enum.sort_by(& &1.original_date, &Timex.before?/2)
+                   |> Enum.uniq()
+        end
+
+      end
+    )
   end
 
   describe "create_category/2" do

@@ -66,6 +66,11 @@
           <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_account), class: "btn btn-sm btn-primary" %>
         </div>
       </div>
+      <%= if Enum.empty?(@accounts) do %>
+        <div class="d-flex mt-2 flex-justify-center">
+          No accounts yet
+        </div>
+      <% end %>
       <%= for account <- @accounts do %>
         <div class="d-flex mt-2">
           <div>
@@ -88,6 +93,11 @@
           <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_category), class: "btn btn-sm btn-primary" %>
         </div>
       </div>
+      <%= if Enum.empty?(@categories) do %>
+        <div class="d-flex mt-2 flex-justify-center">
+          No categories yet
+        </div>
+      <% end %>
       <%= render_categories(@categories, @socket) %>
     </div>
   </div>

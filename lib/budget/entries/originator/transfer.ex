@@ -1,6 +1,7 @@
 defmodule Budget.Entries.Originator.Transfer do
   use Ecto.Schema
 
+  import Ecto.Query
   alias Budget.Entries
   alias Budget.Entries.Entry
 
@@ -119,5 +120,25 @@ defmodule Budget.Entries.Originator.Transfer do
       |> Map.merge(counter_params)
       |> Map.put(:originator_regular, nil)
     ]
+  end
+
+  def delete(transaction_ids) do
+    transfer_ids = from(
+      transaction in Entry, 
+      where: transaction.id in ^transaction_ids, 
+      select: coalesce(transaction.originator_transfer_part_id, transaction.originator_transfer_counter_part_id)
+    )
+
+    part_counter_part_ids = from(
+      transaction in Entry,
+      where: transaction.originator_transfer_part_id in subquery(transfer_ids) or transaction.originator_transfer_counter_part_id in subquery(transfer_ids),
+      select: transaction.id
+    )
+
+    fn _ ->
+      Ecto.Multi.new()
+      |> Ecto.Multi.all(:transactions, part_counter_part_ids)
+      |> Ecto.Multi.all(:originators, transfer_ids)
+    end
   end
 end

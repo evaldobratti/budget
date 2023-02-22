@@ -329,72 +329,66 @@ defmodule Budget.Entries do
   def delete_entry(entry_id, "entry") do
     entry = get_entry!(entry_id)
 
-    Ecto.Multi.new()
-    |> Ecto.Multi.update_all(
-      :nulify_recurrency_entry,
-      from(re in RecurrencyEntry, where: re.entry_id == ^entry_id),
-      set: [entry_id: nil]
-    )
-    |> Ecto.Multi.delete_all(:delete_entry, from(Entry, where: [id: ^entry.id]))
-    |> Repo.transaction()
+    delete_with_recurrency(entry, [entry_id], false)
   end
 
   def delete_entry(entry_id, "recurrency-keep-future") do
     entry = get_entry!(entry_id)
 
-    recurrency_change =
-      entry.recurrency_entry.recurrency
-      |> change_recurrency(%{
-        date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)
-      })
-
-    Ecto.Multi.new()
-    |> Ecto.Multi.update_all(
-      :nulify_recurrency_entry,
-      from(re in RecurrencyEntry, where: re.entry_id == ^entry_id),
-      set: [entry_id: nil]
-    )
-    |> Ecto.Multi.update(:recurrency, recurrency_change)
-    |> Ecto.Multi.delete_all(:delete_entry, from(Entry, where: [id: ^entry.id]))
-    |> Repo.transaction()
+    delete_with_recurrency(entry, [entry_id], true)
   end
 
   def delete_entry(entry_id, "recurrency-all") do
     entry = get_entry!(entry_id)
-    recurrency = entry.recurrency_entry.recurrency
 
-    recurrency_change =
-      recurrency
-      |> change_recurrency(%{
-        date_end: Timex.shift(entry.recurrency_entry.original_date, days: -1)
-      })
-
-    affected_recurrency_entries =
+    transaction_ids =
       from(
         re in RecurrencyEntry,
         where:
-          re.recurrency_id == ^recurrency.id and
+          re.recurrency_id == ^entry.recurrency_entry.recurrency_id and
             re.original_date >= ^entry.recurrency_entry.original_date,
-        preload: :entry
+        select: re.entry_id
       )
       |> Repo.all()
 
-    affected_re_ids = affected_recurrency_entries |> Enum.map(& &1.id)
+    delete_with_recurrency(entry, transaction_ids, true)
+  end
 
-    affected_entry_ids =
-      affected_recurrency_entries |> Enum.filter(& &1.entry) |> Enum.map(& &1.entry.id)
+  defp delete_with_recurrency(subject, transaction_ids, end_recurrency) do
+    recurrency_change = fn repo, _ ->
+      if end_recurrency && subject.recurrency_entry && subject.recurrency_entry.recurrency do
+        subject.recurrency_entry.recurrency
+        |> Ecto.Changeset.change(%{
+          date_end: Timex.shift(subject.recurrency_entry.original_date, days: -1)
+        })
+        |> repo.update()
+      else
+        {:ok, :nothing_changed}
+      end
+    end
+
+    module = originator_module(subject)
+    prepare = module.delete(transaction_ids)
 
     Ecto.Multi.new()
+    |> Ecto.Multi.merge(prepare)
     |> Ecto.Multi.update_all(
-      :nulify_recurrency_entry,
-      from(re in RecurrencyEntry, where: re.id in ^affected_re_ids),
+      :update_recurrency_transactions,
+      fn %{transactions: transactions} ->
+        from(
+          re in RecurrencyEntry,
+          where: re.entry_id in ^transactions
+        )
+      end,
       set: [entry_id: nil]
     )
-    |> Ecto.Multi.delete_all(
-      :delete_entry,
-      from(e in Entry, where: e.id in ^affected_entry_ids)
-    )
-    |> Ecto.Multi.update(:recurrency, recurrency_change)
+    |> Ecto.Multi.delete_all(:delete_transactions, fn %{transactions: transactions} ->
+      from(t in Entry, where: t.id in ^transactions)
+    end)
+    |> Ecto.Multi.delete_all(:delete_originators, fn %{originators: originators} ->
+      from(t in module, where: t.id in ^originators)
+    end)
+    |> Ecto.Multi.run(:recurrency, recurrency_change)
     |> Repo.transaction()
   end
 
@@ -543,6 +537,16 @@ defmodule Budget.Entries do
       transaction.originator_transfer_counter_part
     ]
     |> Enum.find(&(Ecto.assoc_loaded?(&1) && &1 != nil))
+  end
+
+  def originator_module(%Entry{} = transaction) do
+    [
+      transaction.originator_regular,
+      transaction.originator_transfer_part,
+      transaction.originator_transfer_counter_part
+    ]
+    |> Enum.find(&(Ecto.assoc_loaded?(&1) && &1 != nil))
+    |> then(& &1.__struct__)
   end
 
   def get_counter_part(%Entry{} = transaction) do

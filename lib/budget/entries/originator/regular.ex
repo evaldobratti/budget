@@ -2,6 +2,8 @@ defmodule Budget.Entries.Originator.Regular do
   use Ecto.Schema
   import Ecto.Changeset
 
+  import Ecto.Query
+  alias Budget.Entries.Entry
   alias Budget.Entries.Category
   alias Budget.Entries
 
@@ -24,7 +26,6 @@ defmodule Budget.Entries.Originator.Regular do
       payload
       |> Map.get("account_id")
       |> Entries.get_account!()
-      
 
     %{
       originator_regular: %__MODULE__{
@@ -39,8 +40,7 @@ defmodule Budget.Entries.Originator.Regular do
   end
 
   def get_recurrency_payload(transaction) do
-    %{description: description, category_id: category_id} =
-      transaction.originator_regular
+    %{description: description, category_id: category_id} = transaction.originator_regular
 
     %{
       description: description,
@@ -55,5 +55,20 @@ defmodule Budget.Entries.Originator.Regular do
     %Budget.Entries.Entry{}
     |> Map.merge(recurrency_params)
     |> Map.merge(params)
+  end
+
+  def delete(transaction_ids) do
+    regular_ids =
+      from(
+        transaction in Entry,
+        where: transaction.id in ^transaction_ids,
+        select: transaction.originator_regular_id
+      )
+
+    fn _ ->
+      Ecto.Multi.new()
+      |> Ecto.Multi.run(:transactions, fn _, _ -> {:ok, transaction_ids} end)
+      |> Ecto.Multi.all(:originators, regular_ids)
+    end
   end
 end
