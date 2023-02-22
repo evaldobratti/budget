@@ -44,7 +44,7 @@ defmodule Budget.Entries.Entry.Form do
   end
 
   def insert_changeset(params) do
-    changeset = 
+    changeset =
       %__MODULE__{}
       |> cast(params, [
         :date,
@@ -63,7 +63,10 @@ defmodule Budget.Entries.Entry.Form do
 
     changeset
     |> cast_embed(:regular, with: &changeset_regular/2, required: originator == "regular")
-    |> cast_embed(:transfer, with: &changeset_transfer/2, required: originator == "transfer")
+    |> cast_embed(:transfer,
+      with: fn transfer, params -> changeset_transfer(transfer, params, changeset) end,
+      required: originator == "transfer"
+    )
     |> cast_embed(:recurrency, with: &changeset_recurrency/2)
   end
 
@@ -79,14 +82,24 @@ defmodule Budget.Entries.Entry.Form do
     ])
   end
 
-  def changeset_transfer(transfer, params) do
-    transfer
-    |> cast(params, [
-      :other_account_id
-    ])
-    |> validate_required([
-      :other_account_id
-    ])
+  def changeset_transfer(transfer, params, transaction_changeset) do
+    changeset =
+      transfer
+      |> cast(params, [
+        :other_account_id
+      ])
+      |> validate_required([
+        :other_account_id
+      ])
+
+    account_id1 = get_field(transaction_changeset, :account_id)
+    account_id2 = get_field(changeset, :other_account_id)
+
+    if account_id1 && account_id1 == account_id2 do
+      add_error(changeset, :other_account_id, "can't be the same as the origin")
+    else
+      changeset
+    end
   end
 
   def changeset_recurrency(recurrency, params) do
@@ -298,31 +311,35 @@ defmodule Budget.Entries.Entry.Form do
       | originator: originator,
         regular: regular_data,
         transfer: transfer_data,
-        is_recurrency: (
+        is_recurrency:
           transaction.recurrency_entry &&
-          transaction.recurrency_entry.__struct__ == Budget.Entries.RecurrencyEntry
-        )
+            transaction.recurrency_entry.__struct__ == Budget.Entries.RecurrencyEntry
     }
   end
 
   def update_changeset(form, params) do
-    form
-    |> cast(params, [
-      :date,
-      :account_id,
-      :is_carried_out,
-      :position,
-      :value,
-      :apply_forward
-    ])
-    |> validate_required([
-      :date,
-      :account_id,
-      :is_carried_out,
-      :value
-    ])
+    changeset = 
+      form
+      |> cast(params, [
+        :date,
+        :account_id,
+        :is_carried_out,
+        :position,
+        :value,
+        :apply_forward
+      ])
+      |> validate_required([
+        :date,
+        :account_id,
+        :is_carried_out,
+        :value
+      ])
+
+    changeset
     |> cast_embed(:regular, with: &changeset_regular/2)
-    |> cast_embed(:transfer, with: &changeset_transfer/2)
+    |> cast_embed(:transfer,
+      with: fn transfer, params -> changeset_transfer(transfer, params, changeset) end
+    )
   end
 
   def apply_update(
