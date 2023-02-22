@@ -129,6 +129,21 @@ defmodule Budget.Entries.Entry.FormTest do
                  other_account_id: ["can't be blank"]
                }
              } == errors_on(changeset)
+
+      changeset =
+        Form.insert_changeset(%{
+          originator: "transfer",
+          account_id: 1,
+          transfer: %{other_account_id: 1}
+        })
+
+      assert %{
+               date: ["can't be blank"],
+               value: ["can't be blank"],
+               transfer: %{
+                 other_account_id: ["can't be the same as the origin"]
+               }
+             } == errors_on(changeset)
     end
 
     test "invalid recurrency regular transaction" do
@@ -522,6 +537,8 @@ defmodule Budget.Entries.Entry.FormTest do
     end
 
     test "update valid transfer part transaction", data do
+      other_account_id = account_fixture().id
+
       {:ok, transaction} =
         %{
           date: ~D[2022-01-01],
@@ -530,7 +547,7 @@ defmodule Budget.Entries.Entry.FormTest do
           originator: "transfer",
           is_carried_out: false,
           transfer: %{
-            other_account_id: data.account_id
+            other_account_id: other_account_id
           }
         }
         |> Form.insert_changeset()
@@ -582,6 +599,8 @@ defmodule Budget.Entries.Entry.FormTest do
     end
 
     test "update valid transfer counter part transaction", data do
+      other_account_id = account_fixture().id
+
       {:ok, transaction} =
         %{
           date: ~D[2022-01-01],
@@ -589,7 +608,7 @@ defmodule Budget.Entries.Entry.FormTest do
           value: 200,
           originator: "transfer",
           transfer: %{
-            other_account_id: data.account_id
+            other_account_id: other_account_id
           }
         }
         |> Form.insert_changeset()
@@ -761,6 +780,8 @@ defmodule Budget.Entries.Entry.FormTest do
     end
 
     test "update valid transfer part transaction applying forward", data do
+      other_account_id = account_fixture().id
+
       {:ok, transaction} =
         %{
           date: ~D[2022-01-01],
@@ -768,7 +789,7 @@ defmodule Budget.Entries.Entry.FormTest do
           value: 200,
           originator: "transfer",
           transfer: %{
-            other_account_id: data.account_id
+            other_account_id: other_account_id
           },
           recurrency: %{
             is_parcel: false,
@@ -828,6 +849,8 @@ defmodule Budget.Entries.Entry.FormTest do
     end
 
     test "update valid transfer counter part transaction applying forward", data do
+      other_account_id = account_fixture().id
+
       {:ok, transaction} =
         %{
           date: ~D[2022-01-01],
@@ -835,7 +858,7 @@ defmodule Budget.Entries.Entry.FormTest do
           value: 200,
           originator: "transfer",
           transfer: %{
-            other_account_id: data.account_id
+            other_account_id: other_account_id
           },
           recurrency: %{
             is_parcel: false,
