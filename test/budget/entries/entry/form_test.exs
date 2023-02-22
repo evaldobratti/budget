@@ -284,6 +284,7 @@ defmodule Budget.Entries.Entry.FormTest do
                 account_id: data.account_id,
                 date: ~D[2022-01-01],
                 value: 200.0,
+                is_carried_out: false,
                 originator: %{
                   category_id: data.category_id,
                   description: "Something"
@@ -336,6 +337,7 @@ defmodule Budget.Entries.Entry.FormTest do
                 account_id: data.account_id,
                 date: ~D[2022-01-01],
                 value: 200.0,
+                is_carried_out: false,
                 originator: %{
                   date: ~D[2022-01-01],
                   other_account_id: other_account_id,
@@ -606,6 +608,7 @@ defmodule Budget.Entries.Entry.FormTest do
           date: ~D[2022-02-02],
           account_id: other_account_id_part,
           value: 300,
+          is_carried_out: true,
           transfer: %{
             other_account_id: other_account_id_counter_part
           }
@@ -620,7 +623,8 @@ defmodule Budget.Entries.Entry.FormTest do
                  other_account_id: other_account_id_counter_part,
                  other_value: -300.0
                },
-               value: 300.0
+               value: 300.0,
+               is_carried_out: true
              } == counter_part_transaction |> simplify()
     end
 
@@ -668,6 +672,7 @@ defmodule Budget.Entries.Entry.FormTest do
                date: ~D[2022-02-02],
                originator: %{category_id: other_category_id, description: "Something updated"},
                value: 300.0,
+               is_carried_out: false,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -733,6 +738,7 @@ defmodule Budget.Entries.Entry.FormTest do
                date: ~D[2022-02-02],
                originator: %{category_id: other_category_id, description: "Something updated"},
                value: 300.0,
+               is_carried_out: false,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -800,6 +806,7 @@ defmodule Budget.Entries.Entry.FormTest do
                  other_value: -300.0
                },
                value: 300.0,
+               is_carried_out: false,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -869,6 +876,7 @@ defmodule Budget.Entries.Entry.FormTest do
                  other_value: -300.0
                },
                value: 300.0,
+               is_carried_out: false,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -936,6 +944,7 @@ defmodule Budget.Entries.Entry.FormTest do
                date: ~D[2022-02-02],
                originator: %{category_id: other_category_id, description: "Something updated"},
                value: 300.0,
+               is_carried_out: false,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
