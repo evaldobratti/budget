@@ -285,7 +285,7 @@ defmodule Budget.Transactions do
   end
 
   def encarnate_transient_transaction(transaction_id) do
-    [_, recurrency_id, year, month, day | maybe_ix_tail] = String.split(transaction_id, "-")
+    [_, recurrency_id, year, month, day, ix] = String.split(transaction_id, "-")
 
     {:ok, date} =
       Date.new(String.to_integer(year), String.to_integer(month), String.to_integer(day))
@@ -294,14 +294,7 @@ defmodule Budget.Transactions do
     |> get_recurrency!()
     |> recurrency_transactions(date)
     |> Enum.filter(&(&1.date == date))
-    |> then(fn
-      [e] ->
-        e
-
-      list ->
-        [ix] = maybe_ix_tail
-        Enum.at(list, String.to_integer(ix))
-    end)
+    |> Enum.at(String.to_integer(ix))
   end
 
   def delete_transaction(transaction_id, mode)

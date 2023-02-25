@@ -85,7 +85,6 @@ defmodule Budget.Transactions.Originator.Transfer do
       position: Decimal.new(1),
       recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.value,
-      id: recurrency_params.id <> "-0"
     }
 
     counter_params = %{
@@ -107,7 +106,6 @@ defmodule Budget.Transactions.Originator.Transfer do
       position: Decimal.new(1),
       recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.originator_transfer_part.counter_part.value,
-      id: recurrency_params.id <> "-1"
     }
 
     [
