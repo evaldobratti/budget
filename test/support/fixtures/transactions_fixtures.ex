@@ -1,9 +1,9 @@
-defmodule Budget.EntriesFixtures do
+defmodule Budget.TransactionsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `Budget.Entries` context.
+  entities via the `Budget.Transactions` context.
   """
-  alias Budget.Entries.Entry
+  alias Budget.Transactions.Transaction
 
   @doc """
   Generate a account.
@@ -15,7 +15,7 @@ defmodule Budget.EntriesFixtures do
         initial_balance: "120.5",
         name: "Account Name"
       })
-      |> Budget.Entries.create_account()
+      |> Budget.Transactions.create_account()
 
     account
   end
@@ -26,13 +26,13 @@ defmodule Budget.EntriesFixtures do
       |> Enum.into(%{
         name: "root category"
       })
-      |> Budget.Entries.create_category()
+      |> Budget.Transactions.create_category()
 
     category
   end
 
-  def entry_fixture(attrs \\ %{}) do
-    {:ok, entry} =
+  def transaction_fixture(attrs \\ %{}) do
+    {:ok, transaction} =
       attrs
       |> Map.put_new_lazy(:account_id, fn -> account_fixture().id end)
       |> Enum.into(%{
@@ -40,20 +40,20 @@ defmodule Budget.EntriesFixtures do
         value: 133,
         originator: "regular",
         regular: %{
-          description: "Entry description",
+          description: "Transaction description",
           category_id:
             attrs
             |> Map.get(:regular, %{})
             |> Map.get_lazy(:category_id, fn -> category_fixture().id end)
         }
       })
-      |> Budget.Entries.Entry.Form.apply_insert()
+      |> Budget.Transactions.Transaction.Form.apply_insert()
 
-    entry
+    transaction
   end
 
   def recurrency_fixture(attrs \\ %{}) when is_map(attrs) do
-    {:ok, entry} =
+    {:ok, transaction} =
       %{
         date: Map.get(attrs, :date, Timex.today()),
         value: Map.get(attrs, :value, 133),
@@ -67,7 +67,7 @@ defmodule Budget.EntriesFixtures do
           description:
             attrs
             |> Map.get(:regular, %{})
-            |> Map.get(:description, "Entry description")
+            |> Map.get(:description, "Transaction description")
         },
         recurrency:
           %{
@@ -77,8 +77,8 @@ defmodule Budget.EntriesFixtures do
           }
           |> Map.merge(Map.get(attrs, :recurrency, %{}))
       }
-      |> Entry.Form.apply_insert()
+      |> Transaction.Form.apply_insert()
 
-    Budget.Entries.get_recurrency!(entry.recurrency_entry.recurrency_id)
+    Budget.Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency_id)
   end
 end

@@ -1,11 +1,11 @@
 defmodule BudgetWeb.CategoryLive.FormComponent do
   use BudgetWeb, :live_component
 
-  alias Budget.Entries
+  alias Budget.Transactions
 
   @impl true
   def update(%{category: category} = assigns, socket) do
-    changeset = Entries.change_category(category)
+    changeset = Transactions.change_category(category)
 
     {:ok,
      socket
@@ -17,7 +17,7 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
   def handle_event("validate", %{"category" => category_params}, socket) do
     changeset =
       socket.assigns.category
-      |> Entries.change_category(category_params)
+      |> Transactions.change_category(category_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, :changeset, changeset)}
@@ -28,7 +28,7 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
   end
 
   defp save_category(socket, :edit_category, category_params) do
-    case Entries.update_category(socket.assigns.category, category_params) do
+    case Transactions.update_category(socket.assigns.category, category_params) do
       {:ok, _category} ->
         {
           :noreply,
@@ -43,7 +43,7 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
   end
 
   defp save_category(socket, :new_category, category_params) do
-    case Entries.create_category(category_params, Map.get(socket.assigns, :parent)) do
+    case Transactions.create_category(category_params, Map.get(socket.assigns, :parent)) do
       {:ok, _category} ->
         {
           :noreply,

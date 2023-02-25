@@ -1,8 +1,8 @@
-defmodule Budget.Repo.Migrations.CreateEntries do
+defmodule Budget.Repo.Migrations.CreateTransactions do
   use Ecto.Migration
 
   def change do
-    create table(:entries) do
+    create table(:transactions) do
       add :date, :date
       add :description, :string
       add :is_carried_out, :boolean, default: false, null: false
@@ -12,6 +12,6 @@ defmodule Budget.Repo.Migrations.CreateEntries do
       timestamps()
     end
 
-    create index(:entries, [:account_id])
+    create index(:transactions, [:account_id])
   end
 end

@@ -3,8 +3,8 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   alias Phoenix.LiveView.JS
 
-  alias Budget.Entries
-  alias Budget.Entries.Entry
+  alias Budget.Transactions
+  alias Budget.Transactions.Transaction
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,14 +17,14 @@ defmodule BudgetWeb.BudgetLive.Index do
       )
       |> assign(confirm_delete: nil)
       |> assign(balances: [0, 0])
-      |> reload_entries()
+      |> reload_transactions()
     }
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    if Map.get(params, "entry-add-new") do
-      Process.send_after(self(), :add_new_entry, 200)
+    if Map.get(params, "transaction-add-new") do
+      Process.send_after(self(), :add_new_transaction, 200)
     end
 
     {
@@ -37,56 +37,56 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def apply_action(socket, :new_account, _params) do
     socket
-    |> assign(account: %Entries.Account{})
+    |> assign(account: %Transactions.Account{})
   end
 
   def apply_action(socket, :edit_account, %{"id" => id}) do
     socket
-    |> assign(account: Entries.get_account!(id))
+    |> assign(account: Transactions.get_account!(id))
   end
 
   def apply_action(socket, :new_category, _params) do
     socket
-    |> assign(category: %Entries.Category{})
+    |> assign(category: %Transactions.Category{})
   end
 
   def apply_action(socket, :edit_category, %{"id" => id}) do
     socket
-    |> assign(category: Entries.get_category!(id))
+    |> assign(category: Transactions.get_category!(id))
   end
 
   def apply_action(socket, :new_category_child, %{"id" => id}) do
     socket
-    |> assign(category: Entries.get_category!(id))
+    |> assign(category: Transactions.get_category!(id))
   end
 
-  def apply_action(socket, :edit_entry, %{"id" => id}) do
-    entry =
+  def apply_action(socket, :edit_transaction, %{"id" => id}) do
+    transaction =
       case id do
         "recurrency" <> _ ->
-          Entries.encarnate_transient_entry(id)
+          Transactions.encarnate_transient_transaction(id)
 
         _ ->
-          Entries.get_entry!(id)
+          Transactions.get_transaction!(id)
       end
 
     socket
-    |> assign(edit_entry: entry)
+    |> assign(edit_transaction: transaction)
   end
 
-  def apply_action(socket, :delete_entry, %{"id" => id}) do
-    delete_state = Entries.delete_entry_state(id)
+  def apply_action(socket, :delete_transaction, %{"id" => id}) do
+    delete_state = Transactions.delete_transaction_state(id)
 
     socket
-    |> assign(confirm_delete: %{entry_id: id, delete_state: delete_state})
+    |> assign(confirm_delete: %{transaction_id: id, delete_state: delete_state})
   end
 
   def apply_action(socket, _, _) do
     socket
   end
 
-  def apply_return_from(socket, from) when from in ["account", "entry", "delete", "category"] do
-    reload_entries(socket)
+  def apply_return_from(socket, from) when from in ["account", "transaction", "delete", "category"] do
+    reload_transactions(socket)
   end
 
   def apply_return_from(socket, _), do: socket
@@ -109,7 +109,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> assign(dates: dates)
-      |> reload_entries()
+      |> reload_transactions()
     }
   end
 
@@ -130,7 +130,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> assign(dates: dates)
-      |> reload_entries()
+      |> reload_transactions()
     }
   end
 
@@ -148,7 +148,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> assign(accounts_selected_ids: accounts_selected_ids)
-      |> reload_entries()
+      |> reload_transactions()
     }
   end
 
@@ -167,18 +167,18 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> assign(dates: [date_start, date_end])
-      |> reload_entries()
+      |> reload_transactions()
     }
   end
 
-  def handle_event("entry-delete", %{"delete-mode" => delete_mode}, socket) do
-    entry_id = socket.assigns.confirm_delete.entry_id
+  def handle_event("transaction-delete", %{"delete-mode" => delete_mode}, socket) do
+    transaction_id = socket.assigns.confirm_delete.transaction_id
 
     socket =
-      case Entries.delete_entry(entry_id, delete_mode) do
+      case Transactions.delete_transaction(transaction_id, delete_mode) do
         {:ok, _} ->
           socket
-          |> put_flash(:info, "Entry successfully deleted!")
+          |> put_flash(:info, "Transaction successfully deleted!")
           |> push_patch(to: Routes.budget_index_path(socket, :index, from: "delete"))
 
         _ ->
@@ -194,12 +194,12 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def handle_event("reorder", %{"newIndex" => new_index, "oldIndex" => old_index}, socket) do
-    case Entries.update_order(old_index, new_index, socket.assigns.entries) do
+    case Transactions.update_order(old_index, new_index, socket.assigns.transactions) do
       {:ok, _} ->
         {
           :noreply,
           socket
-          |> reload_entries()
+          |> reload_transactions()
         }
 
       _ ->
@@ -211,19 +211,19 @@ defmodule BudgetWeb.BudgetLive.Index do
     end
   end
 
-  defp reload_entries(socket) do
+  defp reload_transactions(socket) do
     accounts_ids = socket.assigns.accounts_selected_ids
     [date_start, date_end] = socket.assigns.dates
 
-    previous_balance = Entries.balance_at(accounts_ids, Timex.shift(date_start, days: -1))
-    next_balance = Entries.balance_at(accounts_ids, date_end)
+    previous_balance = Transactions.balance_at(accounts_ids, Timex.shift(date_start, days: -1))
+    next_balance = Transactions.balance_at(accounts_ids, date_end)
 
-    entries = Entries.entries_in_period(accounts_ids, date_start, date_end)
+    transactions = Transactions.transactions_in_period(accounts_ids, date_start, date_end)
 
     socket
-    |> assign(categories: Entries.list_categories_arranged())
-    |> assign(accounts: Entries.list_accounts())
-    |> assign(entries: entries)
+    |> assign(categories: Transactions.list_categories_arranged())
+    |> assign(accounts: Transactions.list_accounts())
+    |> assign(transactions: transactions)
     |> assign(balances: [previous_balance, next_balance])
   end
 
@@ -260,22 +260,22 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   @impl true
-  def handle_info(:add_new_entry, socket) do
-    {:noreply, socket |> push_patch(to: Routes.budget_index_path(socket, :new_entry))}
+  def handle_info(:add_new_transaction, socket) do
+    {:noreply, socket |> push_patch(to: Routes.budget_index_path(socket, :new_transaction))}
   end
 
-  def description(entry) do
-    case Entries.originator(entry) do
-      %Entries.Originator.Regular{} = regular ->
+  def description(transaction) do
+    case Transactions.originator(transaction) do
+      %Transactions.Originator.Regular{} = regular ->
         regular.description
 
-      %Entries.Originator.Transfer{} ->
-        other_part = Entries.get_counter_part(entry)
+      %Transactions.Originator.Transfer{} ->
+        other_part = Transactions.get_counter_part(transaction)
 
-        if entry.value |> Decimal.negative?() do
+        if transaction.value |> Decimal.negative?() do
           "Transfer to '#{other_part.account.name}'"
         else
-          "Transfer from '#{entry.account.name}'"
+          "Transfer from '#{transaction.account.name}'"
         end
     end
   end

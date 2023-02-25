@@ -1,11 +1,11 @@
 defmodule BudgetWeb.AccountLive.FormComponent do
   use BudgetWeb, :live_component
 
-  alias Budget.Entries
+  alias Budget.Transactions
 
   @impl true
   def update(%{account: account} = assigns, socket) do
-    changeset = Entries.change_account(account)
+    changeset = Transactions.change_account(account)
 
     {:ok,
      socket
@@ -17,7 +17,7 @@ defmodule BudgetWeb.AccountLive.FormComponent do
   def handle_event("validate", %{"account" => account_params}, socket) do
     changeset =
       socket.assigns.account
-      |> Entries.change_account(account_params)
+      |> Transactions.change_account(account_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, :changeset, changeset)}
@@ -28,7 +28,7 @@ defmodule BudgetWeb.AccountLive.FormComponent do
   end
 
   defp save_account(socket, :edit_account, account_params) do
-    case Entries.update_account(socket.assigns.account, account_params) do
+    case Transactions.update_account(socket.assigns.account, account_params) do
       {:ok, _account} ->
         {
           :noreply,
@@ -43,7 +43,7 @@ defmodule BudgetWeb.AccountLive.FormComponent do
   end
 
   defp save_account(socket, :new_account, account_params) do
-    case Entries.create_account(account_params) do
+    case Transactions.create_account(account_params) do
       {:ok, _account} ->
         {
           :noreply,
