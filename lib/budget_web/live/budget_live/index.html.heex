@@ -116,7 +116,7 @@
           <div>
             <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
             <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
-            <div class="d-inline px-1">until</div>
+            <div class="d-inline px-1">to</div>
             <input name="date-end" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")} />
             <button class="btn btn-sm btn-primary" phx-click="month-next" type="button"><%= ">>" %></button>
           </div>
@@ -238,7 +238,7 @@
         </div>
       </:row>
 
-      <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center list-group-item">
+      <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center list-group-item item-draggable">
         <div class="col-1 px-1">
           <%= format_date(entry.date) %> 
         </div>
@@ -280,11 +280,9 @@
               <.fa_icon icon="fa-trash" />
             <% end %>
           </.tooltiped>
-          <.tooltiped tooltip="Sort">
-            <span class="sortable-handle btn-octicon">
-              <.fa_icon icon="fa-up-down" />
-            </span>
-          </.tooltiped>
+          <span class="btn-octicon sortable-handle">
+            <.fa_icon icon="fa-up-down" />
+          </span>
         </div>
       </:row>
 

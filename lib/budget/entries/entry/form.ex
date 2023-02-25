@@ -114,7 +114,6 @@ defmodule Budget.Entries.Entry.Form do
         :parcel_end
       ])
       |> validate_required([
-        :is_forever,
         :frequency
       ])
 

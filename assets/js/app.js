@@ -130,6 +130,7 @@ let liveSocket = new LiveSocket("/live", Socket, {
 
 const setupSortable = (el) => {
     new Sortable(el, {
+      draggable: ".item-draggable",
       handle: ".sortable-handle",
       animation: 150,
       onEnd: ({oldIndex, newIndex}) => {
