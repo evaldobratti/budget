@@ -293,7 +293,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       assert live |> element("#previous-balance") |> render =~ "320,50"
 
-      assert live |> element("#transaction-recurrency-#{recurrency.id}-#{next_month_transaction}") |> render =~
+      assert live |> element("#transaction-recurrency-#{recurrency.id}-#{next_month_transaction}-0") |> render =~
                "200,00"
 
       assert live |> element("#next-balance") |> render =~ "520,50"

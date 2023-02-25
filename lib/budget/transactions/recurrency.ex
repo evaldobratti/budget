@@ -109,12 +109,18 @@ defmodule Budget.Transactions.Recurrency do
       params = payload_at_date(payloads, date)
 
       originator.build_transactions(%{
-        id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
         date: date,
         is_recurrency: true,
         recurrency_transaction: recurrency_transaction,
         position: Decimal.new(1)
       }, params)
+      |> List.wrap()
+      |> Enum.with_index()
+      |> Enum.map(fn {entry, ix} -> 
+        id = "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}-#{ix}"
+
+        Map.put(entry, :id, id)
+      end)
     end)
     |> List.flatten()
     |> Enum.filter(
