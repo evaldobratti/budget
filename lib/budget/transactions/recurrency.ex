@@ -1,8 +1,8 @@
-defmodule Budget.Entries.Recurrency do
+defmodule Budget.Transactions.Recurrency do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Budget.Entries.RecurrencyEntry
+  alias Budget.Transactions.RecurrencyTransaction
 
   schema "recurrencies" do
     field :date_end, :date
@@ -12,9 +12,9 @@ defmodule Budget.Entries.Recurrency do
     field :is_parcel, :boolean, default: false
     field :parcel_end, :integer
     field :parcel_start, :integer
-    field :entry_payload, :map
+    field :transaction_payload, :map
 
-    has_many :recurrency_entries, RecurrencyEntry
+    has_many :recurrency_transactions, RecurrencyTransaction
 
     timestamps()
   end
@@ -59,7 +59,7 @@ defmodule Budget.Entries.Recurrency do
     end
   end
 
-  def entries(%__MODULE__{} = recurrency, until_date) do
+  def transactions(%__MODULE__{} = recurrency, until_date) do
     first_end =
       cond do
         recurrency.is_forever -> [recurrency.date_end, until_date]
@@ -73,14 +73,14 @@ defmodule Budget.Entries.Recurrency do
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
     originator = 
-      recurrency.entry_payload
+      recurrency.transaction_payload
       |> Map.values()
       |> Enum.random()
       |> Map.get("originator")
       |> String.to_existing_atom()
 
     payloads =
-      recurrency.entry_payload
+      recurrency.transaction_payload
       |> Enum.map(fn {date, payload} ->
         {Date.from_iso8601!(date), originator.restore_for_recurrency(payload)}
       end)
@@ -89,9 +89,9 @@ defmodule Budget.Entries.Recurrency do
     dates
     |> Enum.with_index()
     |> Enum.map(fn {date, ix} ->
-      recurrency_entry =
+      recurrency_transaction =
         if recurrency.is_parcel do
-          %RecurrencyEntry{
+          %RecurrencyTransaction{
             original_date: date,
             recurrency_id: recurrency.id,
             recurrency: recurrency,
@@ -99,7 +99,7 @@ defmodule Budget.Entries.Recurrency do
             parcel_end: recurrency.parcel_end
           }
         else
-          %RecurrencyEntry{
+          %RecurrencyTransaction{
             original_date: date,
             recurrency_id: recurrency.id,
             recurrency: recurrency
@@ -108,18 +108,18 @@ defmodule Budget.Entries.Recurrency do
 
       params = payload_at_date(payloads, date)
 
-      originator.build_entries(%{
+      originator.build_transactions(%{
         id: "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}",
         date: date,
         is_recurrency: true,
-        recurrency_entry: recurrency_entry,
+        recurrency_transaction: recurrency_transaction,
         position: Decimal.new(1)
       }, params)
     end)
     |> List.flatten()
     |> Enum.filter(
-      &(!Enum.any?(recurrency.recurrency_entries, fn re ->
-          re.original_date == &1.recurrency_entry.original_date
+      &(!Enum.any?(recurrency.recurrency_transactions, fn re ->
+          re.original_date == &1.recurrency_transaction.original_date
         end))
     )
   end

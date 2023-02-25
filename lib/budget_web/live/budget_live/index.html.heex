@@ -47,7 +47,7 @@
         module={BudgetWeb.CategoryLive.FormComponent}
         id={@category.id || :new}
         action={:new_category}
-        category={%Entries.Category{}}
+        category={%Transactions.Category{}}
         parent={@category}
         return_to={Routes.budget_index_path(@socket, :index, from: "category")}
       />
@@ -123,17 +123,17 @@
         </.form>
       </div>
       <div class="col-auto align-items-end">
-        <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_entry), class: "btn btn-sm btn-primary" %>
-        <%= if @live_action == :new_entry do %>
+        <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_transaction), class: "btn btn-sm btn-primary" %>
+        <%= if @live_action == :new_transaction do %>
           <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
             <:header_title>Transaction</:header_title>
             <:body>
               <.live_component
-                module={BudgetWeb.EntryLive.FormComponent}
+                module={BudgetWeb.TransactionLive.FormComponent}
                 action={@live_action}
                 id={:new}
-                entry={%Entry{date: Timex.today()}}
-                return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
+                transaction={%Transaction{date: Timex.today()}}
+                return_to={Routes.budget_index_path(@socket, :index, from: "transaction")}
               />
             </:body>
           </.dialog>
@@ -141,57 +141,57 @@
       </div>
     </div>
 
-    <%= if @live_action == :edit_entry do %>
+    <%= if @live_action == :edit_transaction do %>
       <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
         <:header_title>Transaction</:header_title>
         <:body>
           <.live_component
-            module={BudgetWeb.EntryLive.FormComponent}
+            module={BudgetWeb.TransactionLive.FormComponent}
             action={@live_action}
-            id={@edit_entry.id}
-            entry={@edit_entry}
-            return_to={Routes.budget_index_path(@socket, :index, from: "entry")}
+            id={@edit_transaction.id}
+            transaction={@edit_transaction}
+            return_to={Routes.budget_index_path(@socket, :index, from: "transaction")}
           />
         </:body>
       </.dialog>
     <% end %>
 
-    <%= if @live_action == :delete_entry do %>
+    <%= if @live_action == :delete_transaction do %>
 
       <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
         <:header_title>Delete transaction</:header_title>
         <:body>
           <%= case @confirm_delete.delete_state do %>
             <% :recurrency -> %>
-              This entry is associated to a recurrency. What do you want to do about it?
+              This transaction is associated to a recurrency. What do you want to do about it?
 
               <div>
-                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="entry-delete" phx-value-delete-mode="entry">
-                  Delete just this entry
+                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
+                  Delete just this transaction
                 </button>
-                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="entry-delete" phx-value-delete-mode="recurrency-all">
-                  Delete this entry and future entries
+                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
+                  Delete this transaction and future transactions
                 </button>
               </div>
 
             <% :recurrency_with_future -> %>
-              This entry is associated to a recurrency. Future entries from this recurrency have already been updated, so what do you want to do about it?
+              This transaction is associated to a recurrency. Future transactions from this recurrency have already been updated, so what do you want to do about it?
                 <div>
-                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="entry-delete" phx-value-delete-mode="entry">
-                    Delete just this entry
+                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
+                    Delete just this transaction
                   </button>
-                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="entry-delete" phx-value-delete-mode="recurrency-keep-future">
-                    Delete this entry with future ones but keep changed ones
+                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-keep-future">
+                    Delete this transaction with future ones but keep changed ones
                   </button>
-                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="entry-delete" phx-value-delete-mode="recurrency-all">
-                    Delete this entry and all future ones
+                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
+                    Delete this transaction and all future ones
                   </button>
                 </div>
 
             <% :regular -> %>
-              Do you confirm deleting this entry?
+              Do you confirm deleting this transaction?
               <div>
-                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="entry-delete" phx-value-delete-mode="entry">
+                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
                   Yes
                 </button>
               </div>
@@ -203,7 +203,7 @@
     <.box is_condensed class="my-2 list-group" phx_mounted={JS.dispatch("budget:sortable-setup")}>
       <:header class="d-flex">
         <div class="col-1 px-1">
-          Date 
+          Date
         </div>
         <div class="flex-1 px-1">
           Description
@@ -224,7 +224,7 @@
       </:header>
       <:row id="previous-balance" class="d-flex">
         <div class="col-1 px-1">
-          <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %> 
+          <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
         </div>
         <div class="flex-1 px-1">
           Previous balance
@@ -238,19 +238,19 @@
         </div>
       </:row>
 
-      <:row :for={entry <- @entries} is_hover_gray id={"entry-#{entry.id}"} class="d-flex flex-items-center list-group-item item-draggable">
+      <:row :for={transaction <- @transactions} is_hover_gray id={"transaction-#{transaction.id}"} class="d-flex flex-items-center list-group-item item-draggable">
         <div class="col-1 px-1">
-          <%= format_date(entry.date) %> 
+          <%= format_date(transaction.date) %>
         </div>
         <div class="flex-1 px-1 d-flex">
-          <%= live_patch description(entry), to: Routes.budget_index_path(@socket, :edit_entry, entry.id) %>
+          <%= live_patch description(transaction), to: Routes.budget_index_path(@socket, :edit_transaction, transaction.id) %>
           <div class="ml-auto">
-            <%= if entry.recurrency_entry && entry.recurrency_entry.parcel do %>
+            <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
               <span>
-                <%= "(#{entry.recurrency_entry.parcel}/#{entry.recurrency_entry.parcel_end})" %>
+                <%= "(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})" %>
               </span>
             <% end %>
-            <%= if entry.recurrency_entry do %>
+            <%= if transaction.recurrency_transaction do %>
               <.tooltiped tooltip="Recurrency">
                 <.fa_icon icon="fa-repeat" />
               </.tooltiped>
@@ -258,25 +258,25 @@
           </div>
         </div>
         <div class="col-2 px-1 text-center">
-          <% originator = Entries.originator(entry) %>
+          <% originator = Transactions.originator(transaction) %>
 
-          <%= if originator && originator.__struct__ == Budget.Entries.Originator.Regular, do: entry.originator_regular.category.name %>
+          <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular, do: transaction.originator_regular.category.name %>
 
-          <%= if originator && originator.__struct__ == Budget.Entries.Originator.Transfer do %>
+          <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
             <.tooltiped tooltip="Transfer">
               <.fa_icon icon="fa-money-bill-transfer" />
             </.tooltiped>
           <% end %>
         </div>
         <div class="col-2 px-1 text-center">
-          <%= entry.account.name %>
+          <%= transaction.account.name %>
         </div>
         <div class={"col-2 text-right px-1"}>
-          <.currency value={entry.value} />
+          <.currency value={transaction.value} />
         </div>
         <div class="col-1 px-1">
           <.tooltiped tooltip="Delete">
-            <%= live_patch to: Routes.budget_index_path(@socket, :delete_entry, entry.id), data_testid: "delete-#{entry.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
+            <%= live_patch to: Routes.budget_index_path(@socket, :delete_transaction, transaction.id), data_testid: "delete-#{transaction.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
               <.fa_icon icon="fa-trash" />
             <% end %>
           </.tooltiped>
@@ -286,13 +286,13 @@
         </div>
       </:row>
 
-      <:row :if={Enum.empty?(@entries)} is_hover_gray id={"empty-transactions"} class="d-flex flex-justify-center">
+      <:row :if={Enum.empty?(@transactions)} is_hover_gray id={"empty-transactions"} class="d-flex flex-justify-center">
         No transactions in this period.
       </:row>
 
       <:row id="next-balance" class="d-flex">
         <div class="col-1 px-1">
-          <%= format_date(Enum.at(@dates, 1)) %> 
+          <%= format_date(Enum.at(@dates, 1)) %>
         </div>
         <div class="flex-1 px-1">
           Next balance

@@ -1,35 +1,35 @@
-defmodule Budget.Entries.Originator.Transfer do
+defmodule Budget.Transactions.Originator.Transfer do
   use Ecto.Schema
 
   import Ecto.Query
-  alias Budget.Entries
-  alias Budget.Entries.Entry
+  alias Budget.Transactions
+  alias Budget.Transactions.Transaction
 
   schema "originators_transfer" do
-    has_one(:part, Entry, foreign_key: :originator_transfer_part_id)
-    has_one(:counter_part, Entry, foreign_key: :originator_transfer_counter_part_id)
+    has_one(:part, Transaction, foreign_key: :originator_transfer_part_id)
+    has_one(:counter_part, Transaction, foreign_key: :originator_transfer_counter_part_id)
 
     field(:other_account_id, :integer, virtual: true)
 
     timestamps()
   end
 
-  @behaviour Budget.Entries.Originator
+  @behaviour Budget.Transactions.Originator
 
   def restore_for_recurrency(payload) do
     account =
       payload
       |> Map.get("part_account_id")
-      |> Entries.get_account!()
+      |> Transactions.get_account!()
 
     other_account =
       payload
       |> Map.get("counter_part_account_id")
-      |> Entries.get_account!()
+      |> Transactions.get_account!()
 
     %{
       originator_transfer_part: %__MODULE__{
-        counter_part: %Entry{
+        counter_part: %Transaction{
           value: Decimal.new(Map.get(payload, "value")) |> Decimal.negate(),
           account_id: other_account.id,
           account: other_account,
@@ -65,17 +65,17 @@ defmodule Budget.Entries.Originator.Transfer do
     }
   end
 
-  def build_entries(recurrency_params, params) do
+  def build_transactions(recurrency_params, params) do
     part_params = %{
       originator_transfer_part: %__MODULE__{
-        counter_part: %Entry{
+        counter_part: %Transaction{
           date: recurrency_params.date,
           value: params.originator_transfer_part.counter_part.value,
           account_id: params.originator_transfer_part.counter_part.account_id,
           account: params.originator_transfer_part.counter_part.account,
           is_carried_out: false,
           position: Decimal.new(1),
-          recurrency_entry: recurrency_params.recurrency_entry
+          recurrency_transaction: recurrency_params.recurrency_transaction
         }
       },
       date: recurrency_params.date,
@@ -83,20 +83,20 @@ defmodule Budget.Entries.Originator.Transfer do
       account: params.account,
       is_carried_out: false,
       position: Decimal.new(1),
-      recurrency_entry: recurrency_params.recurrency_entry,
+      recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.value,
       id: recurrency_params.id <> "-0"
     }
 
     counter_params = %{
       originator_transfer_counter_part: %__MODULE__{
-        part: %Entry{
+        part: %Transaction{
           date: recurrency_params.date,
           value: params.value,
           account_id: params.account_id,
           account: params.account,
           is_carried_out: false,
-          recurrency_entry: recurrency_params.recurrency_entry,
+          recurrency_transaction: recurrency_params.recurrency_transaction,
           position: Decimal.new(1)
         }
       },
@@ -105,17 +105,17 @@ defmodule Budget.Entries.Originator.Transfer do
       account: params.originator_transfer_part.counter_part.account,
       is_carried_out: false,
       position: Decimal.new(1),
-      recurrency_entry: recurrency_params.recurrency_entry,
+      recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.originator_transfer_part.counter_part.value,
       id: recurrency_params.id <> "-1"
     }
 
     [
-      %Budget.Entries.Entry{}
+      %Budget.Transactions.Transaction{}
       |> Map.merge(recurrency_params)
       |> Map.merge(part_params)
       |> Map.put(:originator_regular, nil),
-      %Budget.Entries.Entry{}
+      %Budget.Transactions.Transaction{}
       |> Map.merge(recurrency_params)
       |> Map.merge(counter_params)
       |> Map.put(:originator_regular, nil)
@@ -124,13 +124,13 @@ defmodule Budget.Entries.Originator.Transfer do
 
   def delete(transaction_ids) do
     transfer_ids = from(
-      transaction in Entry, 
-      where: transaction.id in ^transaction_ids, 
+      transaction in Transaction,
+      where: transaction.id in ^transaction_ids,
       select: coalesce(transaction.originator_transfer_part_id, transaction.originator_transfer_counter_part_id)
     )
 
     part_counter_part_ids = from(
-      transaction in Entry,
+      transaction in Transaction,
       where: transaction.originator_transfer_part_id in subquery(transfer_ids) or transaction.originator_transfer_counter_part_id in subquery(transfer_ids),
       select: transaction.id
     )

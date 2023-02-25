@@ -1,17 +1,12 @@
-defmodule Budget.Entries.Entry do
+defmodule Budget.Transactions.Transaction do
   use Ecto.Schema
 
-  import Ecto.Changeset
-  import Ecto.Query
+  alias Budget.Transactions.Account
+  alias Budget.Transactions.RecurrencyTransaction
+  alias Budget.Transactions.Originator.Transfer
+  alias Budget.Transactions.Originator.Regular
 
-  alias Budget.Entries.Recurrency
-  alias Ecto.Changeset
-  alias Budget.Entries.Account
-  alias Budget.Entries.RecurrencyEntry
-  alias Budget.Entries.Originator.Transfer
-  alias Budget.Entries.Originator.Regular
-
-  schema "entries" do
+  schema "transactions" do
     field(:date, :date)
     field(:is_carried_out, :boolean, default: false)
     field(:value, :decimal)
@@ -28,7 +23,7 @@ defmodule Budget.Entries.Entry do
     field(:is_transfer, :boolean, virtual: true)
     field(:recurrency_apply_forward, :boolean, virtual: true)
 
-    has_one(:recurrency_entry, RecurrencyEntry)
+    has_one(:recurrency_transaction, RecurrencyTransaction)
 
     timestamps()
   end

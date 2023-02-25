@@ -2,7 +2,7 @@ defmodule BudgetWeb.AccountLiveTest do
   use BudgetWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import Budget.EntriesFixtures
+  import Budget.TransactionsFixtures
 
   @create_attrs %{initial_balance: "120.5", name: "some name"}
   @update_attrs %{initial_balance: "456.7", name: "some updated name"}

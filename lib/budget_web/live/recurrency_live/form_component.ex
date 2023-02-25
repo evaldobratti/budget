@@ -1,29 +1,29 @@
 defmodule BudgetWeb.RecurrencyLive.FormComponent do
   use BudgetWeb, :live_component
 
-  alias Budget.Entries
+  alias Budget.Transactions
 
   @impl true
   def update(%{recurrency: recurrency} = assigns, socket) do
     changeset =
       if assigns.action == :new do
-        Entries.change_recurrency(recurrency, %{date_start: Date.utc_today()})
+        Transactions.change_recurrency(recurrency, %{date_start: Date.utc_today()})
       else
-        Entries.change_recurrency(recurrency)
+        Transactions.change_recurrency(recurrency)
       end
 
     {:ok,
      socket
      |> assign(assigns)
      |> assign(:changeset, changeset)
-     |> assign(:accounts, Entries.list_accounts())}
+     |> assign(:accounts, Transactions.list_accounts())}
   end
 
   @impl true
   def handle_event("validate", %{"recurrency" => recurrency_params}, socket) do
     changeset =
       socket.assigns.recurrency
-      |> Entries.change_recurrency(recurrency_params)
+      |> Transactions.change_recurrency(recurrency_params)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, :changeset, changeset)}
@@ -34,7 +34,7 @@ defmodule BudgetWeb.RecurrencyLive.FormComponent do
   end
 
   defp save_recurrency(socket, :edit, recurrency_params) do
-    case Entries.update_recurrency(socket.assigns.recurrency, recurrency_params) do
+    case Transactions.update_recurrency(socket.assigns.recurrency, recurrency_params) do
       {:ok, recurrency} ->
         send(self(), recurrency_updated: recurrency)
 
@@ -50,7 +50,7 @@ defmodule BudgetWeb.RecurrencyLive.FormComponent do
   end
 
   defp save_recurrency(socket, :new, recurrency_params) do
-    case Entries.create_recurrency(recurrency_params) do
+    case Transactions.create_recurrency(recurrency_params) do
       {:ok, recurrency} ->
         send(self(), recurrency_created: recurrency)
 

@@ -2,16 +2,16 @@
   <.form
     let={f}
     for={@changeset}
-    id="entry-form"
+    id="transaction-form"
     phx-target={@myself}
     phx-change="validate"
     phx-submit="save"
   >
-    <% entry_loaded = @changeset.data.id %>
+    <% transaction_loaded = @changeset.data.id %>
     <% [regular_form] = inputs_for f, :regular %>
     <% [transfer_form] = inputs_for f, :transfer %>
 
-    <%= if !entry_loaded do %>
+    <%= if !transaction_loaded do %>
       <div class="d-flex flex-justify-center mb-3">
         <.radio_group>
           <:radio_button name={input_name(f, :originator)} value="regular" checked={input_value(f, :originator) == "regular"}></:radio_button>
@@ -58,8 +58,8 @@
 
     <div class="d-flex mb-3">
       <.checkbox form={f} field={:is_carried_out} cass="flex-1" />
-      <.checkbox :if={!entry_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
-      <.checkbox :if={!entry_loaded} form={f} name={:keep_adding} class="flex-1"> 
+      <.checkbox :if={!transaction_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
+      <.checkbox :if={!transaction_loaded} form={f} name={:keep_adding} class="flex-1">
         <:label>Keep adding</:label>
       </.checkbox>
     </div>
@@ -70,7 +70,7 @@
       <.checkbox form={f} field={:apply_forward} />
     <% end %>
 
-    <%= if Ecto.Changeset.get_field(@changeset, :is_recurrency) && !entry_loaded do %>
+    <%= if Ecto.Changeset.get_field(@changeset, :is_recurrency) && !transaction_loaded do %>
 
       <.form_group form={recurrency_form} field={:frequency}>
         <.select form={recurrency_form} field={:frequency} options={Ecto.Enum.mappings(Recurrency, :frequency)} />
@@ -82,20 +82,20 @@
 
       <div class="d-flex">
         <div class="flex-1">
-          <.checkbox form={recurrency_form} field={:is_parcel} disabled={entry_loaded  || is_forever || has_end_date} /> 
+          <.checkbox form={recurrency_form} field={:is_parcel} disabled={transaction_loaded  || is_forever || has_end_date} />
 
           <.form_group form={recurrency_form} field={:parcel_start}>
-            <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
+            <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={transaction_loaded  || is_forever || has_end_date} class="width-small" />
           </.form_group>
           <.form_group form={recurrency_form} field={:parcel_end}>
-            <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={entry_loaded  || is_forever || has_end_date} class="width-small" />
+            <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={transaction_loaded  || is_forever || has_end_date} class="width-small" />
           </.form_group>
         </div>
 
         <div class="flex-1">
-          <.checkbox form={recurrency_form} field={:is_forever} disabled={entry_loaded  || is_parcel} /> 
+          <.checkbox form={recurrency_form} field={:is_forever} disabled={transaction_loaded  || is_parcel} />
           <.form_group form={recurrency_form} field={:date_end}>
-            <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || entry_loaded} class="width-small" />
+            <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || transaction_loaded} class="width-small" />
           </.form_group>
         </div>
 
@@ -104,6 +104,6 @@
   </.form>
 
   <div class="d-flex">
-    <%= submit "Save", phx_disable_with: "Saving...", form: "entry-form", class: "btn btn-primary btn-sm", style: "width: 100%" %>
+    <%= submit "Save", phx_disable_with: "Saving...", form: "transaction-form", class: "btn btn-primary btn-sm", style: "width: 100%" %>
   </div>
 </div>

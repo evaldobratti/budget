@@ -2,10 +2,10 @@ defmodule BudgetWeb.BudgetLiveTest do
   use BudgetWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
-  import Budget.EntriesFixtures
+  import Budget.TransactionsFixtures
 
   alias Budget.Repo
-  alias Budget.Entries
+  alias Budget.Transactions
 
   defp create_account(_) do
     account = account_fixture()
@@ -52,16 +52,16 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
   end
 
-  describe "entries" do
-    test "create new entry", %{conn: conn, account: account, category: category} do
+  describe "transactions" do
+    test "create new transaction", %{conn: conn, account: account, category: category} do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a[href='#{Routes.budget_index_path(conn, :new_entry)}']")
+      |> element("a[href='#{Routes.budget_index_path(conn, :new_transaction)}']")
       |> render_click()
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           regular: %{
@@ -74,24 +74,24 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
       |> render_submit()
 
-      refute live |> element("#entry-form") |> has_element?
+      refute live |> element("#transaction-form") |> has_element?
 
-      entry = Repo.one(Budget.Entries.Entry)
+      transaction = Repo.one(Budget.Transactions.Transaction)
 
       assert live |> element("#previous-balance") |> render =~ "120,50"
-      assert live |> element("#entry-#{entry.id}") |> render =~ "200,00"
+      assert live |> element("#transaction-#{transaction.id}") |> render =~ "200,00"
       assert live |> element("#next-balance") |> render =~ "320,50"
     end
 
-    test "keeps adding entries", %{conn: conn, account: account, category: category} do
+    test "keeps adding transactions", %{conn: conn, account: account, category: category} do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a[href='#{Routes.budget_index_path(conn, :new_entry)}']")
+      |> element("a[href='#{Routes.budget_index_path(conn, :new_transaction)}']")
       |> render_click()
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           regular: %{
@@ -105,24 +105,24 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
       |> render_submit()
 
-      refute live |> element("#entry-form") |> has_element?
+      refute live |> element("#transaction-form") |> has_element?
 
-      assert "/entries/new" == assert_patch(live, 100)
-      assert "/?entry-add-new=true&from=entry" == assert_patch(live, 100)
-      assert "/entries/new" == assert_patch(live, 300)
+      assert "/transactions/new" == assert_patch(live, 100)
+      assert "/?from=transaction&transaction-add-new=true" == assert_patch(live, 100)
+      assert "/transactions/new" == assert_patch(live, 300)
     end
 
-    test "editing entry", %{conn: conn, account: account} do
-      entry = entry_fixture(%{account_id: account.id})
+    test "editing transaction", %{conn: conn, account: account} do
+      transaction = transaction_fixture(%{account_id: account.id})
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a", "Entry description")
+      |> element("a", "Transaction description")
       |> render_click()
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           regular: %{description: "a new description"},
           value: "400"
@@ -130,24 +130,24 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
       |> render_submit()
 
-      updated = Entries.get_entry!(entry.id)
+      updated = Transactions.get_transaction!(transaction.id)
 
       assert updated.value == Decimal.new(400)
       assert updated.originator_regular.description == "a new description"
     end
 
     test "navigating through months via form", %{conn: conn, account: account} do
-      today = entry_fixture(%{value: 200, account_id: account.id})
+      today = transaction_fixture(%{value: 200, account_id: account.id})
 
       last_month =
-        entry_fixture(%{
+        transaction_fixture(%{
           date: Timex.today() |> Timex.shift(months: -1) |> Date.to_iso8601(),
           value: 300,
           account_id: account.id
         })
 
       next_month =
-        entry_fixture(%{
+        transaction_fixture(%{
           date: Timex.today() |> Timex.shift(months: 1) |> Date.to_iso8601(),
           value: 400,
           account_id: account.id
@@ -156,7 +156,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       assert live |> element("#previous-balance") |> render =~ "420,50"
-      assert live |> element("#entry-#{today.id}") |> render =~ "200,00"
+      assert live |> element("#transaction-#{today.id}") |> render =~ "200,00"
       assert live |> element("#next-balance") |> render =~ "620,50"
 
       last_month_start = Timex.today() |> Timex.shift(months: -1) |> Timex.beginning_of_month()
@@ -170,7 +170,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       })
 
       assert live |> element("#previous-balance") |> render =~ "120,50"
-      assert live |> element("#entry-#{last_month.id}") |> render =~ "300,00"
+      assert live |> element("#transaction-#{last_month.id}") |> render =~ "300,00"
       assert live |> element("#next-balance") |> render =~ "420,50"
 
       next_month_start = Timex.today() |> Timex.shift(months: 1) |> Timex.beginning_of_month()
@@ -184,22 +184,22 @@ defmodule BudgetWeb.BudgetLiveTest do
       })
 
       assert live |> element("#previous-balance") |> render =~ "620,50"
-      assert live |> element("#entry-#{next_month.id}") |> render =~ "400,00"
+      assert live |> element("#transaction-#{next_month.id}") |> render =~ "400,00"
       assert live |> element("#next-balance") |> render =~ "1.020,50"
     end
 
     test "navigating through months via buttons", %{conn: conn, account: account} do
-      today = entry_fixture(%{value: 200, account_id: account.id})
+      today = transaction_fixture(%{value: 200, account_id: account.id})
 
       last_month =
-        entry_fixture(%{
+        transaction_fixture(%{
           date: Timex.today() |> Timex.shift(months: -1) |> Date.to_iso8601(),
           value: 300,
           account_id: account.id
         })
 
       next_month =
-        entry_fixture(%{
+        transaction_fixture(%{
           date: Timex.today() |> Timex.shift(months: 1) |> Date.to_iso8601(),
           value: 400,
           account_id: account.id
@@ -208,7 +208,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       assert live |> element("#previous-balance") |> render =~ "420,50"
-      assert live |> element("#entry-#{today.id}") |> render =~ "200,00"
+      assert live |> element("#transaction-#{today.id}") |> render =~ "200,00"
       assert live |> element("#next-balance") |> render =~ "620,50"
 
       live
@@ -216,7 +216,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       assert live |> element("#previous-balance") |> render =~ "120,50"
-      assert live |> element("#entry-#{last_month.id}") |> render =~ "300,00"
+      assert live |> element("#transaction-#{last_month.id}") |> render =~ "300,00"
       assert live |> element("#next-balance") |> render =~ "420,50"
 
       live
@@ -228,21 +228,21 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       assert live |> element("#previous-balance") |> render =~ "620,50"
-      assert live |> element("#entry-#{next_month.id}") |> render =~ "400,00"
+      assert live |> element("#transaction-#{next_month.id}") |> render =~ "400,00"
       assert live |> element("#next-balance") |> render =~ "1.020,50"
     end
   end
 
   describe "recurrencies" do
-    test "create entry with recurrency", %{conn: conn, account: account, category: category} do
+    test "create transaction with recurrency", %{conn: conn, account: account, category: category} do
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a[href='#{Routes.budget_index_path(conn, :new_entry)}']")
+      |> element("a[href='#{Routes.budget_index_path(conn, :new_transaction)}']")
       |> render_click()
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           regular: %{
@@ -257,7 +257,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_change()
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           regular: %{
@@ -275,41 +275,41 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
       |> render_submit()
 
-      refute live |> element("#entry-form") |> has_element?
+      refute live |> element("#transaction-form") |> has_element?
 
-      entry = Repo.one(Budget.Entries.Entry)
+      transaction = Repo.one(Budget.Transactions.Transaction)
 
       assert live |> element("#previous-balance") |> render =~ "120,50"
-      assert live |> element("#entry-#{entry.id}") |> render =~ "200,00"
+      assert live |> element("#transaction-#{transaction.id}") |> render =~ "200,00"
       assert live |> element("#next-balance") |> render =~ "320,50"
 
       live
       |> element("button", ">>")
       |> render_click()
 
-      recurrency = Repo.one(Budget.Entries.Recurrency)
+      recurrency = Repo.one(Budget.Transactions.Recurrency)
 
-      next_month_entry = Timex.today() |> Timex.shift(months: 1) |> Date.to_iso8601()
+      next_month_transaction = Timex.today() |> Timex.shift(months: 1) |> Date.to_iso8601()
 
       assert live |> element("#previous-balance") |> render =~ "320,50"
 
-      assert live |> element("#entry-recurrency-#{recurrency.id}-#{next_month_entry}") |> render =~
+      assert live |> element("#transaction-recurrency-#{recurrency.id}-#{next_month_transaction}") |> render =~
                "200,00"
 
       assert live |> element("#next-balance") |> render =~ "520,50"
     end
 
-    test "edit existing entry from recurrency", %{conn: conn} do
+    test "edit existing transaction from recurrency", %{conn: conn} do
       recurrency = recurrency_fixture()
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
       live
-      |> element("a", "Entry description")
+      |> element("a", "Transaction description")
       |> render_click()
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           regular: %{
             description: "a new description"
@@ -321,17 +321,17 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       updated =
         recurrency.id
-        |> Entries.get_recurrency!()
-        |> then(& &1.recurrency_entries)
+        |> Transactions.get_recurrency!()
+        |> then(& &1.recurrency_transactions)
         |> Enum.at(0)
-        |> then(& &1.entry.id)
-        |> Entries.get_entry!()
+        |> then(& &1.transaction.id)
+        |> Transactions.get_transaction!()
 
       assert updated.value == Decimal.new(420)
       assert updated.originator_regular.description == "a new description"
     end
 
-    test "edit transient entry from recurrency", %{conn: conn} do
+    test "edit transient transaction from recurrency", %{conn: conn} do
       recurrency = recurrency_fixture()
       another_category = category_fixture()
 
@@ -342,11 +342,11 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       live
-      |> element("a", "Entry description")
+      |> element("a", "Transaction description")
       |> render_click()
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           date: ~D[2020-06-13],
           regular: %{
@@ -358,29 +358,29 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
       |> render_submit()
 
-      recurrency = Entries.get_recurrency!(recurrency.id)
+      recurrency = Transactions.get_recurrency!(recurrency.id)
 
-      assert length(recurrency.recurrency_entries) == 2
+      assert length(recurrency.recurrency_transactions) == 2
 
-      recurrency_entry =
-        Enum.find(recurrency.recurrency_entries, &(&1.entry.value == Decimal.new(420)))
+      recurrency_transaction =
+        Enum.find(recurrency.recurrency_transactions, &(&1.transaction.value == Decimal.new(420)))
 
-      entry = recurrency_entry.entry
+      transaction = recurrency_transaction.transaction
 
-      assert entry.originator_regular.description == "a new description"
-      assert recurrency_entry.original_date == Timex.today() |> Timex.shift(months: 1)
-      assert entry.date == ~D[2020-06-13]
+      assert transaction.originator_regular.description == "a new description"
+      assert recurrency_transaction.original_date == Timex.today() |> Timex.shift(months: 1)
+      assert transaction.date == ~D[2020-06-13]
     end
 
-    test "edit a persistent entry from recurrency", %{conn: conn} do
+    test "edit a persistent transaction from recurrency", %{conn: conn} do
       recurrency = recurrency_fixture()
 
       {:ok, %{id: id}} =
         recurrency.id
-        |> Entries.get_recurrency!()
-        |> Entries.recurrency_entries(Timex.today() |> Timex.shift(months: 3))
+        |> Transactions.get_recurrency!()
+        |> Transactions.recurrency_transactions(Timex.today() |> Timex.shift(months: 3))
         |> Enum.at(0)
-        |> Entries.Entry.Form.apply_update(%{})
+        |> Transactions.Transaction.Form.apply_update(%{})
 
       {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
@@ -389,14 +389,14 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       live
-      |> element("a", "Entry description")
+      |> element("a", "Transaction description")
       |> render_click()
 
       path = assert_patch(live)
-      assert path == BudgetWeb.Router.Helpers.budget_index_path(conn, :edit_entry, id)
+      assert path == BudgetWeb.Router.Helpers.budget_index_path(conn, :edit_transaction, id)
 
       live
-      |> form("#entry-form",
+      |> form("#transaction-form",
         form: %{
           date: ~D[2020-06-13],
           regular: %{
@@ -407,59 +407,59 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
       |> render_submit()
 
-      recurrency = Entries.get_recurrency!(recurrency.id)
+      recurrency = Transactions.get_recurrency!(recurrency.id)
 
-      assert length(recurrency.recurrency_entries) == 2
+      assert length(recurrency.recurrency_transactions) == 2
 
-      entry = Entries.get_entry!(id)
+      transaction = Transactions.get_transaction!(id)
 
-      assert entry.originator_regular.description == "a new description"
-      assert entry.date == ~D[2020-06-13]
-      assert entry.value == Decimal.new(420)
+      assert transaction.originator_regular.description == "a new description"
+      assert transaction.date == ~D[2020-06-13]
+      assert transaction.value == Decimal.new(420)
     end
   end
 
-  test "delete single entry", %{conn: conn, account: account} do
-    entry = entry_fixture(%{account_id: account.id})
+  test "delete single transaction", %{conn: conn, account: account} do
+    transaction = transaction_fixture(%{account_id: account.id})
 
     {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
 
     live
-    |> element("[data-testid=delete-#{entry.id}]")
+    |> element("[data-testid=delete-#{transaction.id}]")
     |> render_click()
 
     assert live
            |> element("button", "Yes")
-           |> render_click() =~ "Entry successfully deleted!"
+           |> render_click() =~ "Transaction successfully deleted!"
   end
 
-  test "delete recurrent entry and the next transient one", %{conn: conn} do
+  test "delete recurrent transaction and the next transient one", %{conn: conn} do
     recurrency = recurrency_fixture()
 
-    entry = recurrency.recurrency_entries |> Enum.at(0) |> then(& &1.entry)
+    transaction = recurrency.recurrency_transactions |> Enum.at(0) |> then(& &1.transaction)
 
     {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
 
-    assert html =~ "Entry description"
+    assert html =~ "Transaction description"
 
     html =
       live
-      |> element("[data-testid=delete-#{entry.id}]")
+      |> element("[data-testid=delete-#{transaction.id}]")
       |> render_click()
 
-    assert html =~ "Delete just this entry"
-    assert html =~ "Delete this entry and future entries"
+    assert html =~ "Delete just this transaction"
+    assert html =~ "Delete this transaction and future transactions"
 
     html =
       live
-      |> element("button", "Delete just this entry")
+      |> element("button", "Delete just this transaction")
       |> render_click()
 
-    assert html =~ "Entry successfully deleted!"
-    refute html =~ "Entry description"
+    assert html =~ "Transaction successfully deleted!"
+    refute html =~ "Transaction description"
   end
 
-  test "delete recurrent transient entry", %{conn: conn} do
+  test "delete recurrent transient transaction", %{conn: conn} do
     recurrency_fixture()
 
     {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
@@ -469,30 +469,30 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> element("button", ">>")
       |> render_click()
 
-    assert html =~ "Entry description"
+    assert html =~ "Transaction description"
 
     html =
       live
       |> element("[data-testid^=delete-]")
       |> render_click()
 
-    assert html =~ "Delete just this entry"
-    assert html =~ "Delete this entry and future entries"
+    assert html =~ "Delete just this transaction"
+    assert html =~ "Delete this transaction and future transactions"
 
     html =
       live
-      |> element("button", "Delete this entry and future entries")
+      |> element("button", "Delete this transaction and future transactions")
       |> render_click()
 
-    assert html =~ "Entry successfully deleted!"
-    refute html =~ "Entry description"
+    assert html =~ "Transaction successfully deleted!"
+    refute html =~ "Transaction description"
 
     html =
       live
       |> element("button", ">>")
       |> render_click()
 
-    refute html =~ "Entry description"
+    refute html =~ "Transaction description"
   end
 
   test "delete recurrent transient with future persisted", %{conn: conn} do
@@ -513,16 +513,16 @@ defmodule BudgetWeb.BudgetLiveTest do
     |> render_click()
 
     live
-    |> element("a", "Entry description")
+    |> element("a", "Transaction description")
     |> render_click()
 
     live
-    |> form("#entry-form")
+    |> form("#transaction-form")
     |> render_submit()
 
     html = render(live)
 
-    assert html =~ "Entry updated successfully!"
+    assert html =~ "Transaction updated successfully!"
 
     live
     |> element("button", "<<")
@@ -537,24 +537,24 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> element("[data-testid^=delete-]")
       |> render_click()
 
-    assert html =~ "Delete just this entry"
-    assert html =~ "Delete this entry with future ones but keep changed ones"
-    assert html =~ "Delete this entry and all future ones"
+    assert html =~ "Delete just this transaction"
+    assert html =~ "Delete this transaction with future ones but keep changed ones"
+    assert html =~ "Delete this transaction and all future ones"
 
     html =
       live
-      |> element("button", "Delete this entry with future ones but keep changed ones")
+      |> element("button", "Delete this transaction with future ones but keep changed ones")
       |> render_click()
 
-    assert html =~ "Entry successfully deleted!"
+    assert html =~ "Transaction successfully deleted!"
 
     refute live
            |> element("button", ">>")
-           |> render_click() =~ "Entry description"
+           |> render_click() =~ "Transaction description"
 
     assert live
            |> element("button", ">>")
-           |> render_click() =~ "Entry description"
+           |> render_click() =~ "Transaction description"
   end
 
   test "create new category", %{conn: conn} do
@@ -617,7 +617,7 @@ defmodule BudgetWeb.BudgetLiveTest do
   } do
     1..5
     |> Enum.map(
-      &entry_fixture(%{
+      &transaction_fixture(%{
         regular: %{
           description: "Transaction #{&1}",
           category_id: category_id

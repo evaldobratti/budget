@@ -15,7 +15,7 @@ defmodule Budget.Repo.Migrations.AddOriginators do
       timestamps()
     end
 
-    alter table(:entries) do
+    alter table(:transactions) do
       add :originator_regular_id, references(:originators_regular, on_delete: :nothing)
       add :originator_transfer_part_id, references(:originators_transfer, on_delete: :nothing)
       add :originator_transfer_counter_part_id, references(:originators_transfer, on_delete: :nothing)
@@ -26,9 +26,9 @@ defmodule Budget.Repo.Migrations.AddOriginators do
       remove_if_exists :description, :string
       remove_if_exists :value, :decimal
 
-      add :entry_payload, :map
+      add :transaction_payload, :map
     end
 
-    create index(:entries, [:originator_regular_id])
+    create index(:transactions, [:originator_regular_id])
   end
 end

@@ -1,4 +1,4 @@
-defmodule Budget.Entries.Account do
+defmodule Budget.Transactions.Account do
   use Ecto.Schema
   import Ecto.Changeset
 

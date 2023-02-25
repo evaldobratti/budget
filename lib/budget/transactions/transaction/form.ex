@@ -1,14 +1,14 @@
-defmodule Budget.Entries.Entry.Form do
+defmodule Budget.Transactions.Transaction.Form do
   use Ecto.Schema
 
   import Ecto.Changeset
 
-  alias Budget.Entries
-  alias Budget.Entries.Originator.Transfer
-  alias Budget.Entries.Entry
-  alias Budget.Entries.Originator.Regular
-  alias Budget.Entries.Recurrency
-  alias Budget.Entries.RecurrencyEntry
+  alias Budget.Transactions
+  alias Budget.Transactions.Originator.Transfer
+  alias Budget.Transactions.Transaction
+  alias Budget.Transactions.Originator.Regular
+  alias Budget.Transactions.Recurrency
+  alias Budget.Transactions.RecurrencyTransaction
 
   embedded_schema do
     field(:date, :date)
@@ -157,7 +157,7 @@ defmodule Budget.Entries.Entry.Form do
         is_parcel: get_field(recurrency, :is_parcel),
         parcel_start: get_field(recurrency, :parcel_start),
         parcel_end: get_field(recurrency, :parcel_end),
-        entry_payload: %{
+        transaction_payload: %{
           get_field(changeset, :date) =>
             case get_change(changeset, :originator) do
               "regular" -> Regular.get_recurrency_payload(Enum.at(transactions, 0))
@@ -166,12 +166,12 @@ defmodule Budget.Entries.Entry.Form do
         }
       })
       |> put_assoc(
-        :recurrency_entries,
+        :recurrency_transactions,
         Enum.map(
           transactions,
-          &%RecurrencyEntry{
+          &%RecurrencyTransaction{
             original_date: get_field(changeset, :date),
-            entry_id: &1.id,
+            transaction_id: &1.id,
             parcel: get_field(recurrency, :parcel_start),
             parcel_end: get_field(recurrency, :parcel_end)
           }
@@ -180,7 +180,7 @@ defmodule Budget.Entries.Entry.Form do
       |> Budget.Repo.insert()
     end)
     |> Ecto.Multi.run(:result, fn _repo, %{transaction: transaction} ->
-      refreshed = Entries.get_entry!(transaction.id)
+      refreshed = Transactions.get_transaction!(transaction.id)
 
       {:ok, refreshed}
     end)
@@ -202,14 +202,14 @@ defmodule Budget.Entries.Entry.Form do
       description: get_change(regular, :description)
     }
 
-    %Entry{}
+    %Transaction{}
     |> change(%{
       date: get_change(changeset, :date),
       value: get_change(changeset, :value),
       account_id: get_change(changeset, :account_id),
       position:
         get_change(changeset, :position) ||
-          Entries.next_position_for_date(get_change(changeset, :date))
+          Transactions.next_position_for_date(get_change(changeset, :date))
     })
     |> put_assoc(:originator_regular, originator)
     |> Budget.Repo.insert()
@@ -221,23 +221,23 @@ defmodule Budget.Entries.Entry.Form do
     originator =
       %Transfer{}
       |> change()
-      |> put_assoc(:counter_part, %Entry{
+      |> put_assoc(:counter_part, %Transaction{
         date: get_change(changeset, :date),
         value: get_change(changeset, :value) |> Decimal.negate(),
         account_id: get_change(transfer, :other_account_id),
         position:
           get_change(changeset, :position) ||
-            Entries.next_position_for_date(get_change(changeset, :date))
+            Transactions.next_position_for_date(get_change(changeset, :date))
       })
 
-    %Entry{}
+    %Transaction{}
     |> change(%{
       date: get_change(changeset, :date),
       value: get_change(changeset, :value),
       account_id: get_change(changeset, :account_id),
       position:
         get_change(changeset, :position) ||
-          Entries.next_position_for_date(get_change(changeset, :date))
+          Transactions.next_position_for_date(get_change(changeset, :date))
     })
     |> put_assoc(:originator_transfer_part, originator)
     |> Budget.Repo.insert()
@@ -265,7 +265,7 @@ defmodule Budget.Entries.Entry.Form do
     [transaction, transaction.originator_transfer_part.counter_part]
   end
 
-  def decorate(%Entry{} = transaction) do
+  def decorate(%Transaction{} = transaction) do
     base = %__MODULE__{
       id: transaction.id,
       date: transaction.date,
@@ -311,13 +311,13 @@ defmodule Budget.Entries.Entry.Form do
         regular: regular_data,
         transfer: transfer_data,
         is_recurrency:
-          transaction.recurrency_entry &&
-            transaction.recurrency_entry.__struct__ == Budget.Entries.RecurrencyEntry
+          transaction.recurrency_transaction &&
+            transaction.recurrency_transaction.__struct__ == Budget.Transaction.RecurrencyTransaction
     }
   end
 
   def update_changeset(form, params) do
-    changeset = 
+    changeset =
       form
       |> cast(params, [
         :date,
@@ -375,12 +375,12 @@ defmodule Budget.Entries.Entry.Form do
       |> apply_update(transaction)
     end)
     |> Ecto.Multi.run(:recurrency, fn _repo, %{transaction: transaction} ->
-      transaction.recurrency_entry.recurrency
+      transaction.recurrency_transaction.recurrency
       |> change(
-        entry_payload:
+        transaction_payload:
           Map.put(
-            transaction.recurrency_entry.recurrency.entry_payload,
-            transaction.recurrency_entry.original_date |> Date.to_iso8601(),
+            transaction.recurrency_transaction.recurrency.transaction_payload,
+            transaction.recurrency_transaction.original_date |> Date.to_iso8601(),
             case get_field(changeset, :originator) do
               "regular" -> Regular.get_recurrency_payload(transaction)
               "transfer" -> Transfer.get_recurrency_payload(transaction)
@@ -390,7 +390,7 @@ defmodule Budget.Entries.Entry.Form do
       |> Budget.Repo.update()
     end)
     |> Ecto.Multi.run(:result, fn _repo, %{transaction: transaction} ->
-      {:ok, Entries.get_entry!(transaction.id)}
+      {:ok, Transactions.get_transaction!(transaction.id)}
     end)
     |> Budget.Repo.transaction()
     |> case do
@@ -443,7 +443,7 @@ defmodule Budget.Entries.Entry.Form do
         is_carried_out: get_field(changeset, :is_carried_out)
       })
 
-    {entry_transfer_field, transfer_field} =
+    {transaction_transfer_field, transfer_field} =
       if transaction.originator_transfer_part_id do
         {:originator_transfer_part, :counter_part}
       else
@@ -452,19 +452,19 @@ defmodule Budget.Entries.Entry.Form do
 
     current_counter_part =
       transaction
-      |> Map.get(entry_transfer_field)
+      |> Map.get(transaction_transfer_field)
       |> Map.get(transfer_field)
 
     changeset
     |> put_assoc(
-      entry_transfer_field,
+      transaction_transfer_field,
       transaction
-      |> Map.get(entry_transfer_field)
+      |> Map.get(transaction_transfer_field)
       |> change()
       |> put_assoc(
         transfer_field,
         transaction
-        |> Map.get(entry_transfer_field)
+        |> Map.get(transaction_transfer_field)
         |> Map.get(transfer_field)
         |> change(
           date: get_field(changeset, :date),

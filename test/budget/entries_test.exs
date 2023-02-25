@@ -1,24 +1,24 @@
-defmodule Budget.EntriesTest do
+defmodule Budget.TransactionsTest do
   use Budget.DataCase, async: true
 
-  alias Budget.Entries.Originator.Transfer
-  alias Budget.Entries.Originator.Regular
-  alias Budget.Entries
-  alias Budget.Entries.Recurrency
-  alias Budget.Entries.Entry
-  alias Budget.Entries.Category
+  alias Budget.Transactions.Originator.Transfer
+  alias Budget.Transactions.Originator.Regular
+  alias Budget.Transactions
+  alias Budget.Transactions.Recurrency
+  alias Budget.Transactions.Transaction
+  alias Budget.Transactions.Category
 
-  import Budget.EntriesFixtures
+  import Budget.TransactionsFixtures
 
   def create_account(_) do
     {:ok, account1} =
-      Entries.create_account(%{
+      Transactions.create_account(%{
         name: "Account name",
         initial_balance: -10
       })
 
     {:ok, account2} =
-      Entries.create_account(%{
+      Transactions.create_account(%{
         name: "Account name",
         initial_balance: 50
       })
@@ -31,14 +31,14 @@ defmodule Budget.EntriesTest do
 
     test "finite recurrency", %{account1: account} do
       changeset =
-        Entries.change_recurrency(%Recurrency{}, %{
+        Transactions.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
           date_end: "2022-10-01",
           account_id: account.id,
           is_forever: false,
           is_parcel: false,
           frequency: :monthly,
-          entry_payload: %{
+          transaction_payload: %{
             originator_regular: %{
               description: "Some description",
               category_id: category_fixture().id
@@ -50,13 +50,13 @@ defmodule Budget.EntriesTest do
       assert %{valid?: true} = changeset
 
       changeset =
-        Entries.change_recurrency(%Recurrency{}, %{
+        Transactions.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
           account_id: account.id,
           is_forever: false,
           is_parcel: false,
           frequency: :monthly,
-          entry_payload: %{
+          transaction_payload: %{
             originator_regular: %{
               description: "Some description",
               category_id: category_fixture().id
@@ -71,7 +71,7 @@ defmodule Budget.EntriesTest do
 
     test "infinite recurrency", %{account1: account} do
       changeset =
-        Entries.change_recurrency(%Recurrency{}, %{
+        Transactions.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
           date_end: "2022-10-01",
           value: "200",
@@ -79,7 +79,7 @@ defmodule Budget.EntriesTest do
           is_forever: true,
           is_parcel: false,
           frequency: :monthly,
-          entry_payload: %{
+          transaction_payload: %{
             originator_regular: %{
               description: "Some description",
               category_id: category_fixture().id
@@ -94,14 +94,14 @@ defmodule Budget.EntriesTest do
 
     test "infinite parcel", %{account1: account} do
       changeset =
-        Entries.change_recurrency(%Recurrency{}, %{
+        Transactions.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
           date_end: "2022-10-01",
           account_id: account.id,
           is_forever: true,
           is_parcel: true,
           frequency: :monthly,
-          entry_payload: %{
+          transaction_payload: %{
             originator_regular: %{
               description: "Some description",
               category_id: category_fixture().id
@@ -116,13 +116,13 @@ defmodule Budget.EntriesTest do
 
     test "parcel", %{account1: account} do
       changeset =
-        Entries.change_recurrency(%Recurrency{}, %{
+        Transactions.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
           is_forever: false,
           is_parcel: true,
           frequency: :monthly,
           account_id: account.id,
-          entry_payload: %{
+          transaction_payload: %{
             originator_regular: %{
               description: "Some description",
               category_id: category_fixture().id
@@ -139,7 +139,7 @@ defmodule Budget.EntriesTest do
              }
     end
 
-    test "calculate finite recurrency entries until date - monthly" do
+    test "calculate finite recurrency transactions until date - monthly" do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
@@ -159,7 +159,7 @@ defmodule Budget.EntriesTest do
                %{date: ~D[2019-02-01], value: 200, description: "Some description"},
                %{date: ~D[2019-03-01], value: 200, description: "Some description"}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-03-15])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-03-15])
                |> Enum.map(
                  &%{
                    date: &1.date,
@@ -172,7 +172,7 @@ defmodule Budget.EntriesTest do
                %{date: ~D[2019-02-01], value: 200, description: "Some description"},
                %{date: ~D[2019-03-01], value: 200, description: "Some description"}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-03-01])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-03-01])
                |> Enum.map(
                  &%{
                    date: &1.date,
@@ -181,13 +181,13 @@ defmodule Budget.EntriesTest do
                  }
                )
 
-      assert [] = Entries.recurrency_entries(recurrency, ~D[2018-03-01])
+      assert [] = Transactions.recurrency_transactions(recurrency, ~D[2018-03-01])
 
       assert [
                %{date: ~D[2019-02-01], value: 200, description: "Some description"},
                %{date: ~D[2019-03-01], value: 200, description: "Some description"}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-06-01])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-06-01])
                |> Enum.map(
                  &%{
                    date: &1.date,
@@ -197,7 +197,7 @@ defmodule Budget.EntriesTest do
                )
     end
 
-    test "calculate finite recurrency entries until date - weekly" do
+    test "calculate finite recurrency transactions until date - weekly" do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
@@ -220,7 +220,7 @@ defmodule Budget.EntriesTest do
                %{date: ~D[2019-01-22], value: 200, description: "Some description"},
                %{date: ~D[2019-01-29], value: 200, description: "Some description"}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-03-15])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-03-15])
                |> Enum.map(
                  &%{
                    date: &1.date,
@@ -233,7 +233,7 @@ defmodule Budget.EntriesTest do
                %{date: ~D[2019-01-08], value: 200, description: "Some description"},
                %{date: ~D[2019-01-15], value: 200, description: "Some description"}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-01-15])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-01-15])
                |> Enum.map(
                  &%{
                    date: &1.date,
@@ -242,7 +242,7 @@ defmodule Budget.EntriesTest do
                  }
                )
 
-      assert [] = Entries.recurrency_entries(recurrency, ~D[2018-03-01])
+      assert [] = Transactions.recurrency_transactions(recurrency, ~D[2018-03-01])
 
       assert [
                %{date: ~D[2019-01-08], value: 200, description: "Some description"},
@@ -250,7 +250,7 @@ defmodule Budget.EntriesTest do
                %{date: ~D[2019-01-22], value: 200, description: "Some description"},
                %{date: ~D[2019-01-29], value: 200, description: "Some description"}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-06-01])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-06-01])
                |> Enum.map(
                  &%{
                    date: &1.date,
@@ -260,7 +260,7 @@ defmodule Budget.EntriesTest do
                )
     end
 
-    test "calculate infinite recurrency entries starting date 31" do
+    test "calculate infinite recurrency transactions starting date 31" do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-31],
@@ -280,7 +280,7 @@ defmodule Budget.EntriesTest do
                ~D[2019-07-31]
              ] ==
                recurrency
-               |> Entries.recurrency_entries(~D[2019-07-31])
+               |> Transactions.recurrency_transactions(~D[2019-07-31])
                |> Enum.map(& &1.date)
     end
 
@@ -339,14 +339,14 @@ defmodule Budget.EntriesTest do
                  parcel_end: 6
                }
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-04-01])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-04-01])
                |> Enum.map(
                  &%{
                    date: &1.date,
                    value: Decimal.to_integer(&1.value),
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel,
-                   parcel_end: &1.recurrency_entry.parcel_end
+                   parcel: &1.recurrency_transaction.parcel,
+                   parcel_end: &1.recurrency_transaction.parcel_end
                  }
                )
 
@@ -373,14 +373,14 @@ defmodule Budget.EntriesTest do
                  parcel_end: 6
                }
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-01-22])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-01-22])
                |> Enum.map(
                  &%{
                    date: &1.date,
                    value: Decimal.to_integer(&1.value),
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel,
-                   parcel_end: &1.recurrency_entry.parcel_end
+                   parcel: &1.recurrency_transaction.parcel,
+                   parcel_end: &1.recurrency_transaction.parcel_end
                  }
                )
     end
@@ -408,13 +408,13 @@ defmodule Budget.EntriesTest do
                %{date: ~D[2019-01-15], value: 200, parcel: 5, parcel_end: 6},
                %{date: ~D[2019-01-22], value: 200, parcel: 6, parcel_end: 6}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-04-01])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-04-01])
                |> Enum.map(
                  &%{
                    date: &1.date,
                    value: Decimal.to_integer(&1.value),
-                   parcel: &1.recurrency_entry.parcel,
-                   parcel_end: &1.recurrency_entry.parcel_end
+                   parcel: &1.recurrency_transaction.parcel,
+                   parcel_end: &1.recurrency_transaction.parcel_end
                  }
                )
 
@@ -422,18 +422,18 @@ defmodule Budget.EntriesTest do
                %{date: ~D[2019-01-08], value: 200, parcel: 4, parcel_end: 6},
                %{date: ~D[2019-01-15], value: 200, parcel: 5, parcel_end: 6}
              ] =
-               Entries.recurrency_entries(recurrency, ~D[2019-01-15])
+               Transactions.recurrency_transactions(recurrency, ~D[2019-01-15])
                |> Enum.map(
                  &%{
                    date: &1.date,
                    value: Decimal.to_integer(&1.value),
-                   parcel: &1.recurrency_entry.parcel,
-                   parcel_end: &1.recurrency_entry.parcel_end
+                   parcel: &1.recurrency_transaction.parcel,
+                   parcel_end: &1.recurrency_transaction.parcel_end
                  }
                )
     end
 
-    test "recurrency when it ends and the end of an entry" do
+    test "recurrency when it ends and the end of an transaction" do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2019-01-01],
@@ -449,18 +449,18 @@ defmodule Budget.EntriesTest do
       assert [
                %{date: ~D[2019-02-01]},
                %{date: ~D[2019-03-01]}
-             ] = Entries.recurrency_entries(recurrency, ~D[2019-03-03])
+             ] = Transactions.recurrency_transactions(recurrency, ~D[2019-03-03])
     end
   end
 
-  describe "entries_in_period/3" do
+  describe "transactions_in_period/3" do
     setup :create_account
 
-    test "retrieve regular entries", %{account1: account} do
+    test "retrieve regular transactions", %{account1: account} do
       category = category_fixture()
 
       {:ok, _} =
-        Entry.Form.apply_insert(%{
+        Transaction.Form.apply_insert(%{
           date: ~D[2020-02-01],
           originator: "regular",
           regular: %{
@@ -472,7 +472,7 @@ defmodule Budget.EntriesTest do
         })
 
       {:ok, _} =
-        Entry.Form.apply_insert(%{
+        Transaction.Form.apply_insert(%{
           date: ~D[2020-01-31],
           originator: "regular",
           regular: %{
@@ -484,7 +484,7 @@ defmodule Budget.EntriesTest do
         })
 
       {:ok, _} =
-        Entry.Form.apply_insert(%{
+        Transaction.Form.apply_insert(%{
           date: ~D[2020-02-10],
           originator: "regular",
           regular: %{
@@ -496,7 +496,7 @@ defmodule Budget.EntriesTest do
         })
 
       {:ok, _} =
-        Entry.Form.apply_insert(%{
+        Transaction.Form.apply_insert(%{
           date: ~D[2020-02-11],
           originator: "regular",
           regular: %{
@@ -507,20 +507,20 @@ defmodule Budget.EntriesTest do
           value: 200
         })
 
-      entries = Entries.entries_in_period([account.id], ~D[2020-02-01], ~D[2020-02-10])
+      transactions = Transactions.transactions_in_period([account.id], ~D[2020-02-01], ~D[2020-02-10])
 
-      assert length(entries) == 2
+      assert length(transactions) == 2
 
-      entries = Entries.entries_in_period([], ~D[2020-02-01], ~D[2020-02-10])
+      transactions = Transactions.transactions_in_period([], ~D[2020-02-01], ~D[2020-02-10])
 
-      assert length(entries) == 2
+      assert length(transactions) == 2
     end
 
-    test "retrieve recurrency entries", %{account1: account} do
+    test "retrieve recurrency transactions", %{account1: account} do
       category = category_fixture()
 
-      {:ok, _entry} =
-        Entry.Form.apply_insert(%{
+      {:ok, _transaction} =
+        Transaction.Form.apply_insert(%{
           date: ~D[2020-02-01],
           account_id: account.id,
           originator: "regular",
@@ -539,12 +539,12 @@ defmodule Budget.EntriesTest do
           }
         })
 
-      entries = Entries.entries_in_period([], ~D[2020-01-01], ~D[2020-04-10])
+      transactions = Transactions.transactions_in_period([], ~D[2020-01-01], ~D[2020-04-10])
 
       value = Decimal.new(200)
 
       assert [
-               %Entry{
+               %Transaction{
                  date: ~D[2020-02-01],
                  originator_regular: %{description: "Description1"},
                  value: ^value
@@ -559,7 +559,7 @@ defmodule Budget.EntriesTest do
                  originator_regular: %{description: "Description1"},
                  value: ^value
                }
-             ] = entries
+             ] = transactions
     end
   end
 
@@ -567,14 +567,14 @@ defmodule Budget.EntriesTest do
     setup :create_account
 
     test "balance with only initial balance", %{account1: account1, account2: account2} do
-      balance = Entries.balance_at([account1.id, account2.id], ~D[2020-01-01])
+      balance = Transactions.balance_at([account1.id, account2.id], ~D[2020-01-01])
 
       assert balance == Decimal.new(40)
     end
 
-    test "balance with entries", %{account1: account1, account2: account2} do
+    test "balance with transactions", %{account1: account1, account2: account2} do
       {:ok, _} =
-        Entry.Form.apply_insert(%{
+        Transaction.Form.apply_insert(%{
           date: ~D[2020-01-05],
           originator: "regular",
           regular: %{
@@ -585,8 +585,8 @@ defmodule Budget.EntriesTest do
           value: 200
         })
 
-      assert Entries.balance_at([account1.id, account2.id], ~D[2020-01-04]) == Decimal.new(40)
-      assert Entries.balance_at([account1.id, account2.id], ~D[2020-01-05]) == Decimal.new(240)
+      assert Transactions.balance_at([account1.id, account2.id], ~D[2020-01-04]) == Decimal.new(40)
+      assert Transactions.balance_at([account1.id, account2.id], ~D[2020-01-05]) == Decimal.new(240)
     end
 
     test "balance with recurrencies", %{account1: account} do
@@ -600,14 +600,14 @@ defmodule Budget.EntriesTest do
           description: "something",
           category_id: category.id
         },
-        recurrency_entry: %{
+        recurrency_transaction: %{
           recurrency: %{
             date_start: ~D[2020-02-01],
             date_end: ~D[2021-02-01],
             frequency: :monthly,
             is_forever: false,
             value: 200,
-            entry_payload: %{
+            transaction_payload: %{
               value: 200,
               originator_regular: %{
                 description: "something",
@@ -618,76 +618,76 @@ defmodule Budget.EntriesTest do
         }
       })
 
-      balance = Entries.balance_at([], ~D[2020-06-01])
+      balance = Transactions.balance_at([], ~D[2020-06-01])
 
       assert balance == Decimal.new(1040)
     end
   end
 
-  describe "create_transient_entry/2" do
-    test "create entry and recurrency_entry" do
+  describe "create_transient_transaction/2" do
+    test "create transaction and recurrency_transaction" do
       recurrency = recurrency_fixture()
 
-      transient_entries =
-        Entries.recurrency_entries(
+      transient_transactions =
+        Transactions.recurrency_transactions(
           recurrency,
           Timex.today() |> Timex.shift(months: 3)
         )
 
-      assert length(transient_entries) == 3
+      assert length(transient_transactions) == 3
 
-      {:ok, created} = Entry.Form.apply_update(Enum.at(transient_entries, 1), %{})
+      {:ok, created} = Transaction.Form.apply_update(Enum.at(transient_transactions, 1), %{})
 
-      assert created.recurrency_entry.original_date == Timex.today() |> Timex.shift(months: 2)
+      assert created.recurrency_transaction.original_date == Timex.today() |> Timex.shift(months: 2)
 
-      transient_entries =
+      transient_transactions =
         recurrency.id
-        |> Entries.get_recurrency!()
-        |> Entries.recurrency_entries(Timex.today() |> Timex.shift(months: 3))
+        |> Transactions.get_recurrency!()
+        |> Transactions.recurrency_transactions(Timex.today() |> Timex.shift(months: 3))
 
-      assert length(transient_entries) == 2
+      assert length(transient_transactions) == 2
     end
 
-    test "updating a transient entry applying changes forward" do
+    test "updating a transient transaction applying changes forward" do
       recurrency = recurrency_fixture(%{date: ~D[2022-10-15]})
 
-      [_, transient | _] = Entries.recurrency_entries(recurrency, ~D[2022-12-15])
+      [_, transient | _] = Transactions.recurrency_transactions(recurrency, ~D[2022-12-15])
 
       assert "recurrency" <> _ = transient.id
       assert transient.date == ~D[2022-12-15]
       assert transient.value == Decimal.new(133)
       assert transient.originator_regular.category_id > 0
 
-      {:ok, _} = Entry.Form.apply_update(transient, %{value: 500, apply_forward: true})
+      {:ok, _} = Transaction.Form.apply_update(transient, %{value: 500, apply_forward: true})
 
-      entries =
+      transactions =
         transient.account_id
         |> List.wrap()
-        |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
+        |> Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15])
 
       assert %{date: ~D[2022-10-15], value: Decimal.new(133)} ==
-               Enum.at(entries, 0) |> Map.take([:date, :value])
+               Enum.at(transactions, 0) |> Map.take([:date, :value])
 
       assert %{date: ~D[2022-11-15], value: Decimal.new(133)} ==
-               Enum.at(entries, 1) |> Map.take([:date, :value])
+               Enum.at(transactions, 1) |> Map.take([:date, :value])
 
       assert %{date: ~D[2022-12-15], value: Decimal.new(500)} ==
-               Enum.at(entries, 2) |> Map.take([:date, :value])
+               Enum.at(transactions, 2) |> Map.take([:date, :value])
 
       assert %{date: ~D[2023-01-15], value: Decimal.new(500)} ==
-               Enum.at(entries, 3) |> Map.take([:date, :value])
+               Enum.at(transactions, 3) |> Map.take([:date, :value])
 
       assert %{date: ~D[2023-02-15], value: Decimal.new(500)} ==
-               Enum.at(entries, 4) |> Map.take([:date, :value])
+               Enum.at(transactions, 4) |> Map.take([:date, :value])
 
       assert %{date: ~D[2023-03-15], value: Decimal.new(500)} ==
-               Enum.at(entries, 5) |> Map.take([:date, :value])
+               Enum.at(transactions, 5) |> Map.take([:date, :value])
 
       assert %{date: ~D[2023-04-15], value: Decimal.new(500)} ==
-               Enum.at(entries, 6) |> Map.take([:date, :value])
+               Enum.at(transactions, 6) |> Map.take([:date, :value])
     end
 
-    test "updating a transient entry from parcel applying changes forward" do
+    test "updating a transient transaction from parcel applying changes forward" do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2022-10-15],
@@ -699,123 +699,123 @@ defmodule Budget.EntriesTest do
           }
         })
 
-      [_, transient | _] = Entries.recurrency_entries(recurrency, ~D[2022-12-15])
+      [_, transient | _] = Transactions.recurrency_transactions(recurrency, ~D[2022-12-15])
 
       assert "recurrency" <> _ = transient.id
       assert transient.date == ~D[2022-12-15]
       assert transient.value == Decimal.new(133)
-      assert transient.originator_regular.description == "Entry description"
-      assert transient.recurrency_entry.parcel == 3
-      assert transient.recurrency_entry.parcel_end == 6
+      assert transient.originator_regular.description == "Transaction description"
+      assert transient.recurrency_transaction.parcel == 3
+      assert transient.recurrency_transaction.parcel_end == 6
       assert transient.position == Decimal.new(1)
 
-      {:ok, _} = Entry.Form.apply_update(transient, %{value: 500, apply_forward: true})
+      {:ok, _} = Transaction.Form.apply_update(transient, %{value: 500, apply_forward: true})
 
-      entries =
+      transactions =
         transient.account_id
         |> List.wrap()
-        |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
+        |> Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15])
 
       assert %{
                date: ~D[2022-10-15],
                value: Decimal.new(133),
-               description: "Entry description",
+               description: "Transaction description",
                parcel: 1
              } ==
-               Enum.at(entries, 0)
+               Enum.at(transactions, 0)
                |> then(
                  &%{
                    date: &1.date,
                    value: &1.value,
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel
+                   parcel: &1.recurrency_transaction.parcel
                  }
                )
 
       assert %{
                date: ~D[2022-11-15],
                value: Decimal.new(133),
-               description: "Entry description",
+               description: "Transaction description",
                parcel: 2
              } ==
-               Enum.at(entries, 1)
+               Enum.at(transactions, 1)
                |> then(
                  &%{
                    date: &1.date,
                    value: &1.value,
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel
+                   parcel: &1.recurrency_transaction.parcel
                  }
                )
 
       assert %{
                date: ~D[2022-12-15],
                value: Decimal.new(500),
-               description: "Entry description",
+               description: "Transaction description",
                parcel: 3
              } ==
-               Enum.at(entries, 2)
+               Enum.at(transactions, 2)
                |> then(
                  &%{
                    date: &1.date,
                    value: &1.value,
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel
+                   parcel: &1.recurrency_transaction.parcel
                  }
                )
 
       assert %{
                date: ~D[2023-01-15],
                value: Decimal.new(500),
-               description: "Entry description",
+               description: "Transaction description",
                parcel: 4
              } ==
-               Enum.at(entries, 3)
+               Enum.at(transactions, 3)
                |> then(
                  &%{
                    date: &1.date,
                    value: &1.value,
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel
+                   parcel: &1.recurrency_transaction.parcel
                  }
                )
 
       assert %{
                date: ~D[2023-02-15],
                value: Decimal.new(500),
-               description: "Entry description",
+               description: "Transaction description",
                parcel: 5
              } ==
-               Enum.at(entries, 4)
+               Enum.at(transactions, 4)
                |> then(
                  &%{
                    date: &1.date,
                    value: &1.value,
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel
+                   parcel: &1.recurrency_transaction.parcel
                  }
                )
 
       assert %{
                date: ~D[2023-03-15],
                value: Decimal.new(500),
-               description: "Entry description",
+               description: "Transaction description",
                parcel: 6
              } ==
-               Enum.at(entries, 5)
+               Enum.at(transactions, 5)
                |> then(
                  &%{
                    date: &1.date,
                    value: &1.value,
                    description: &1.originator_regular.description,
-                   parcel: &1.recurrency_entry.parcel
+                   parcel: &1.recurrency_transaction.parcel
                  }
                )
 
-      assert nil == Enum.at(entries, 6)
+      assert nil == Enum.at(transactions, 6)
     end
 
-    test "updating recurrency entry without applying changes forward" do
+    test "updating recurrency transaction without applying changes forward" do
       recurrency =
         recurrency_fixture(%{
           date: ~D[2022-10-15],
@@ -828,7 +828,7 @@ defmodule Budget.EntriesTest do
           }
         })
 
-      [_, transient | _] = Entries.recurrency_entries(recurrency, ~D[2022-12-15])
+      [_, transient | _] = Transactions.recurrency_transactions(recurrency, ~D[2022-12-15])
 
       transient_date = ~D[2022-12-15]
 
@@ -838,39 +838,39 @@ defmodule Budget.EntriesTest do
       assert %{
                "2022-10-15" => %{
                  "category_id" => _,
-                 "description" => "Entry description",
+                 "description" => "Transaction description",
                  "value" => "133"
                }
-             } = recurrency.entry_payload
+             } = recurrency.transaction_payload
 
-      {:ok, _} = Entry.Form.apply_update(transient, %{value: 500, apply_forward: false})
+      {:ok, _} = Transaction.Form.apply_update(transient, %{value: 500, apply_forward: false})
 
       assert %{
                "2022-10-15" => %{
                  "category_id" => _,
-                 "description" => "Entry description",
+                 "description" => "Transaction description",
                  "value" => "133"
                }
-             } = Entries.get_recurrency!(recurrency.id).entry_payload
+             } = Transactions.get_recurrency!(recurrency.id).transaction_payload
 
-      entries =
+      transactions =
         transient.account_id
         |> List.wrap()
-        |> Entries.entries_in_period(~D[2022-10-15], ~D[2023-10-15])
+        |> Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15])
 
-      assert Decimal.new(133) == Enum.at(entries, 0).value
+      assert Decimal.new(133) == Enum.at(transactions, 0).value
 
-      assert Decimal.new(133) == Enum.at(entries, 1).value
+      assert Decimal.new(133) == Enum.at(transactions, 1).value
 
-      assert Decimal.new(500) == Enum.at(entries, 2).value
-      assert transient_date == Enum.at(entries, 2).date
+      assert Decimal.new(500) == Enum.at(transactions, 2).value
+      assert transient_date == Enum.at(transactions, 2).date
 
-      assert Decimal.new(133) == Enum.at(entries, 3).value
+      assert Decimal.new(133) == Enum.at(transactions, 3).value
     end
   end
 
-  describe "create_entry/1" do
-    test "create regular entry" do
+  describe "create_transaction/1" do
+    test "create regular transaction" do
       %{id: account_id} = account_fixture()
       %{id: category_id} = category_fixture()
 
@@ -884,7 +884,7 @@ defmodule Budget.EntriesTest do
                 },
                 position: position
               }} =
-               Entry.Form.apply_insert(%{
+               Transaction.Form.apply_insert(%{
                  date: ~D[2022-01-01],
                  account_id: account_id,
                  originator: "regular",
@@ -901,7 +901,7 @@ defmodule Budget.EntriesTest do
               %{
                 position: position
               }} =
-               Entry.Form.apply_insert(%{
+               Transaction.Form.apply_insert(%{
                  date: ~D[2022-01-01] |> Date.to_iso8601(),
                  account_id: account_id,
                  originator: "regular",
@@ -915,11 +915,11 @@ defmodule Budget.EntriesTest do
       assert position == Decimal.new(2)
     end
 
-    test "updates recurrency_entry if entry is parcel recurrency" do
+    test "updates recurrency_transaction if transaction is parcel recurrency" do
       account = account_fixture()
       category = category_fixture()
 
-      entry = %{
+      transaction = %{
         date: ~D[2020-06-01],
         account_id: account.id,
         originator: "regular",
@@ -937,11 +937,11 @@ defmodule Budget.EntriesTest do
         }
       }
 
-      {:ok, entry} = Entry.Form.apply_insert(entry)
+      {:ok, transaction} = Transaction.Form.apply_insert(transaction)
 
-      assert entry.originator_regular.description == "a description"
-      assert entry.recurrency_entry.parcel == 1
-      assert entry.recurrency_entry.parcel_end == 6
+      assert transaction.originator_regular.description == "a description"
+      assert transaction.recurrency_transaction.parcel == 1
+      assert transaction.recurrency_transaction.parcel_end == 6
     end
 
     test "create transfer" do
@@ -949,7 +949,7 @@ defmodule Budget.EntriesTest do
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, _} =
-               Entry.Form.apply_insert(%{
+               Transaction.Form.apply_insert(%{
                  date: ~D[2022-01-01],
                  account_id: from_account_id,
                  originator: "transfer",
@@ -963,7 +963,7 @@ defmodule Budget.EntriesTest do
                {from_account_id, Decimal.new(200)},
                {to_account_id, Decimal.new(-200)}
              ] ==
-               Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
+               Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-01-01])
                |> Enum.map(&{&1.account_id, &1.value})
     end
 
@@ -972,7 +972,7 @@ defmodule Budget.EntriesTest do
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, _} =
-               Entry.Form.apply_insert(%{
+               Transaction.Form.apply_insert(%{
                  date: ~D[2022-01-01] |> Date.to_iso8601(),
                  account_id: from_account_id,
                  is_recurrency: true,
@@ -987,7 +987,7 @@ defmodule Budget.EntriesTest do
                  value: 200
                })
 
-      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
@@ -999,21 +999,21 @@ defmodule Budget.EntriesTest do
                {~D[2022-04-01], from_account_id, Decimal.new(200)},
                {~D[2022-04-01], to_account_id, Decimal.new(-200)}
              ] ==
-               entries
+               transactions
                |> Enum.map(&{&1.date, &1.account_id, &1.value})
 
-      assert Enum.at(entries, 0).id |> is_integer()
-      assert Enum.at(entries, 1).id |> is_integer()
-      assert "recurrency-" <> _ = Enum.at(entries, 2).id
-      assert "recurrency-" <> _ = Enum.at(entries, 3).id
-      assert "recurrency-" <> _ = Enum.at(entries, 4).id
-      assert "recurrency-" <> _ = Enum.at(entries, 5).id
-      assert "recurrency-" <> _ = Enum.at(entries, 6).id
-      assert "recurrency-" <> _ = Enum.at(entries, 7).id
+      assert Enum.at(transactions, 0).id |> is_integer()
+      assert Enum.at(transactions, 1).id |> is_integer()
+      assert "recurrency-" <> _ = Enum.at(transactions, 2).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 3).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 4).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 5).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 6).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 7).id
 
-      {:ok, _persisted} = Entry.Form.apply_update(Enum.at(entries, 2), %{})
+      {:ok, _persisted} = Transaction.Form.apply_update(Enum.at(transactions, 2), %{})
 
-      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
@@ -1025,27 +1025,27 @@ defmodule Budget.EntriesTest do
                {~D[2022-04-01], from_account_id, Decimal.new(200)},
                {~D[2022-04-01], to_account_id, Decimal.new(-200)}
              ] ==
-               entries
+               transactions
                |> Enum.map(&{&1.date, &1.account_id, &1.value})
 
-      assert 4 == Budget.Repo.all(Entries.RecurrencyEntry) |> length()
+      assert 4 == Budget.Repo.all(Transactions.RecurrencyTransaction) |> length()
 
-      assert Enum.at(entries, 0).id |> is_integer()
-      assert Enum.at(entries, 1).id |> is_integer()
-      assert Enum.at(entries, 2).id |> is_integer()
-      assert Enum.at(entries, 3).id |> is_integer()
-      assert "recurrency-" <> _ = Enum.at(entries, 4).id
-      assert "recurrency-" <> _ = Enum.at(entries, 5).id
-      assert "recurrency-" <> _ = Enum.at(entries, 6).id
-      assert "recurrency-" <> _ = Enum.at(entries, 7).id
+      assert Enum.at(transactions, 0).id |> is_integer()
+      assert Enum.at(transactions, 1).id |> is_integer()
+      assert Enum.at(transactions, 2).id |> is_integer()
+      assert Enum.at(transactions, 3).id |> is_integer()
+      assert "recurrency-" <> _ = Enum.at(transactions, 4).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 5).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 6).id
+      assert "recurrency-" <> _ = Enum.at(transactions, 7).id
     end
 
-    test "persist recurrent transfer entry applying forward" do
+    test "persist recurrent transfer transaction applying forward" do
       %{id: from_account_id} = account_fixture()
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, _} =
-               Entry.Form.apply_insert(%{
+               Transaction.Form.apply_insert(%{
                  date: ~D[2022-01-01],
                  account_id: from_account_id,
                  recurrency: %{
@@ -1059,7 +1059,7 @@ defmodule Budget.EntriesTest do
                  value: 200
                })
 
-      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200), "part"},
@@ -1071,7 +1071,7 @@ defmodule Budget.EntriesTest do
                {~D[2022-04-01], from_account_id, Decimal.new(200), "part"},
                {~D[2022-04-01], to_account_id, Decimal.new(-200), "counter-part"}
              ] ==
-               entries
+               transactions
                |> Enum.map(
                  &{
                    &1.date,
@@ -1087,12 +1087,12 @@ defmodule Budget.EntriesTest do
                )
 
       {:ok, _persisted} =
-        Entry.Form.apply_update(Enum.at(entries, 2), %{
+        Transaction.Form.apply_update(Enum.at(transactions, 2), %{
           value: 400,
           apply_forward: true
         })
 
-      entries = Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
@@ -1104,18 +1104,18 @@ defmodule Budget.EntriesTest do
                {~D[2022-04-01], from_account_id, Decimal.new(400)},
                {~D[2022-04-01], to_account_id, Decimal.new(-400)}
              ] ==
-               entries
+               transactions
                |> Enum.map(&{&1.date, &1.account_id, &1.value})
     end
   end
 
-  describe "update_entry/2" do
+  describe "update_transaction/2" do
     test "updating value from a transfer transaction" do
       %{id: from_account_id} = account_fixture()
       %{id: to_account_id} = account_fixture()
 
       assert {:ok, %{id: id}} =
-               Entry.Form.apply_insert(%{
+               Transaction.Form.apply_insert(%{
                  date: ~D[2022-01-01],
                  account_id: from_account_id,
                  originator: "transfer",
@@ -1125,15 +1125,15 @@ defmodule Budget.EntriesTest do
                  value: 200
                })
 
-      entry = Entries.get_entry!(id)
+      transaction = Transactions.get_transaction!(id)
 
-      assert {:ok, _} = Entry.Form.apply_update(entry, %{value: 400})
+      assert {:ok, _} = Transaction.Form.apply_update(transaction, %{value: 400})
 
       assert [
-               {from_account_id, Decimal.new(400), entry.originator_transfer_part_id, nil},
-               {to_account_id, Decimal.new(-400), nil, entry.originator_transfer_part_id}
+               {from_account_id, Decimal.new(400), transaction.originator_transfer_part_id, nil},
+               {to_account_id, Decimal.new(-400), nil, transaction.originator_transfer_part_id}
              ] ==
-               Entries.entries_in_period([], ~D[2022-01-01], ~D[2022-01-01])
+               Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-01-01])
                |> Enum.map(
                  &{&1.account_id, &1.value, &1.originator_transfer_part_id,
                   &1.originator_transfer_counter_part_id}
@@ -1141,65 +1141,65 @@ defmodule Budget.EntriesTest do
     end
   end
 
-  describe "delete_entry_state/1" do
-    test "entry_state for an alone entry" do
-      entry = entry_fixture()
+  describe "delete_transaction_state/1" do
+    test "transaction_state for an alone transaction" do
+      transaction = transaction_fixture()
 
-      assert :regular == Entries.delete_entry_state(entry.id)
+      assert :regular == Transactions.delete_transaction_state(transaction.id)
     end
 
-    test "entry_state for a recurrency entry without future persisted" do
+    test "transaction_state for a recurrency transaction without future persisted" do
       recurrency = recurrency_fixture()
 
-      entry = Enum.at(recurrency.recurrency_entries, 0).entry
+      transaction = Enum.at(recurrency.recurrency_transactions, 0).transaction
 
-      assert :recurrency == Entries.delete_entry_state(entry.id)
+      assert :recurrency == Transactions.delete_transaction_state(transaction.id)
     end
 
-    test "entry_state for a recurrency entry with future persisted" do
+    test "transaction_state for a recurrency transaction with future persisted" do
       recurrency = recurrency_fixture()
 
       {:ok, _} =
         recurrency
-        |> Entries.recurrency_entries(Timex.today() |> Timex.shift(months: 1))
+        |> Transactions.recurrency_transactions(Timex.today() |> Timex.shift(months: 1))
         |> Enum.at(0)
-        |> Entry.Form.apply_update(%{})
+        |> Transaction.Form.apply_update(%{})
 
-      entry = Enum.at(recurrency.recurrency_entries, 0).entry
+      transaction = Enum.at(recurrency.recurrency_transactions, 0).transaction
 
-      assert :recurrency_with_future == Entries.delete_entry_state(entry.id)
+      assert :recurrency_with_future == Transactions.delete_transaction_state(transaction.id)
     end
 
-    test "entry_state for a recurrency transient entry with future persisted" do
+    test "transaction_state for a recurrency transient transaction with future persisted" do
       recurrency = recurrency_fixture()
 
-      entries = Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 4))
+      transactions = Transactions.recurrency_transactions(recurrency, Timex.today() |> Timex.shift(months: 4))
 
       {:ok, _} =
-        entries
+        transactions
         |> Enum.at(3)
-        |> Entry.Form.apply_update(%{})
+        |> Transaction.Form.apply_update(%{})
 
-      assert :recurrency_with_future == Entries.delete_entry_state(Enum.at(entries, 1).id)
+      assert :recurrency_with_future == Transactions.delete_transaction_state(Enum.at(transactions, 1).id)
     end
 
-    test "entry_state for a recurrency transient entry with future deleted" do
+    test "transaction_state for a recurrency transient transaction with future deleted" do
       recurrency = recurrency_fixture()
 
-      entries = Entries.recurrency_entries(recurrency, Timex.today() |> Timex.shift(months: 4))
+      transactions = Transactions.recurrency_transactions(recurrency, Timex.today() |> Timex.shift(months: 4))
 
-      {:ok, entry} =
-        entries
+      {:ok, transaction} =
+        transactions
         |> Enum.at(3)
-        |> Entry.Form.apply_update(%{})
+        |> Transaction.Form.apply_update(%{})
 
-      {:ok, _} = Entries.delete_entry(entry.id, "entry")
+      {:ok, _} = Transactions.delete_transaction(transaction.id, "transaction")
 
-      assert :recurrency == Entries.delete_entry_state(Enum.at(entries, 1).id)
+      assert :recurrency == Transactions.delete_transaction_state(Enum.at(transactions, 1).id)
     end
   end
 
-  def delete_entry_payload("regular") do
+  def delete_transaction_payload("regular") do
     account_id = account_fixture().id
     category_id = category_fixture().id
 
@@ -1217,10 +1217,10 @@ defmodule Budget.EntriesTest do
         frequency: :monthly
       }
     }
-    |> Entry.Form.apply_insert()
+    |> Transaction.Form.apply_insert()
   end
 
-  def delete_entry_payload(Regular) do
+  def delete_transaction_payload(Regular) do
     category_id = category_fixture().id
 
     %{
@@ -1232,7 +1232,7 @@ defmodule Budget.EntriesTest do
     }
   end
 
-  def delete_entry_payload(Transfer) do
+  def delete_transaction_payload(Transfer) do
     account_id2 = account_fixture().id
 
     %{
@@ -1243,35 +1243,35 @@ defmodule Budget.EntriesTest do
     }
   end
 
-  describe "delete_entry/2" do
+  describe "delete_transaction/2" do
     Enum.each(
       [Regular, Transfer],
       fn originator ->
-        test "delete_entry mode entry for an alone entry #{originator}" do
+        test "delete_transaction mode transaction for an alone transaction #{originator}" do
           account_id = account_fixture().id
 
-          {:ok, entry} = 
+          {:ok, transaction} =
             unquote(originator)
-            |> delete_entry_payload()
+            |> delete_transaction_payload()
             |> Map.merge(%{
               date: ~D[2020-01-01],
               account_id: account_id,
               value: 200
             })
-            |> Entry.Form.apply_insert()
+            |> Transaction.Form.apply_insert()
 
-          assert {:ok, _} = Entries.delete_entry(entry.id, "entry")
+          assert {:ok, _} = Transactions.delete_transaction(transaction.id, "transaction")
 
-          assert 0 == Budget.Repo.all(Budget.Entries.Entry) |> length()
+          assert 0 == Budget.Repo.all(Budget.Transactions.Transaction) |> length()
           assert 0 == Budget.Repo.all(unquote(originator)) |> length()
         end
 
-        test "delete_entry mode entry for a recurrent #{originator}" do
+        test "delete_transaction mode transaction for a recurrent #{originator}" do
           account_id = account_fixture().id
 
-          {:ok, entry} =
+          {:ok, transaction} =
             unquote(originator)
-            |> delete_entry_payload()
+            |> delete_transaction_payload()
             |> Map.merge(%{
               date: ~D[2020-01-01],
               account_id: account_id,
@@ -1281,20 +1281,20 @@ defmodule Budget.EntriesTest do
                 is_forever: true
               }
             })
-            |> Entry.Form.apply_insert()
+            |> Transaction.Form.apply_insert()
 
-          assert {:ok, _} = Entries.delete_entry(entry.id, "entry")
+          assert {:ok, _} = Transactions.delete_transaction(transaction.id, "transaction")
 
-          assert 0 == Budget.Repo.all(Budget.Entries.Entry) |> length()
+          assert 0 == Budget.Repo.all(Budget.Transactions.Transaction) |> length()
           assert 0 == Budget.Repo.all(unquote(originator)) |> length()
         end
 
-        test "delete_entry mode recurrency-keep-future for a recurrency entry #{originator}" do
+        test "delete_transaction mode recurrency-keep-future for a recurrency transaction #{originator}" do
           account_id = account_fixture().id
 
-          {:ok, entry} =
+          {:ok, transaction} =
             unquote(originator)
-            |> delete_entry_payload()
+            |> delete_transaction_payload()
             |> Map.merge(%{
               date: ~D[2020-01-01],
               account_id: account_id,
@@ -1304,30 +1304,30 @@ defmodule Budget.EntriesTest do
                 is_forever: true
               }
             })
-            |> Entry.Form.apply_insert()
+            |> Transaction.Form.apply_insert()
 
-          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+          recurrency = Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency.id)
 
           [transient | _] =
-            Entries.recurrency_entries(recurrency, ~D[2020-02-01])
+            Transactions.recurrency_transactions(recurrency, ~D[2020-02-01])
 
-          {:ok, _} = Entry.Form.apply_update(transient, %{})
+          {:ok, _} = Transaction.Form.apply_update(transient, %{})
 
-          assert {:ok, _} = Entries.delete_entry(entry.id, "recurrency-keep-future")
+          assert {:ok, _} = Transactions.delete_transaction(transaction.id, "recurrency-keep-future")
 
-          assert Entries.get_recurrency!(recurrency.id).date_end ==
+          assert Transactions.get_recurrency!(recurrency.id).date_end ==
                    ~D[2019-12-31]
 
-          assert Budget.Repo.all(Budget.Entries.Entry) |> length() > 0
+          assert Budget.Repo.all(Budget.Transactions.Transaction) |> length() > 0
           assert Budget.Repo.all(unquote(originator)) |> length() > 0
         end
 
-        test "delete_entry mode recurrency-all for a recurrency entry #{originator}" do
+        test "delete_transaction mode recurrency-all for a recurrency transaction #{originator}" do
           account_id = account_fixture().id
 
-          {:ok, entry} =
+          {:ok, transaction} =
             unquote(originator)
-            |> delete_entry_payload()
+            |> delete_transaction_payload()
             |> Map.merge(%{
               date: ~D[2020-01-01],
               account_id: account_id,
@@ -1337,30 +1337,30 @@ defmodule Budget.EntriesTest do
                 is_forever: true
               }
             })
-            |> Entry.Form.apply_insert()
+            |> Transaction.Form.apply_insert()
 
-          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+          recurrency = Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency.id)
 
           [transient | _] =
-            Entries.recurrency_entries(recurrency, ~D[2020-02-01])
+            Transactions.recurrency_transactions(recurrency, ~D[2020-02-01])
 
-          {:ok, _} = Entry.Form.apply_update(transient, %{})
+          {:ok, _} = Transaction.Form.apply_update(transient, %{})
 
-          assert {:ok,_} = Entries.delete_entry(entry.id, "recurrency-all")
+          assert {:ok,_} = Transactions.delete_transaction(transaction.id, "recurrency-all")
 
-          assert Entries.get_recurrency!(recurrency.id).date_end ==
+          assert Transactions.get_recurrency!(recurrency.id).date_end ==
                    ~D[2019-12-31]
 
-          assert Budget.Repo.all(Budget.Entries.Entry) |> length() == 0
+          assert Budget.Repo.all(Budget.Transactions.Transaction) |> length() == 0
           assert Budget.Repo.all(unquote(originator)) |> length() == 0
         end
 
-        test "delete_entry mode entry for a transient recurrency entry #{originator}" do
+        test "delete_transaction mode transaction for a transient recurrency transaction #{originator}" do
           account_id = account_fixture().id
 
-          {:ok, entry} =
+          {:ok, transaction} =
             unquote(originator)
-            |> delete_entry_payload()
+            |> delete_transaction_payload()
             |> Map.merge(%{
               date: ~D[2020-01-01],
               account_id: account_id,
@@ -1370,25 +1370,25 @@ defmodule Budget.EntriesTest do
                 is_forever: true
               }
             })
-            |> Entry.Form.apply_insert()
+            |> Transaction.Form.apply_insert()
 
-          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+          recurrency = Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency.id)
 
-          [transient | _] = Entries.recurrency_entries(recurrency, ~D[2020-02-01])
+          [transient | _] = Transactions.recurrency_transactions(recurrency, ~D[2020-02-01])
 
-          assert {:ok, _} = Entries.delete_entry(transient.id, "entry")
+          assert {:ok, _} = Transactions.delete_transaction(transient.id, "transaction")
 
-          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+          recurrency = Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency.id)
 
-          assert [] == Entries.recurrency_entries(recurrency, ~D[2020-02-01])
+          assert [] == Transactions.recurrency_transactions(recurrency, ~D[2020-02-01])
         end
 
-        test "delete_entry mode recurrency-keep-future for a transient recurrency entry #{originator}" do
+        test "delete_transaction mode recurrency-keep-future for a transient recurrency transaction #{originator}" do
           account_id = account_fixture().id
 
-          {:ok, entry} =
+          {:ok, transaction} =
             unquote(originator)
-            |> delete_entry_payload()
+            |> delete_transaction_payload()
             |> Map.merge(%{
               date: ~D[2020-01-01],
               account_id: account_id,
@@ -1398,43 +1398,43 @@ defmodule Budget.EntriesTest do
                 is_forever: true
               }
             })
-            |> Entry.Form.apply_insert()
+            |> Transaction.Form.apply_insert()
 
-          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+          recurrency = Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency.id)
 
-          [transient | _] = Entries.entries_in_period([], ~D[2020-02-01], ~D[2020-02-01])
+          [transient | _] = Transactions.transactions_in_period([], ~D[2020-02-01], ~D[2020-02-01])
 
-          [future | _] = Entries.entries_in_period([], ~D[2020-03-01], ~D[2020-03-01])
+          [future | _] = Transactions.transactions_in_period([], ~D[2020-03-01], ~D[2020-03-01])
 
-          {:ok, persisted} = Entry.Form.apply_update(future, %{})
+          {:ok, persisted} = Transaction.Form.apply_update(future, %{})
 
-          assert {:ok, _} = Entries.delete_entry(transient.id, "recurrency-keep-future")
+          assert {:ok, _} = Transactions.delete_transaction(transient.id, "recurrency-keep-future")
 
-          recurrency = Entries.get_recurrency!(recurrency.id)
+          recurrency = Transactions.get_recurrency!(recurrency.id)
 
           assert recurrency.date_end == ~D[2020-01-31]
 
-          assert Entries.get_entry!(persisted.id)
+          assert Transactions.get_transaction!(persisted.id)
 
           assert [
-                   %{has_entry_id: true, original_date: ~D[2020-01-01]},
-                   %{has_entry_id: false, original_date: ~D[2020-02-01]},
-                   %{has_entry_id: true, original_date: ~D[2020-03-01]},
+                   %{has_transaction_id: true, original_date: ~D[2020-01-01]},
+                   %{has_transaction_id: false, original_date: ~D[2020-02-01]},
+                   %{has_transaction_id: true, original_date: ~D[2020-03-01]},
                  ] ==
                    Enum.map(
-                     recurrency.recurrency_entries,
-                     &%{has_entry_id: not is_nil(&1.entry_id), original_date: &1.original_date}
+                     recurrency.recurrency_transactions,
+                     &%{has_transaction_id: not is_nil(&1.transaction_id), original_date: &1.original_date}
                    )
                    |> Enum.sort_by(& &1.original_date, &Timex.before?/2)
                    |> Enum.uniq()
         end
 
-        test "delete_entry mode recurrency-all when there is already a deleted entry in the future #{originator}" do
+        test "delete_transaction mode recurrency-all when there is already a deleted transaction in the future #{originator}" do
           account_id = account_fixture().id
 
-          {:ok, entry} =
+          {:ok, transaction} =
             unquote(originator)
-            |> delete_entry_payload()
+            |> delete_transaction_payload()
             |> Map.merge(%{
               date: ~D[2020-01-01],
               account_id: account_id,
@@ -1444,29 +1444,29 @@ defmodule Budget.EntriesTest do
                 is_forever: true
               }
             })
-            |> Entry.Form.apply_insert()
+            |> Transaction.Form.apply_insert()
 
-          [transient | _] = Entries.entries_in_period([], ~D[2020-02-01], ~D[2020-02-01])
-          [future | _] = Entries.entries_in_period([], ~D[2020-03-01], ~D[2020-03-01])
+          [transient | _] = Transactions.transactions_in_period([], ~D[2020-02-01], ~D[2020-02-01])
+          [future | _] = Transactions.transactions_in_period([], ~D[2020-03-01], ~D[2020-03-01])
 
-          {:ok, persisted} = Entry.Form.apply_update(future, %{})
+          {:ok, persisted} = Transaction.Form.apply_update(future, %{})
 
-          assert {:ok, _} = Entries.delete_entry(persisted.id, "entry")
+          assert {:ok, _} = Transactions.delete_transaction(persisted.id, "transaction")
 
-          assert {:ok, _} = Entries.delete_entry(transient.id, "recurrency-all")
+          assert {:ok, _} = Transactions.delete_transaction(transient.id, "recurrency-all")
 
-          recurrency = Entries.get_recurrency!(entry.recurrency_entry.recurrency.id)
+          recurrency = Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency.id)
 
           assert recurrency.date_end == ~D[2020-01-31]
 
           assert [
-                   %{has_entry_id: true, original_date: ~D[2020-01-01]},
-                   %{has_entry_id: false, original_date: ~D[2020-02-01]},
-                   %{has_entry_id: false, original_date: ~D[2020-03-01]},
+                   %{has_transaction_id: true, original_date: ~D[2020-01-01]},
+                   %{has_transaction_id: false, original_date: ~D[2020-02-01]},
+                   %{has_transaction_id: false, original_date: ~D[2020-03-01]},
                  ] ==
                    Enum.map(
-                     recurrency.recurrency_entries,
-                     &%{has_entry_id: not is_nil(&1.entry_id), original_date: &1.original_date}
+                     recurrency.recurrency_transactions,
+                     &%{has_transaction_id: not is_nil(&1.transaction_id), original_date: &1.original_date}
                    )
                    |> Enum.sort_by(& &1.original_date, &Timex.before?/2)
                    |> Enum.uniq()
@@ -1478,24 +1478,24 @@ defmodule Budget.EntriesTest do
 
   describe "create_category/2" do
     test "create root category" do
-      assert {:ok, %Category{name: "root"}} = Entries.create_category(%{name: "root"})
+      assert {:ok, %Category{name: "root"}} = Transactions.create_category(%{name: "root"})
     end
 
     test "create child category" do
-      {:ok, %{id: id} = parent} = Entries.create_category(%{name: "root"})
+      {:ok, %{id: id} = parent} = Transactions.create_category(%{name: "root"})
 
       assert {:ok, %{name: "child", path: [^id]}} =
-               Entries.create_category(%{name: "child"}, parent)
+               Transactions.create_category(%{name: "child"}, parent)
     end
   end
 
   describe "list_categories_arranged/0" do
     test "list all categoris" do
-      {:ok, %{id: id_root} = root} = Entries.create_category(%{name: "root"})
-      {:ok, %{id: id_parent} = parent} = Entries.create_category(%{name: "parent"}, root)
+      {:ok, %{id: id_root} = root} = Transactions.create_category(%{name: "root"})
+      {:ok, %{id: id_parent} = parent} = Transactions.create_category(%{name: "parent"}, root)
 
       assert {:ok, %{name: "child", path: [^id_root, ^id_parent]}} =
-               Entries.create_category(%{name: "child"}, parent)
+               Transactions.create_category(%{name: "child"}, parent)
 
       assert [
                %{name: "root"} = root,
@@ -1511,157 +1511,157 @@ defmodule Budget.EntriesTest do
                      {^child, []}
                    ]}
                 ]}
-             ] = Entries.list_categories_arranged()
+             ] = Transactions.list_categories_arranged()
     end
   end
 
-  describe "put_entry_before/2" do
+  describe "put_transaction_before/2" do
     test "reorder between 3 elements" do
-      entry_1 = %{id: id1} = entry_fixture()
-      entry_2 = %{id: id2} = entry_fixture()
-      entry_3 = %{id: id3} = entry_fixture()
+      transaction_1 = %{id: id1} = transaction_fixture()
+      transaction_2 = %{id: id2} = transaction_fixture()
+      transaction_3 = %{id: id3} = transaction_fixture()
 
-      assert Decimal.new(1) == entry_1.position
-      assert Decimal.new(2) == entry_2.position
-      assert Decimal.new(3) == entry_3.position
+      assert Decimal.new(1) == transaction_1.position
+      assert Decimal.new(2) == transaction_2.position
+      assert Decimal.new(3) == transaction_3.position
 
-      {:ok, updated} = Entries.put_entry_between(entry_3, [entry_1, entry_2])
+      {:ok, updated} = Transactions.put_transaction_between(transaction_3, [transaction_1, transaction_2])
 
       assert Decimal.new("1.5") == updated.position
 
-      entries = Entries.entries_in_period([], Timex.today(), Timex.today())
+      transactions = Transactions.transactions_in_period([], Timex.today(), Timex.today())
 
       assert [
                {id1, Decimal.new(1)},
                {id3, Decimal.new("1.5")},
                {id2, Decimal.new(2)}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position})
+               transactions |> Enum.map(&{&1.id, &1.position})
 
-      [entry_1, entry_3, entry_2] = entries
+      [transaction_1, transaction_3, transaction_2] = transactions
 
-      {:ok, _} = Entries.put_entry_between(entry_1, [entry_3, entry_2])
+      {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_3, transaction_2])
 
       assert Decimal.new("1.5") == updated.position
 
-      entries = Entries.entries_in_period([], Timex.today(), Timex.today())
+      transactions = Transactions.transactions_in_period([], Timex.today(), Timex.today())
 
       assert [
                {id3, Decimal.new("1.5")},
                {id1, Decimal.new("1.75")},
                {id2, Decimal.new(2)}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position})
+               transactions |> Enum.map(&{&1.id, &1.position})
     end
 
     test "reorder between 2 elements and it is put after the other" do
-      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
-      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-21]})
+      transaction_1 = %{id: id1} = transaction_fixture(%{date: ~D[2023-01-17]})
+      transaction_2 = %{id: id2} = transaction_fixture(%{date: ~D[2023-01-21]})
 
-      {:ok, _} = Entries.put_entry_between(entry_1, [entry_2, nil])
+      {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_2, nil])
 
-      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-21])
+      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-21])
 
       assert [
                {id2, Decimal.new(1), ~D[2023-01-21]},
                {id1, Decimal.new("1.5"), ~D[2023-01-21]}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+               transactions |> Enum.map(&{&1.id, &1.position, &1.date})
     end
 
     test "reorder between 2 elements and it is put before the other" do
-      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
-      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-21]})
+      transaction_1 = %{id: id1} = transaction_fixture(%{date: ~D[2023-01-17]})
+      transaction_2 = %{id: id2} = transaction_fixture(%{date: ~D[2023-01-21]})
 
-      {:ok, _} = Entries.put_entry_between(entry_2, [nil, entry_1])
+      {:ok, _} = Transactions.put_transaction_between(transaction_2, [nil, transaction_1])
 
-      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-21])
+      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-21])
 
       assert [
                {id2, Decimal.new("0.5"), ~D[2023-01-17]},
                {id1, Decimal.new(1), ~D[2023-01-17]}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+               transactions |> Enum.map(&{&1.id, &1.position, &1.date})
     end
 
     test "reorder between 3 elements putting last in first updating date" do
-      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
-      _entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
-      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+      transaction_1 = %{id: id1} = transaction_fixture(%{date: ~D[2023-01-17]})
+      _transaction_2 = %{id: id2} = transaction_fixture(%{date: ~D[2023-01-18]})
+      transaction_3 = %{id: id3} = transaction_fixture(%{date: ~D[2023-01-19]})
 
-      {:ok, _} = Entries.put_entry_between(entry_3, [nil, entry_1])
+      {:ok, _} = Transactions.put_transaction_between(transaction_3, [nil, transaction_1])
 
-      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id3, Decimal.new("0.5"), ~D[2023-01-17]},
                {id1, Decimal.new(1), ~D[2023-01-17]},
                {id2, Decimal.new(1), ~D[2023-01-18]}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+               transactions |> Enum.map(&{&1.id, &1.position, &1.date})
     end
 
     test "reorder between 3 elements putting last in middle updating date" do
-      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
-      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
-      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+      transaction_1 = %{id: id1} = transaction_fixture(%{date: ~D[2023-01-17]})
+      transaction_2 = %{id: id2} = transaction_fixture(%{date: ~D[2023-01-18]})
+      transaction_3 = %{id: id3} = transaction_fixture(%{date: ~D[2023-01-19]})
 
-      {:ok, _} = Entries.put_entry_between(entry_3, [entry_1, entry_2])
+      {:ok, _} = Transactions.put_transaction_between(transaction_3, [transaction_1, transaction_2])
 
-      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id1, Decimal.new(1), ~D[2023-01-17]},
                {id3, Decimal.new("1.5"), ~D[2023-01-17]},
                {id2, Decimal.new(1), ~D[2023-01-18]}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+               transactions |> Enum.map(&{&1.id, &1.position, &1.date})
     end
 
     test "reorder between 3 elements putting first in middle updating date" do
-      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
-      entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
-      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+      transaction_1 = %{id: id1} = transaction_fixture(%{date: ~D[2023-01-17]})
+      transaction_2 = %{id: id2} = transaction_fixture(%{date: ~D[2023-01-18]})
+      transaction_3 = %{id: id3} = transaction_fixture(%{date: ~D[2023-01-19]})
 
-      {:ok, _} = Entries.put_entry_between(entry_1, [entry_2, entry_3])
+      {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_2, transaction_3])
 
-      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id2, Decimal.new(1), ~D[2023-01-18]},
                {id1, Decimal.new("1.5"), ~D[2023-01-18]},
                {id3, Decimal.new(1), ~D[2023-01-19]}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+               transactions |> Enum.map(&{&1.id, &1.position, &1.date})
     end
 
     test "reorder between 3 elements putting first in last updating date" do
-      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-17]})
-      _entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-18]})
-      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-19]})
+      transaction_1 = %{id: id1} = transaction_fixture(%{date: ~D[2023-01-17]})
+      _transaction_2 = %{id: id2} = transaction_fixture(%{date: ~D[2023-01-18]})
+      transaction_3 = %{id: id3} = transaction_fixture(%{date: ~D[2023-01-19]})
 
-      {:ok, _} = Entries.put_entry_between(entry_1, [entry_3, nil])
+      {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_3, nil])
 
-      entries = Entries.entries_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id2, Decimal.new(1), ~D[2023-01-18]},
                {id3, Decimal.new(1), ~D[2023-01-19]},
                {id1, Decimal.new("1.5"), ~D[2023-01-19]}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+               transactions |> Enum.map(&{&1.id, &1.position, &1.date})
     end
 
     test "reorder with different dates and various positions" do
-      entry_1 = %{id: id1} = entry_fixture(%{date: ~D[2023-01-01], position: "4.5"})
-      _entry_2 = %{id: id2} = entry_fixture(%{date: ~D[2023-01-01], position: "4.75"})
-      entry_3 = %{id: id3} = entry_fixture(%{date: ~D[2023-01-13], position: "2"})
-      entry_4 = %{id: id4} = entry_fixture(%{date: ~D[2023-01-28], position: "1"})
-      _entry_5 = %{id: id5} = entry_fixture(%{date: ~D[2023-01-28], position: "5"})
+      transaction_1 = %{id: id1} = transaction_fixture(%{date: ~D[2023-01-01], position: "4.5"})
+      _transaction_2 = %{id: id2} = transaction_fixture(%{date: ~D[2023-01-01], position: "4.75"})
+      transaction_3 = %{id: id3} = transaction_fixture(%{date: ~D[2023-01-13], position: "2"})
+      transaction_4 = %{id: id4} = transaction_fixture(%{date: ~D[2023-01-28], position: "1"})
+      _transaction_5 = %{id: id5} = transaction_fixture(%{date: ~D[2023-01-28], position: "5"})
 
-      {:ok, _} = Entries.put_entry_between(entry_1, [entry_3, entry_4])
+      {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_3, transaction_4])
 
-      entries = Entries.entries_in_period([], ~D[2023-01-01], ~D[2023-01-31])
+      transactions = Transactions.transactions_in_period([], ~D[2023-01-01], ~D[2023-01-31])
 
       assert [
                {id2, Decimal.new("4.75"), ~D[2023-01-01]},
@@ -1670,23 +1670,23 @@ defmodule Budget.EntriesTest do
                {id4, Decimal.new("1"), ~D[2023-01-28]},
                {id5, Decimal.new("5"), ~D[2023-01-28]}
              ] ==
-               entries |> Enum.map(&{&1.id, &1.position, &1.date})
+               transactions |> Enum.map(&{&1.id, &1.position, &1.date})
     end
   end
 
   describe "update_order/3" do
     test "basic reorder" do
-      entry_1 = %{id: id1} = entry_fixture()
-      entry_2 = %{id: id2} = entry_fixture()
-      entry_3 = %{id: id3} = entry_fixture()
-      entry_4 = %{id: id4} = entry_fixture()
-      entry_5 = %{id: id5} = entry_fixture()
+      transaction_1 = %{id: id1} = transaction_fixture()
+      transaction_2 = %{id: id2} = transaction_fixture()
+      transaction_3 = %{id: id3} = transaction_fixture()
+      transaction_4 = %{id: id4} = transaction_fixture()
+      transaction_5 = %{id: id5} = transaction_fixture()
 
-      {:ok, _} = Entries.update_order(0, 2, [entry_1, entry_2, entry_3, entry_4, entry_5])
+      {:ok, _} = Transactions.update_order(0, 2, [transaction_1, transaction_2, transaction_3, transaction_4, transaction_5])
 
-      entries = Entries.entries_in_period([], Timex.today(), Timex.today())
+      transactions = Transactions.transactions_in_period([], Timex.today(), Timex.today())
 
-      assert [id2, id3, id1, id4, id5] == entries |> Enum.map(& &1.id)
+      assert [id2, id3, id1, id4, id5] == transactions |> Enum.map(& &1.id)
     end
   end
 end

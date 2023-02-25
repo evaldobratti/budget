@@ -1,13 +1,13 @@
-defmodule Budget.Entries.Entry.FormTest do
+defmodule Budget.Transactions.Transaction.FormTest do
   use Budget.DataCase, async: true
 
-  import Budget.EntriesFixtures
+  import Budget.TransactionsFixtures
 
-  alias Budget.Entries
-  alias Budget.Entries.Entry.Form
-  alias Budget.Entries.Entry
+  alias Budget.Transactions
+  alias Budget.Transactions.Transaction.Form
+  alias Budget.Transactions.Transaction
 
-  def simplify(%Entry{} = transaction) do
+  def simplify(%Transaction{} = transaction) do
     originator =
       case transaction do
         %{originator_regular_id: id} when is_integer(id) ->
@@ -34,7 +34,7 @@ defmodule Budget.Entries.Entry.FormTest do
       end
 
     recurrency_data =
-      case transaction.recurrency_entry do
+      case transaction.recurrency_transaction do
         %Ecto.Association.NotLoaded{} ->
           %{}
 
@@ -42,19 +42,19 @@ defmodule Budget.Entries.Entry.FormTest do
           %{}
 
         _ ->
-          recurrency = transaction.recurrency_entry.recurrency
+          recurrency = transaction.recurrency_transaction.recurrency
 
           %{
-            recurrency_entry: %{
-              original_date: transaction.recurrency_entry.original_date,
-              parcel: transaction.recurrency_entry.parcel,
-              parcel_end: transaction.recurrency_entry.parcel_end
+            recurrency_transaction: %{
+              original_date: transaction.recurrency_transaction.original_date,
+              parcel: transaction.recurrency_transaction.parcel,
+              parcel_end: transaction.recurrency_transaction.parcel_end
             },
             recurrency: %{
               frequency: recurrency.frequency,
               date_start: recurrency.date_start,
               date_end: recurrency.date_end,
-              entry_payload: recurrency.entry_payload,
+              transaction_payload: recurrency.transaction_payload,
               is_parcel: recurrency.is_parcel,
               parcel_start: recurrency.parcel_start,
               parcel_end: recurrency.parcel_end
@@ -72,7 +72,7 @@ defmodule Budget.Entries.Entry.FormTest do
     |> Map.merge(recurrency_data)
   end
 
-  def simplify({:ok, %Entry{} = transaction}) do
+  def simplify({:ok, %Transaction{} = transaction}) do
     {:ok, simplify(transaction)}
   end
 
@@ -156,7 +156,6 @@ defmodule Budget.Entries.Entry.FormTest do
                regular: ["can't be blank"],
                recurrency: %{
                  date_end: ["can't be blank"],
-                 is_forever: ["can't be blank"]
                }
              } == errors_on(changeset)
 
@@ -307,12 +306,12 @@ defmodule Budget.Entries.Entry.FormTest do
                 recurrency: %{
                   date_end: ~D[2022-12-01],
                   date_start: ~D[2022-01-01],
-                  entry_payload: %{
+                  transaction_payload: %{
                     "2022-01-01" => %{
                       "account_id" => data.account_id,
                       "category_id" => data.category_id,
                       "description" => "Something",
-                      "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                      "originator" => "Elixir.Budget.Transactions.Originator.Regular",
                       "value" => "200"
                     }
                   },
@@ -321,7 +320,7 @@ defmodule Budget.Entries.Entry.FormTest do
                   parcel_end: nil,
                   parcel_start: nil
                 },
-                recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+                recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
               }} == Form.apply_insert(changeset) |> simplify()
     end
 
@@ -361,9 +360,9 @@ defmodule Budget.Entries.Entry.FormTest do
                 recurrency: %{
                   date_end: ~D[2022-12-01],
                   date_start: ~D[2022-01-01],
-                  entry_payload: %{
+                  transaction_payload: %{
                     "2022-01-01" => %{
-                      "originator" => "Elixir.Budget.Entries.Originator.Transfer",
+                      "originator" => "Elixir.Budget.Transactions.Originator.Transfer",
                       "value" => "200",
                       "counter_part_account_id" => other_account_id,
                       "part_account_id" => data.account_id
@@ -374,7 +373,7 @@ defmodule Budget.Entries.Entry.FormTest do
                   parcel_end: nil,
                   parcel_start: nil
                 },
-                recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+                recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
               }} == Form.apply_insert(changeset) |> simplify()
     end
   end
@@ -397,7 +396,7 @@ defmodule Budget.Entries.Entry.FormTest do
 
       form = Form.decorate(transaction)
 
-      assert %Budget.Entries.Entry.Form{
+      assert %Budget.Transactions.Transaction.Form{
                account_id: data.account_id,
                date: ~D[2022-01-01],
                id: transaction.id,
@@ -407,7 +406,7 @@ defmodule Budget.Entries.Entry.FormTest do
                originator: "regular",
                recurrency: nil,
                apply_forward: false,
-               regular: %Budget.Entries.Entry.Form.RegularForm{
+               regular: %Budget.Transactions.Transaction.Form.RegularForm{
                  id: nil,
                  category_id: data.category_id,
                  description: "Something"
@@ -456,7 +455,7 @@ defmodule Budget.Entries.Entry.FormTest do
 
       form = Form.decorate(transaction)
 
-      assert %Budget.Entries.Entry.Form{
+      assert %Budget.Transactions.Transaction.Form{
                account_id: data.account_id,
                date: ~D[2022-01-01],
                id: transaction.id,
@@ -466,7 +465,7 @@ defmodule Budget.Entries.Entry.FormTest do
                originator: "transfer",
                recurrency: nil,
                apply_forward: false,
-               transfer: %Budget.Entries.Entry.Form.TransferForm{
+               transfer: %Budget.Transactions.Transaction.Form.TransferForm{
                  other_account_id: other_account_id
                },
                value: Decimal.new(200),
@@ -594,7 +593,7 @@ defmodule Budget.Entries.Entry.FormTest do
                value: -300.0
              } ==
                transaction.originator_transfer_part.counter_part.id
-               |> Entries.get_entry!()
+               |> Transactions.get_transaction!()
                |> simplify()
     end
 
@@ -615,7 +614,7 @@ defmodule Budget.Entries.Entry.FormTest do
         |> Form.apply_insert()
 
       counter_part_transaction =
-        Entries.get_entry!(transaction.originator_transfer_part.counter_part.id)
+        Transactions.get_transaction!(transaction.originator_transfer_part.counter_part.id)
 
       other_account_id_part = account_fixture().id
       other_account_id_counter_part = account_fixture().id
@@ -695,12 +694,12 @@ defmodule Budget.Entries.Entry.FormTest do
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
-                 entry_payload: %{
+                 transaction_payload: %{
                    "2022-01-01" => %{
                      "account_id" => data.account_id,
                      "category_id" => data.category_id,
                      "description" => "Something",
-                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "originator" => "Elixir.Budget.Transactions.Originator.Regular",
                      "value" => "200"
                    }
                  },
@@ -709,7 +708,7 @@ defmodule Budget.Entries.Entry.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
              } == transaction |> simplify()
     end
 
@@ -761,12 +760,12 @@ defmodule Budget.Entries.Entry.FormTest do
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
-                 entry_payload: %{
+                 transaction_payload: %{
                    "2022-01-01" => %{
                      "account_id" => other_account_id,
                      "category_id" => other_category_id,
                      "description" => "Something updated",
-                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "originator" => "Elixir.Budget.Transactions.Originator.Regular",
                      "value" => "300"
                    }
                  },
@@ -775,7 +774,7 @@ defmodule Budget.Entries.Entry.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
              } == transaction |> simplify()
     end
 
@@ -831,10 +830,10 @@ defmodule Budget.Entries.Entry.FormTest do
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
-                 entry_payload: %{
+                 transaction_payload: %{
                    "2022-01-01" => %{
                      "counter_part_account_id" => other_account_id_counter_part,
-                     "originator" => "Elixir.Budget.Entries.Originator.Transfer",
+                     "originator" => "Elixir.Budget.Transactions.Originator.Transfer",
                      "part_account_id" => other_account_id_part,
                      "value" => "300"
                    }
@@ -844,7 +843,7 @@ defmodule Budget.Entries.Entry.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
              } == transaction |> simplify()
     end
 
@@ -871,7 +870,7 @@ defmodule Budget.Entries.Entry.FormTest do
         |> Form.apply_insert()
 
       counter_part_transaction =
-        Entries.get_entry!(transaction.originator_transfer_part.counter_part.id)
+        Transactions.get_transaction!(transaction.originator_transfer_part.counter_part.id)
 
       other_account_id_part = account_fixture().id
       other_account_id_counter_part = account_fixture().id
@@ -903,10 +902,10 @@ defmodule Budget.Entries.Entry.FormTest do
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
-                 entry_payload: %{
+                 transaction_payload: %{
                    "2022-01-01" => %{
                      "counter_part_account_id" => other_account_id_part,
-                     "originator" => "Elixir.Budget.Entries.Originator.Transfer",
+                     "originator" => "Elixir.Budget.Transactions.Originator.Transfer",
                      "part_account_id" => other_account_id_counter_part,
                      "value" => "300"
                    }
@@ -916,7 +915,7 @@ defmodule Budget.Entries.Entry.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_entry: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
              } == counter_part_transaction |> simplify()
     end
 
@@ -942,7 +941,7 @@ defmodule Budget.Entries.Entry.FormTest do
         |> Form.insert_changeset()
         |> Form.apply_insert()
 
-      [transaction] = Entries.entries_in_period([], ~D[2022-02-01], ~D[2022-02-01])
+      [transaction] = Transactions.transactions_in_period([], ~D[2022-02-01], ~D[2022-02-01])
 
       other_account_id = account_fixture().id
       other_category_id = category_fixture().id
@@ -971,19 +970,19 @@ defmodule Budget.Entries.Entry.FormTest do
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
-                 entry_payload: %{
+                 transaction_payload: %{
                    "2022-01-01" => %{
                      "account_id" => data.account_id,
                      "category_id" => data.category_id,
                      "description" => "Something",
-                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "originator" => "Elixir.Budget.Transactions.Originator.Regular",
                      "value" => "200"
                    },
                    "2022-02-01" => %{
                      "account_id" => other_account_id,
                      "category_id" => other_category_id,
                      "description" => "Something updated",
-                     "originator" => "Elixir.Budget.Entries.Originator.Regular",
+                     "originator" => "Elixir.Budget.Transactions.Originator.Regular",
                      "value" => "300"
                    }
                  },
@@ -992,7 +991,7 @@ defmodule Budget.Entries.Entry.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_entry: %{original_date: ~D[2022-02-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{original_date: ~D[2022-02-01], parcel: nil, parcel_end: nil}
              } == transaction |> simplify()
     end
   end
