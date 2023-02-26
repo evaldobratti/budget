@@ -21,6 +21,9 @@ ENV PATH="/root/.nvm/versions/node/v16.13.0/bin/:${PATH}"
 RUN node --version
 RUN npm --version
 
+# pdftotext
+RUN apt-get update -y && apt-get install -y poppler-utils
+
 # prepare build dir
 WORKDIR /app
 
