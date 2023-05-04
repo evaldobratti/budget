@@ -15,9 +15,11 @@ defmodule Budget.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Budget.PubSub},
       # Start the Endpoint (http/https)
-      BudgetWeb.Endpoint
+      BudgetWeb.Endpoint,
       # Start a worker by calling: Budget.Worker.start_link(arg)
       # {Budget.Worker, arg}
+      {Registry, keys: :unique, name: Buget.Importer.Registry},
+      {DynamicSupervisor, name: Budget.Importer}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

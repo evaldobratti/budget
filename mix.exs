@@ -53,7 +53,7 @@ defmodule Budget.MixProject do
       {:number, "~> 1.0.3"},
       {:ecto_materialized_trail, "~> 0.3.0"},
       {:primer_live, "~> 0.2.2"},
-      {:fraction, github: "lermannen/elixir-fraction"}
+      {:phoenix_view, "~> 2.0.0"}
     ]
   end
 

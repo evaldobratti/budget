@@ -15,16 +15,18 @@ defmodule BudgetWeb.ImportLive.CreditCard.NuBank do
   end
 
   def handle_event("save", _params, socket) do
-    uploaded_files =
+    [file] =
       consume_uploaded_entries(socket, :invoice, fn %{path: path}, _entry ->
         dest = Path.join([:code.priv_dir(:budget), "static", "uploads", Path.basename(path)])
         # The `static/uploads` directory must exist for `File.cp!/2`
         # and MyAppWeb.static_paths/0 should contain uploads to work,.
         File.cp!(path, dest)
 
-        dest
+        {:ok, dest}
       end)
 
-    {:noreply, update(socket, :uploaded_files, &(&1 ++ uploaded_files))}
+    {:ok, digits} = Budget.Importations.import(file)
+
+    {:noreply, push_navigate(socket, to: "/imports/result/" <> digits)}
   end
 end

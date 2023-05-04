@@ -5,6 +5,16 @@
       <span>My Budget</span>
     </.link>
   </:item>
+  <:item :let={classes}>
+    <.link navigate="/" class={[classes.link, "d-flex flex-items-center"]}>
+      <span>Transactions</span>
+    </.link>
+  </:item>
+  <:item :let={classes}>
+    <.link navigate="/imports" class={[classes.link, "d-flex flex-items-center"]}>
+      <span>Import</span>
+    </.link>
+  </:item>
 </.header>
 
 <main class="container-xxl">

@@ -28,6 +28,11 @@ defmodule BudgetWeb.Router do
     live "/categories/:id/children/new", BudgetLive.Index, :new_category_child
 
     live "/accounts", AccountLive.Index, :index
+
+    live "/imports", ImportLive.Index, :index
+
+    live "/imports/credit_card/nu_bank", ImportLive.CreditCard.NuBank, :index
+    live "/imports/result/:result", ImportLive.Result, :index
     # live "/accounts/new", AccountLive.Index, :new
     # live "/accounts/:id/edit", AccountLive.Index, :edit
 
