@@ -1,1 +1,82 @@
-<%= inspect @result %>
+<ul>
+<li>
+Adicionar negócio pra selecionar quem será importado
+</li>
+<li>
+tentar categorizar automaticamente
+</li>
+<li>
+possibilidade de editar os dados
+</li>
+<li>
+além de selecionar elementos, possiblitar simplesmente apagar da listagem/importação
+</li>
+<li>
+lançamentos importados provavelmente são negativos
+</li>
+</ul>
+
+<.box is_condensed class="my-2 list-group">
+  <:header class="d-flex">
+
+    <div class="col-1 px-1">
+      Import
+    </div>
+    <div class="col-1 px-1">
+      Date
+    </div>
+    <div class="flex-1 px-1">
+      Description
+    </div>
+    <div class="col-2 px-1 text-center">
+      Category
+    </div>
+    <div class="col-2 text-right px-1">
+      Value
+    </div>
+
+    <div class="col-1 px-1">
+    </div>
+  </:header>
+
+  <:row :for={transaction <- @changes_applied.transactions} is_hover_gray class="d-flex flex-items-center list-group-item">
+    <%= case transaction do %>
+      <% %{type: :transaction} -> %>
+        <form
+          id={"#{transaction.ix}"}
+          phx-change={"validate-#{transaction.ix}"}
+          class="col-12"
+        >
+          <div class="d-flex">
+            <div class="col-1 px-1">
+            <%= inspect transaction %>
+            </div>
+            <div class="col-1 px-1">
+              <.text_input type="date" name="date" value={transaction.date} class="width-full" title={"Original: #{transaction.original_description}"} />
+            </div>
+            <div class="flex-1 px-1 d-flex">
+              <.text_input name="description" value={transaction.description} class="width-full" title={"Original: #{transaction.original_description}"} />
+            </div>
+            <div class="col-2 px-1 text-center">
+              <.select name="category_id" options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" value={transaction.category_id} prompt={[key: "Select", disabled: true, selected: true]} />
+            </div>
+            <div class={"col-2 text-right px-1"}>
+              <.text_input name="value" value={transaction.value} type="number" class="width-full" />
+            </div>
+            <div class="col-1">
+              <%= content_tag :a, href: "#", phx_click: "delete-#{transaction.ix}", class: "btn-octicon btn-octicon-danger p-0"  do %>
+                <.fa_icon icon="fa-trash" />
+              <% end %>
+            </div>
+          </div>
+        </form>
+
+      <% %{type: :page_break} -> %>
+        
+        <div class="col-12 px-1 text-center">
+          page break
+        </div>
+
+    <% end %>
+  </:row>
+</.box>

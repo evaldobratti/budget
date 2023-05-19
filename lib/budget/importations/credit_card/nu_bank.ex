@@ -18,28 +18,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
   def import(file \\ "/Users/user/Downloads/Nubank_2023-02-06.pdf") do
     {text, 0} = System.cmd("pdftotext", [file, "-"])
 
-    [_page1, _page2, _page3 | transactions] =
-      text
-      |> String.split("\f")
-
-    tokens =
-      transactions
-      |> List.flatten()
-      |> Enum.map(&String.split(&1, "\n"))
-      |> List.flatten()
-      |> Enum.filter(&(&1 != ""))
-      |> Enum.map(fn string ->
-        cond do
-          string == "TRANSAÇÕES" -> {:transactions, string}
-          Regex.match?(~r/\d+ de \d+/, string) -> {:page_break, string}
-          Regex.match?(~r/DE \d{2} \w{3} A \d{2} \w{3}/, string) -> {:period, string}
-          Regex.match?(~r/^\d{2} \w{3}$/, string) -> {:date, string}
-          Regex.match?(~r/(\d*\.)?\d+,\d{2}/, string) -> {:value, string}
-          true -> {:description, string}
-        end
-      end)
-
-    tokens
+    process_text(text)
   end
 
   def process_text(text) do
@@ -122,8 +101,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
           {:period, _period}, %{state: :period} = acc ->
             %{acc | state: :values_description}
 
-          {:description, period}, %{state: :values_description} = acc ->
-          IO.inspect(period)
+          {:description, _}, %{state: :values_description} = acc ->
             %{acc | state: :date, }
 
           {:date, date}, %{state: state} = acc when state in [:date, :values_description] ->
