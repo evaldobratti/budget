@@ -12,7 +12,14 @@ defmodule BudgetWeb.ImportLive.Result do
       |> Budget.Importations.find_process()
       |> case do
         nil ->
-          Budget.Importations.import(file)
+
+          Path.join([
+            :code.priv_dir(:budget), 
+            "static", 
+            "uploads", 
+            file |> Path.basename()
+          ])
+          |> Budget.Importations.import()
 
           Budget.Importations.find_process(file)
 
@@ -85,6 +92,7 @@ defmodule BudgetWeb.ImportLive.Result do
     changesets = 
       socket.assigns.changesets
       |> Enum.filter(& match?(%Changeset{}, &1))
+      |> Enum.map(& Map.put(&1, :action, :insert))
 
     all_valid? = Enum.all?(changesets, & &1.valid?)
 
@@ -97,7 +105,11 @@ defmodule BudgetWeb.ImportLive.Result do
           {:noreply, socket}
       end
     else
-      {:noreply, socket}
+      {
+        :noreply, 
+        socket 
+        |> assign(:changesets, changesets)
+      }
     end
   end
 
@@ -108,8 +120,6 @@ defmodule BudgetWeb.ImportLive.Result do
       |> Enum.reduce(socket.assigns.result.transactions, fn
         {:change, change}, acc ->
           Enum.map(acc, fn original ->
-            IO.inspect({original, Map.get(change, "ix")})
-
             if Map.get(original, "ix") == Map.get(change, "ix") do
               MapUtils.deep_merge(original, change)
             else
@@ -129,8 +139,6 @@ defmodule BudgetWeb.ImportLive.Result do
         other ->
           other
       end)
-
-    Enum.at(changesets, 0) |> IO.inspect()
 
     socket
     |> assign(changesets: changesets)

@@ -20,7 +20,6 @@ defmodule BudgetWeb.BudgetLiveTest do
     html
     |> Floki.parse_fragment!()
     |> Floki.raw_html(pretty: true)
-    |> IO.puts()
   end
 
   setup [:create_account, :create_category]

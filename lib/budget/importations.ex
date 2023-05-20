@@ -6,7 +6,7 @@ defmodule Budget.Importations do
     name = Budget.Importations.Worker.name(key)
 
     DynamicSupervisor.start_child(Budget.Importer, {Budget.Importations.Worker, %{
-      file: key,
+      file: file,
       name: name
     }})
 

@@ -41,6 +41,7 @@
     <%= case row do %>
       <% %Changeset{} = changeset -> %>
         <.form
+          id={"transaction-#{changeset.params["ix"]}"}
           for={changeset}
           :let={f}
           phx-change={"validate-#{changeset.params["ix"]}"}

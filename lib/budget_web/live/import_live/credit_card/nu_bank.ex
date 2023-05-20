@@ -25,8 +25,16 @@ defmodule BudgetWeb.ImportLive.CreditCard.NuBank do
         {:ok, dest}
       end)
 
-    {:ok, digits} = Budget.Importations.import(file)
 
-    {:noreply, push_navigate(socket, to: "/imports/result/" <> digits)}
+    {:ok, key} = 
+      Path.join([
+        :code.priv_dir(:budget), 
+        "static", 
+        "uploads", 
+        file |> Path.basename()
+      ])
+      |> Budget.Importations.import()
+
+    {:noreply, push_navigate(socket, to: "/imports/result/" <> key)}
   end
 end

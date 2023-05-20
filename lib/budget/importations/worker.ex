@@ -4,12 +4,12 @@ defmodule Budget.Importations.Worker do
   alias Budget.Hinter
   alias Budget.Importations.CreditCard.NuBank
 
-  def name(digits) do
-    {:via, Registry, {Buget.Importer.Registry, digits}}
+  def name(key) do
+    {:via, Registry, {Buget.Importer.Registry, key}}
   end
 
-  def whereis(digits) do
-    case Registry.lookup(Buget.Importer.Registry, digits) do
+  def whereis(key) do
+    case Registry.lookup(Buget.Importer.Registry, key) do
       [] -> nil
       [{pid, _}] -> pid
     end
@@ -35,11 +35,6 @@ defmodule Budget.Importations.Worker do
   @impl true
   def init(%{file: file}) do
     send(self(), :process)
-    file = Path.join([
-      :code.priv_dir(:budget), 
-      "static", 
-      "uploads", file
-    ])
     Process.send_after(self(), :check_alive, 2000)
 
     {:ok, %{file: file, checked: false, result: :processing}}
@@ -94,6 +89,11 @@ defmodule Budget.Importations.Worker do
 
   @impl true
   def handle_info({:EXIT, _live_view, {:shutdown, _}}, state) do
+    {:stop, :shutdown, state}
+  end
+
+  @impl true
+  def handle_info({:EXIT, _live_view, :shutdown}, state) do
     {:stop, :shutdown, state}
   end
 

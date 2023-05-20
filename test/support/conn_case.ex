@@ -23,6 +23,7 @@ defmodule BudgetWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import BudgetWeb.ConnCase
+      import Budget.Simplifiers
 
       alias BudgetWeb.Router.Helpers, as: Routes
 

@@ -15,8 +15,15 @@ defmodule Budget.Importations.CreditCard.NuBank do
     "DEZ" => 12
     }
 
-  def import(file \\ "/Users/user/Downloads/Nubank_2023-02-06.pdf") do
-    {text, 0} = System.cmd("pdftotext", [file, "-"])
+  def import(file) do
+    text = 
+      if String.ends_with?(file, "txt") do
+        {:ok, text} = File.read(file)
+        text
+      else
+        {text, 0} = System.cmd("pdftotext", [file, "-"])
+        text
+      end
 
     process_text(text)
   end
