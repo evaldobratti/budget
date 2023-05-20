@@ -1,24 +1,22 @@
-<ul>
-<li>
-Adicionar negócio pra selecionar quem será importado
-</li>
-<li>
-tentar categorizar automaticamente
-</li>
-<li>
-possibilidade de editar os dados
-</li>
-<li>
-além de selecionar elementos, possiblitar simplesmente apagar da listagem/importação
-</li>
-<li>
-lançamentos importados provavelmente são negativos
-</li>
-</ul>
+<div class="d-flex">
+  <ul>
+  <li>
+  possibilidade de transformar em transferencia
+  </li>
+  <li>
+  lançamentos importados provavelmente são negativos
+  </li>
+  </ul>
+  <div class="ml-auto d-flex">
+    <form phx-change="change-account-id">
+      <.select name="account_id" value={@account.id} options={Enum.map(@accounts, &{&1.name, &1.id})} />
+    </form>
+    <button class="btn btn-sm btn-primary" phx-click="import" type="button">Import</button>
+  </div>
+</div>
 
 <.box is_condensed class="my-2 list-group">
   <:header class="d-flex">
-
     <div class="col-1 px-1">
       Import
     </div>
@@ -39,40 +37,42 @@ lançamentos importados provavelmente são negativos
     </div>
   </:header>
 
-  <:row :for={transaction <- @changes_applied.transactions} is_hover_gray class="d-flex flex-items-center list-group-item">
-    <%= case transaction do %>
-      <% %{type: :transaction} -> %>
-        <form
-          id={"#{transaction.ix}"}
-          phx-change={"validate-#{transaction.ix}"}
+  <:row :for={row <- @changesets} is_hover_gray class="d-flex flex-items-center list-group-item">
+    <%= case row do %>
+      <% %Changeset{} = changeset -> %>
+        <.form
+          for={changeset}
+          :let={f}
+          phx-change={"validate-#{changeset.params["ix"]}"}
           class="col-12"
         >
+
+          <% [regular_form] = inputs_for f, :regular %>
+
           <div class="d-flex">
             <div class="col-1 px-1">
-            <%= inspect transaction %>
             </div>
             <div class="col-1 px-1">
-              <.text_input type="date" name="date" value={transaction.date} class="width-full" title={"Original: #{transaction.original_description}"} />
+              <.text_input form={f} field={:date} type="date" class="width-full" />
             </div>
             <div class="flex-1 px-1 d-flex">
-              <.text_input name="description" value={transaction.description} class="width-full" title={"Original: #{transaction.original_description}"} />
+              <.text_input form={regular_form} field={:description} class="width-full" title={"Original: #{changeset.params["original_description"]}"} />
             </div>
             <div class="col-2 px-1 text-center">
-              <.select name="category_id" options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" value={transaction.category_id} prompt={[key: "Select", disabled: true, selected: true]} />
+              <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" prompt={[key: "Select", disabled: true, selected: true]} />
             </div>
             <div class={"col-2 text-right px-1"}>
-              <.text_input name="value" value={transaction.value} type="number" class="width-full" />
+              <.text_input form={f} field={:value} type="number" class="width-full" />
             </div>
             <div class="col-1">
-              <%= content_tag :a, href: "#", phx_click: "delete-#{transaction.ix}", class: "btn-octicon btn-octicon-danger p-0"  do %>
+              <%= content_tag :a, href: "#", phx_click: "delete-#{changeset.params["ix"]}", class: "btn-octicon btn-octicon-danger p-0"  do %>
                 <.fa_icon icon="fa-trash" />
               <% end %>
             </div>
           </div>
-        </form>
+        </.form>
 
       <% %{type: :page_break} -> %>
-        
         <div class="col-12 px-1 text-center">
           page break
         </div>

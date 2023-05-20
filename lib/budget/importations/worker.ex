@@ -35,7 +35,12 @@ defmodule Budget.Importations.Worker do
   @impl true
   def init(%{file: file}) do
     send(self(), :process)
-    # Process.send_after(self(), :check_alive, 200)
+    file = Path.join([
+      :code.priv_dir(:budget), 
+      "static", 
+      "uploads", file
+    ])
+    Process.send_after(self(), :check_alive, 2000)
 
     {:ok, %{file: file, checked: false, result: :processing}}
   end
@@ -55,10 +60,19 @@ defmodule Budget.Importations.Worker do
             end
           category = Hinter.hint_category(transaction.description, nil)
 
-          transaction
-          |> Map.put(:original_description, transaction.description)
-          |> Map.put(:description, hint)
-          |> Map.put(:category_id, Map.get(category || %{}, :id))
+          %{
+            "type" => :transaction,
+            "ix" => transaction.ix,
+            "date" => transaction.date,
+            "value" => transaction.value,
+            "originator" => "regular",
+            "regular" => %{
+              "category_id" => Map.get(category || %{}, :id),
+              "description" => hint,
+              "original_description" => transaction.description
+            }
+
+          }
 
         other -> other
       end)
@@ -79,7 +93,7 @@ defmodule Budget.Importations.Worker do
   end
 
   @impl true
-  def handle_info({:EXIT, _live_view, {:shutdown, :closed}}, state) do
+  def handle_info({:EXIT, _live_view, {:shutdown, _}}, state) do
     {:stop, :shutdown, state}
   end
 

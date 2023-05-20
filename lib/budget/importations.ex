@@ -1,23 +1,27 @@
 defmodule Budget.Importations do
 
   def import(file) do
-    ref = 
-      make_ref()
-      |> inspect
+    key = Path.basename(file)
 
-    digits = Regex.scan(~r/\d/, ref) |> List.flatten() |> Enum.join("")
-
-    name = Budget.Importations.Worker.name(digits)
+    name = Budget.Importations.Worker.name(key)
 
     DynamicSupervisor.start_child(Budget.Importer, {Budget.Importations.Worker, %{
-      file: file,
+      file: key,
       name: name
     }})
 
-    {:ok, digits}
+    {:ok, key}
   end
 
-  def find_process(digits) do
-    Budget.Importations.Worker.whereis(digits)
+  def find_process(file) do
+    Budget.Importations.Worker.whereis(file)
+  end
+
+  def insert(changesets) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:inserts, fn _repo, _changes ->
+      {:ok, Enum.map(changesets, &Budget.Transactions.Transaction.Form.apply_insert(&1))}
+    end)
+    |> Budget.Repo.transaction()
   end
 end
