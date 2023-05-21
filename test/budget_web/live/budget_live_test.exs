@@ -416,6 +416,49 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert transaction.date == ~D[2020-06-13]
       assert transaction.value == Decimal.new(420)
     end
+
+    test "apply changes forward", %{conn: conn} do
+      recurrency = recurrency_fixture()
+
+      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      live
+      |> element("a", "Transaction description")
+      |> render_click()
+
+      live
+      |> form("#transaction-form",
+        form: %{
+          value: "420",
+          apply_forward: true
+        }
+      )
+      |> render_submit()
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      assert live |> element("[id^=transaction-recurrency]") |> render =~ "420,00"
+
+      live
+      |> element("button", "<<")
+      |> render_click()
+
+      live
+      |> element("button", "<<")
+      |> render_click()
+
+      assert live |> element("[id^=transaction-recurrency]") |> render =~ "133,00"
+    end
   end
 
   test "delete single transaction", %{conn: conn, account: account} do
