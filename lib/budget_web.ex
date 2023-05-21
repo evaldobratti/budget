@@ -58,7 +58,6 @@ defmodule BudgetWeb do
   def live_component do
     quote do
       use Phoenix.LiveComponent
-      use PrimerLive
 
       unquote(view_helpers())
     end
@@ -93,6 +92,7 @@ defmodule BudgetWeb do
     quote do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
+      use Phoenix.VerifiedRoutes, router: BudgetWeb.Router, endpoint: BudgetWeb.Endpoint
 
       # Import LiveView and .heex helpers (live_render, live_patch, <.form>, etc)
       import Phoenix.LiveView.Helpers

@@ -1,12 +1,3 @@
-<.header class="mb-4">
-  <:item :let={classes}>
-    <.link navigate="/" class={[classes.link, "f4 d-flex flex-items-center"]}>
-      <.fa_icon icon="fa-money-bill" class="mr-2" />
-      <span>My Budget</span>
-    </.link>
-  </:item>
-</.header>
-
 <%= if @live_action in [:new_account, :edit_account] do %>
   <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
     <:header_title>Account</:header_title>

@@ -1,4 +1,23 @@
-<main class="container-xxl">
+<.header class="mb-4">
+  <:item :let={classes}>
+    <.link navigate="/" class={[classes.link, "f4 d-flex flex-items-center"]}>
+      <.fa_icon icon="fa-money-bill" class="mr-2" />
+      <span>My Budget</span>
+    </.link>
+  </:item>
+  <:item :let={classes}>
+    <.link navigate="/" class={[classes.link, "d-flex flex-items-center"]}>
+      <span>Transactions</span>
+    </.link>
+  </:item>
+  <:item :let={classes}>
+    <.link navigate="/imports" class={[classes.link, "d-flex flex-items-center"]}>
+      <span>Import</span>
+    </.link>
+  </:item>
+</.header>
+
+<main class="container-xl">
   <%= if Map.get(@flash, "info") do %>
     <div 
       id="flash-toast-info"
@@ -19,3 +38,4 @@
   <% end %>
   <%= @inner_content %>
 </main>
+

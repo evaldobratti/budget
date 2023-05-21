@@ -1,0 +1,19 @@
+<div class="container-xl">
+  <form id="upload-form" phx-submit="save" phx-change="validate">
+    <.live_file_input upload={@uploads.invoice} />
+    <button type="submit">Upload</button>
+  </form>
+
+  <%= for entry <- @uploads.invoice.entries do %>
+    <%= inspect entry %>
+  <% end %>
+
+  <%= for err <- upload_errors(@uploads.invoice) do %>
+    <p class="alert alert-danger"><%= err %></p>
+  <% end %>
+
+  <%= for uploaded <- @uploaded_files do %>
+    <%= uploaded |> to_string %>
+  <% end %>
+
+</div>

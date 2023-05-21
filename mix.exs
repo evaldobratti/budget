@@ -33,15 +33,15 @@ defmodule Budget.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.6.11"},
+      {:phoenix, "~> 1.7.1"},
       {:phoenix_ecto, "~> 4.4"},
       {:ecto_sql, "~> 3.9.2"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.18.3"},
+      {:phoenix_live_view, "~> 0.18.7"},
       {:floki, ">= 0.30.0", only: :test},
-      {:phoenix_live_dashboard, "~> 0.7"},
+      {:phoenix_live_dashboard, "~> 0.7.2"},
       {:esbuild, "~> 0.4", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},
       {:telemetry_metrics, "~> 0.6"},
@@ -53,7 +53,7 @@ defmodule Budget.MixProject do
       {:number, "~> 1.0.3"},
       {:ecto_materialized_trail, "~> 0.3.0"},
       {:primer_live, "~> 0.2.2"},
-      {:fraction, github: "lermannen/elixir-fraction"}
+      {:phoenix_view, "~> 2.0.0"}
     ]
   end
 
