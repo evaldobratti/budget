@@ -113,7 +113,7 @@ defmodule BudgetWeb.ImportLive.ResultTest do
                date: Timex.today(),
                is_carried_out: false,
                originator: %{category_id: category.id, description: "Panvel Filial"},
-               value: 4.01
+               value: -4.01
              }
            ] ==
              Transactions.transactions_in_period(
