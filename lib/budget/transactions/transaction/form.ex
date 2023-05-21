@@ -311,8 +311,7 @@ defmodule Budget.Transactions.Transaction.Form do
         regular: regular_data,
         transfer: transfer_data,
         is_recurrency:
-          transaction.recurrency_transaction &&
-            transaction.recurrency_transaction.__struct__ == Budget.Transaction.RecurrencyTransaction
+          transaction.recurrency_transaction && Ecto.assoc_loaded?(transaction.recurrency_transaction)
     }
   end
 
