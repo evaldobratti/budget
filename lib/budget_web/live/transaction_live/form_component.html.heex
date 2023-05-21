@@ -59,7 +59,12 @@
     <div class="d-flex mb-3">
       <.checkbox form={f} field={:is_carried_out} cass="flex-1" />
       <.checkbox :if={!transaction_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
-      <.checkbox :if={!transaction_loaded} form={f} name={:keep_adding} class="flex-1">
+      <.checkbox 
+        :if={!transaction_loaded} 
+        form={f} 
+        field={:keep_adding} 
+        class="flex-1"
+      >
         <:label>Keep adding</:label>
       </.checkbox>
     </div>
