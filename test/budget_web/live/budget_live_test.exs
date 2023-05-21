@@ -98,9 +98,9 @@ defmodule BudgetWeb.BudgetLiveTest do
             category_id: category.id
           },
           account_id: account.id,
+          keep_adding: true,
           value: "200"
         },
-        keep_adding: true
       )
       |> render_submit()
 
