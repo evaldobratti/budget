@@ -128,9 +128,16 @@ defmodule Budget.Importations.CreditCard.NuBank do
             |> Map.put(:state, :value)
 
           {:value, value}, %{state: :value} = acc ->
+            adjusted = 
+              if String.contains?(acc.building.description, "Pagamento em") do
+                String.to_float(value)
+              else
+                -String.to_float(value)
+              end
+
             acc
             |> Map.put(:building, %{})
-            |> Map.put(:transactions, [Map.put(acc.building, :value, value) | acc.transactions])
+            |> Map.put(:transactions, [Map.put(acc.building, :value, adjusted) | acc.transactions])
             |> Map.put(:state, :date)
 
           {:date, date}, %{state: :value} = acc ->
@@ -155,7 +162,16 @@ defmodule Budget.Importations.CreditCard.NuBank do
     uncomplete = 
       result.uncomplete_descriptions
       |> Enum.zip(result.uncomplete_values)
-      |> Enum.map(fn {descriptions, value} -> Map.put(descriptions, :value, value) end)
+      |> Enum.map(fn {descriptions, value} -> 
+        adjusted = 
+          if String.contains?(descriptions.description, "Pagamento em") do
+            String.to_float(value)
+          else
+            -String.to_float(value)
+          end
+        
+        Map.put(descriptions, :value, adjusted) 
+      end)
       |> Enum.map(& Map.put(&1, :uncomplete, true))
 
     transactions = 

@@ -17,8 +17,8 @@ defmodule Budget.Importations.Worker do
 
   def start_link(%{name: name} = args) do
     GenServer.start_link(
-      __MODULE__, 
-      args, 
+      __MODULE__,
+      args,
       name: name
     )
   end
@@ -46,13 +46,14 @@ defmodule Budget.Importations.Worker do
 
     hinted_transactions =
       result.transactions
-      |> Enum.map(fn 
+      |> Enum.map(fn
         %{type: :transaction} = transaction ->
-          hint = 
+          hint =
             case Hinter.hint_description(transaction.description) do
               [hint | _] -> hint.suggestion
               [] -> transaction.description
             end
+
           category = Hinter.hint_category(transaction.description, nil)
 
           %{
@@ -66,10 +67,10 @@ defmodule Budget.Importations.Worker do
               "description" => hint,
               "original_description" => transaction.description
             }
-
           }
 
-        other -> other
+        other ->
+          other
       end)
 
     result = Map.put(result, :transactions, hinted_transactions)
@@ -107,5 +108,4 @@ defmodule Budget.Importations.Worker do
   def handle_call(:result, _pid, state) do
     {:reply, state.result, state}
   end
-
 end
