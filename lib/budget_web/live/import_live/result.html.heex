@@ -6,77 +6,120 @@
   </ul>
   <div class="ml-auto">
     <form phx-change="change-account-id">
-      <.select name="account_id" value={@account.id} options={Enum.map(@accounts, &{&1.name, &1.id})} />
+      <.input 
+        type="select"
+        id="general-account-id" 
+        name="account_id" 
+        value={@account.id} 
+        options={Enum.map(@accounts, &{&1.name, &1.id})} 
+      />
     </form>
   </div>
   <button class="btn btn-sm btn-primary" phx-click="import" type="button">Import</button>
 </div>
 
 <div class="container-xl">
-  <.box is_condensed class="my-2 list-group">
-    <:header class="d-flex">
-      <div class="col-1 px-1">
-        Import
-      </div>
-      <div class="col-1 px-1">
-        Date
-      </div>
-      <div class="flex-1 px-1">
-        Description
-      </div>
-      <div class="col-2 px-1 text-center">
-        Category
-      </div>
-      <div class="col-2 text-right px-1">
-        Value
-      </div>
+  <table>
+    <thead>
+      <tr>
+        <td>
+          Type
+        </td>
+        <td>
+          Date
+        </td>
+        <td>
+          Description
+        </td>
+        <td>
+          Category
+        </td>
+        <td>
+          Value
+        </td>
 
-      <div class="col-1 px-1">
-      </div>
-    </:header>
+        <td>
+        </td>
+      </tr>
+    </thead>
 
-    <:row :for={row <- @changesets} is_hover_gray class="d-flex flex-items-center list-group-item">
+    <tbody>
+
+    <tr :for={row <- @changesets}>
       <%= case row do %>
         <% %Changeset{} = changeset -> %>
-          <.form
+          <td>
+            <% form = to_form(row) %>
+          <.simple_form
             id={"transaction-#{changeset.params["ix"]}"}
-            for={changeset}
-            :let={f}
+            for={form}
             phx-change={"validate-#{changeset.params["ix"]}"}
-            class="col-12"
           >
 
-            <% [regular_form] = inputs_for f, :regular %>
+            <div class="flex">
+              <div>
+                <.input field={form[:originator]} type="select" options={[{"Regular", "regular"}, {"Transfer", "transfer"}]} class="mr-1" />
+              </div>
+              <div>
+                <.input field={form[:date]} label="Date" type="date" autocomplete="off" />
+              </div>
+              <div>
 
-            <div class="d-flex">
-              <div class="col-1 px-1">
-              </div>
-              <div class="col-1 px-1">
-                <.text_input form={f} field={:date} type="date" class="width-full" />
-              </div>
-              <div class="flex-1 px-1 d-flex">
-                <.text_input form={regular_form} field={:description} class="width-full" title={"Original: #{changeset.params["original_description"]}"} />
-              </div>
-              <div class="col-2 px-1 text-center">
-                <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" prompt={[key: "Select", disabled: true, selected: true]} />
-              </div>
-              <div class="col-2 text-right px-1">
-                <.text_input form={f} field={:value} type="number" class={"width-full #{if changeset.params["value"] < 0, do: "color-fg-danger", else: "color-fg-success"}"} />
-              </div>
-              <div class="col-1">
-                <%= content_tag :a, href: "#", phx_click: "delete-#{changeset.params["ix"]}", class: "btn-octicon btn-octicon-danger p-0"  do %>
-                  <.fa_icon icon="fa-trash" />
+                <%= if form[:originator].value == "regular" do %>
+                  <.inputs_for :let={regular_form} field={form[:regular]}>
+                    <.input 
+                      field={regular_form[:description]} 
+                      label="Description" 
+                      autocomplete="off" 
+                    />
+                  </.inputs_for>
+                <% end %>
+
+                <%= if form[:originator].value == "transfer" do %>
+                  <.inputs_for :let={transfer_form} field={form[:transfer]}>
+                    <.input
+                      field={transfer_form[:other_account_id]}
+                      type="select"
+                      options={Enum.map(@accounts, &{&1.name, &1.id})}
+                      label="Other Account"
+                    />
+                  </.inputs_for>
                 <% end %>
               </div>
+              <div>
+                <%= if form[:originator].value == "regular" do %>
+                  <.inputs_for :let={regular_form} field={form[:regular]}>
+                    <.input
+                      field={regular_form[:category_id]}
+                      type="select"
+                      options={
+                        Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})
+                      }
+                      label="Category"
+                      prompt="Select"
+                    />
+                  </.inputs_for>
+                <% end %>
+              </div>
+              <div class="col-2 text-right px-1">
+                <.input field={form[:value]} type="number" label="Value" autocomplete="off" />
+              </div>
+              <div class="col-1">
+                <a href="#" phx-click={"delete-#{changeset.params["ix"]}"}>
+                  Delete
+                </a>
+              </div>
             </div>
-          </.form>
+          </.simple_form>
 
+          </td>
         <% %{type: :page_break} -> %>
           <div class="col-12 px-1 text-center">
             page break
           </div>
 
       <% end %>
-    </:row>
-  </.box>
+    </tr>
+    </tbody>
+  </table>
 </div>

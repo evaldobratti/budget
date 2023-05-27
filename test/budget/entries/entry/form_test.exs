@@ -5,7 +5,6 @@ defmodule Budget.Transactions.Transaction.FormTest do
 
   alias Budget.Transactions
   alias Budget.Transactions.Transaction.Form
-  alias Budget.Transactions.Transaction
 
   setup do
     [account_id: account_fixture().id, category_id: category_fixture().id]

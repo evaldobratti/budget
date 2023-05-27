@@ -61,12 +61,16 @@ defmodule Budget.Transactions.Transaction.Form do
 
     originator = get_change(changeset, :originator) || "regular"
 
-    changeset
-    |> cast_embed(:regular, with: &changeset_regular/2, required: originator == "regular")
-    |> cast_embed(:transfer,
-      with: fn transfer, params -> changeset_transfer(transfer, params, changeset) end,
-      required: originator == "transfer"
-    )
+    case originator do 
+      "regular" ->
+        cast_embed(changeset, :regular, with: &changeset_regular/2, required: originator == "regular")
+
+      "transfer" -> 
+        cast_embed(changeset, :transfer,
+          with: fn transfer, params -> changeset_transfer(transfer, params, changeset) end,
+          required: originator == "transfer"
+        )
+    end
     |> cast_embed(:recurrency, with: &changeset_recurrency/2)
   end
 
@@ -311,8 +315,7 @@ defmodule Budget.Transactions.Transaction.Form do
         regular: regular_data,
         transfer: transfer_data,
         is_recurrency:
-          transaction.recurrency_transaction &&
-            transaction.recurrency_transaction.__struct__ == Budget.Transaction.RecurrencyTransaction
+          transaction.recurrency_transaction && Ecto.assoc_loaded?(transaction.recurrency_transaction)
     }
   end
 

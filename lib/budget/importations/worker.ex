@@ -66,6 +66,9 @@ defmodule Budget.Importations.Worker do
               "category_id" => Map.get(category || %{}, :id),
               "description" => hint,
               "original_description" => transaction.description
+            },
+            "transfer" => %{
+              "other_account_id" => nil
             }
           }
 
@@ -73,7 +76,7 @@ defmodule Budget.Importations.Worker do
           other
       end)
 
-    result = Map.put(result, :transactions, hinted_transactions)
+    result = Map.put(result, :transactions, hinted_transactions |> Enum.slice(0, 2))
 
     {:noreply, %{state | result: result}}
   end
