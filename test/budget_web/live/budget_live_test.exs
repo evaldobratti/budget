@@ -164,8 +164,8 @@ defmodule BudgetWeb.BudgetLiveTest do
       live
       |> form("#dates-switch")
       |> render_change(%{
-        "date-start" => last_month_start |> Date.to_iso8601(),
-        "date-end" => last_month_end |> Date.to_iso8601()
+        "date_start" => last_month_start |> Date.to_iso8601(),
+        "date_end" => last_month_end |> Date.to_iso8601()
       })
 
       assert live |> element("#previous-balance") |> render =~ "120,50"
@@ -178,8 +178,8 @@ defmodule BudgetWeb.BudgetLiveTest do
       live
       |> form("#dates-switch")
       |> render_change(%{
-        "date-start" => next_month_start |> Date.to_iso8601(),
-        "date-end" => next_month_end |> Date.to_iso8601()
+        "date_start" => next_month_start |> Date.to_iso8601(),
+        "date_end" => next_month_end |> Date.to_iso8601()
       })
 
       assert live |> element("#previous-balance") |> render =~ "620,50"

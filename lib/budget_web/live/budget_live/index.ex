@@ -153,7 +153,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
-  def handle_event("update-dates", %{"date-start" => date_start, "date-end" => date_end}, socket) do
+  def handle_event("update-dates", %{"date_start" => date_start, "date_end" => date_end}, socket) do
     {:ok, date_start} = Timex.parse(date_start, "{YYYY}-{0M}-{0D}")
     {:ok, date_end} = Timex.parse(date_end, "{YYYY}-{0M}-{0D}")
 
