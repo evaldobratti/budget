@@ -98,17 +98,21 @@
         <span class="h5">Transactions</span>
       </div>
       <div class="mx-auto">
+        <% dates_form = to_form(%{
+          "date_start" => Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}"), 
+          "date_end" =>Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}") 
+        }) %>
         <.form
           id="dates-switch"
-          for={%{}}
+          for={dates_form}
           as={:dates}
           phx-change="update-dates"
         >
           <div class="flex">
             <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
-            <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
+            <.input field={dates_form[:date_start]} type="date" />
             <div class="d-inline px-1">to</div>
-            <input name="date-end" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")} />
+            <.input field={dates_form[:date_end]} type="date" />
             <button class="btn btn-sm btn-primary" phx-click="month-next" type="button"><%= ">>" %></button>
           </div>
         </.form>
