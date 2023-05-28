@@ -19,16 +19,16 @@ defmodule BudgetWeb.ConnCase do
 
   using do
     quote do
+      # The default endpoint for testing
+      @endpoint BudgetWeb.Endpoint
+
+      use BudgetWeb, :verified_routes
+
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
       import BudgetWeb.ConnCase
       import Budget.Simplifiers
-
-      alias BudgetWeb.Router.Helpers, as: Routes
-
-      # The default endpoint for testing
-      @endpoint BudgetWeb.Endpoint
     end
   end
 

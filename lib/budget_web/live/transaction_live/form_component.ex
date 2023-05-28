@@ -29,7 +29,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       :ok,
       socket
       |> assign(assigns)
-      |> assign(changeset: changeset(assigns))
+      |> assign(form: to_form(changeset(assigns)))
       |> assign(accounts: Transactions.list_accounts())
       |> assign(categories: Transactions.list_categories())
     }
@@ -37,12 +37,13 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"form" => form_params}, socket) do
-    changeset =
+    form =
       socket.assigns
       |> changeset(form_params)
       |> Map.put(:action, :validate)
+      |> to_form
 
-    {:noreply, assign(socket, :changeset, changeset)}
+    {:noreply, assign(socket, form: form)}
   end
 
   def handle_event("save", %{"form" => form_params}, socket) do
@@ -60,20 +61,20 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
           :noreply,
           socket
           |> put_flash(:info, "Transaction updated successfully!")
-          |> push_patch(to: socket.assigns.return_to)
+          |> push_patch(to: socket.assigns.patch)
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+        {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 
   def save_transaction(socket, :new_transaction, changeset) do
     case Transaction.Form.apply_insert(changeset) do
       {:ok, _transaction} ->
-        return_to =
+        patch =
           if Ecto.Changeset.get_change(changeset, :keep_adding) do
-            uri = URI.parse(socket.assigns.return_to)
+            uri = URI.parse(socket.assigns.patch)
 
             query =
               uri.query
@@ -84,18 +85,18 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
 
             %{uri | query: query} |> URI.to_string()
           else
-            socket.assigns.return_to
+            socket.assigns.patch
           end
 
         {
           :noreply,
           socket
           |> put_flash(:info, "Transaction created successfully!")
-          |> push_patch(to: return_to)
+          |> push_patch(to: patch)
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+        {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 end

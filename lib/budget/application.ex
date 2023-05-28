@@ -8,16 +8,19 @@ defmodule Budget.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Start the Ecto repository
-      Budget.Repo,
       # Start the Telemetry supervisor
       BudgetWeb.Telemetry,
+      # Start the Ecto repository
+      Budget.Repo,
       # Start the PubSub system
       {Phoenix.PubSub, name: Budget.PubSub},
+      # Start Finch
+      {Finch, name: Budget.Finch},
       # Start the Endpoint (http/https)
       BudgetWeb.Endpoint,
       # Start a worker by calling: Budget.Worker.start_link(arg)
       # {Budget.Worker, arg}
+
       {Registry, keys: :unique, name: Buget.Importer.Registry},
       {DynamicSupervisor, name: Budget.Importer}
     ]

@@ -10,7 +10,7 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:changeset, changeset)}
+     |> assign(:form, to_form(changeset))}
   end
 
   @impl true
@@ -20,7 +20,7 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
       |> Transactions.change_category(category_params)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, :changeset, changeset)}
+    {:noreply, assign(socket, :form, to_form(changeset))}
   end
 
   def handle_event("save", %{"category" => category_params}, socket) do
@@ -34,11 +34,11 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
           :noreply,
           socket
           |> put_flash(:info, "Category updated successfully")
-          |> push_patch(to: socket.assigns.return_to)
+          |> push_patch(to: socket.assigns.patch)
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
+        {:noreply, assign(socket, :form, to_form(changeset))}
     end
   end
 
@@ -49,11 +49,11 @@ defmodule BudgetWeb.CategoryLive.FormComponent do
           :noreply,
           socket
           |> put_flash(:info, "Category created successfully")
-          |> push_patch(to: socket.assigns.return_to)
+          |> push_patch(to: socket.assigns.patch)
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, changeset: changeset)}
+        {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
 end

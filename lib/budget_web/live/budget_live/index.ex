@@ -85,7 +85,8 @@ defmodule BudgetWeb.BudgetLive.Index do
     socket
   end
 
-  def apply_return_from(socket, from) when from in ["account", "transaction", "delete", "category"] do
+  def apply_return_from(socket, from)
+      when from in ["account", "transaction", "delete", "category"] do
     reload_transactions(socket)
   end
 
@@ -179,7 +180,7 @@ defmodule BudgetWeb.BudgetLive.Index do
         {:ok, _} ->
           socket
           |> put_flash(:info, "Transaction successfully deleted!")
-          |> push_patch(to: Routes.budget_index_path(socket, :index, from: "delete"))
+          |> push_patch(to: ~p"/?#{[from: "delete"]}")
 
         _ ->
           socket
@@ -243,13 +244,13 @@ defmodule BudgetWeb.BudgetLive.Index do
 
     ~H"""
     <%= for {category, children} <- @categories do %>
-      <div class="d-flex mt-2">
+      <div class="flex mt-2">
         <div>
           <%= if length(category.path) > 0, do: "└ " %><%=category.name %>
         </div>
         <div class="ml-auto">
-          <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_category, category.id) %>
-          <%= live_patch "+", to: Routes.budget_index_path(@socket, :new_category_child, category), class: "btn btn-sm btn-primary" %>
+          <%= live_patch "Edit", to: ~p"/categories/#{category}/edit" %>
+          <%= live_patch "+", to: ~p"/categories/#{category}/children/new", class: "btn btn-sm btn-primary" %>
         </div>
       </div>
       <div class="pl-1 ml-1" style="border-left: solid 1px">
@@ -261,7 +262,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   @impl true
   def handle_info(:add_new_transaction, socket) do
-    {:noreply, socket |> push_patch(to: Routes.budget_index_path(socket, :new_transaction))}
+    {:noreply, socket |> push_patch(to: ~p"/transactions/new")}
   end
 
   def description(transaction) do
@@ -275,7 +276,7 @@ defmodule BudgetWeb.BudgetLive.Index do
         if transaction.value |> Decimal.negative?() do
           "Transfer to '#{other_part.account.name}'"
         else
-          "Transfer from '#{transaction.account.name}'"
+          "Transfer from '#{other_part.account.name}'"
         end
     end
   end

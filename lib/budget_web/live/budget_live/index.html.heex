@@ -1,91 +1,90 @@
+<header class="px-4 sm:px-6 lg:px-8">
+  <div class="flex items-center space-x-4 border-b border-zinc-100 py-3 text-sm">
+    <%= live_redirect "Transactions", to: ~p"/" %>
+    <%= live_redirect "Import", to: ~p"/imports" %>
+  </div>
+</header>
+
 <%= if @live_action in [:new_account, :edit_account] do %>
-  <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
-    <:header_title>Account</:header_title>
-    <:body>
-      <.live_component
-        module={BudgetWeb.AccountLive.FormComponent}
-        id={@account.id || :new}
-        action={@live_action}
-        account={@account}
-        return_to={Routes.budget_index_path(@socket, :index, from: "account")}
-      />
-    </:body>
-  </.dialog>
+  <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show>
+    <.live_component
+      module={BudgetWeb.AccountLive.FormComponent}
+      id={@account.id || :new}
+      title={@account.id && "Edit account" || "New Account"}
+      action={@live_action}
+      account={@account}
+      patch={~p"/?#{[from: "account"]}"}
+    />
+  </.modal>
 <% end %>
 
 <%= if @live_action in [:new_category, :edit_category] do %>
-  <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
-    <:header_title>Category</:header_title>
-    <:body>
+  <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
       <.live_component
         module={BudgetWeb.CategoryLive.FormComponent}
+        title={@category.id && "Edit category" || "New Category"}
         id={@category.id || :new}
         action={@live_action}
         category={@category}
-        return_to={Routes.budget_index_path(@socket, :index, from: "category")}
+        patch={~p"/?#{[from: "category"]}"}
       />
-    </:body>
-  </.dialog>
+  </.modal>
 <% end %>
 
 <%= if @live_action == :new_category_child do %>
-
-  <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
-    <:header_title>Category</:header_title>
-
-    <:body>
+  <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
       <.live_component
         module={BudgetWeb.CategoryLive.FormComponent}
         id={@category.id || :new}
+        title={@category.id && "Edit category" || "New Category"}
         action={:new_category}
         category={%Transactions.Category{}}
         parent={@category}
-        return_to={Routes.budget_index_path(@socket, :index, from: "category")}
+        patch={~p"/?#{[from: "category"]}"}
       />
-    </:body>
-  </.dialog>
+  </.modal>
 <% end %>
 
-<div class="d-flex">
-  <div class="col-2 px-2">
+<div class="flex">
+  <div class="w-2/12 px-2">
     <div class="border-bottom color-border-muted pb-4">
-      <div class="d-flex">
+      <div class="flex">
         <div class="col align-items-center">
           <span class="h5">Accounts</span>
         </div>
-        <div class="col-auto ml-auto">
-          <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_account), class: "btn btn-sm btn-primary" %>
+        <div class="ml-auto">
+          <%= live_patch "New", to: ~p"/accounts/new", class: "btn btn-sm btn-primary" %>
         </div>
       </div>
       <%= if Enum.empty?(@accounts) do %>
-        <div class="d-flex mt-2 flex-justify-center">
+        <div class="flex mt-2 flex-justify-center">
           No accounts yet
         </div>
       <% end %>
       <%= for account <- @accounts do %>
-        <div class="d-flex mt-2">
+        <div class="flex mt-2">
           <div>
             <input type="checkbox" phx-click="toggle-account" phx-value-account-id={account.id} checked={account.id in @accounts_selected_ids} />
             <%= account.name %>
           </div>
           <div class="ml-auto">
-            <%= live_patch "Edit", to: Routes.budget_index_path(@socket, :edit_account, account.id) %>
+            <%= live_patch "Edit", to: ~p"/accounts/#{account}/edit" %>
           </div>
         </div>
       <% end %>
     </div>
 
     <div class="pt-4">
-      <div class="d-flex">
+      <div class="flex">
         <div class="align-items-center">
           <span class="h5">Categories</span>
         </div>
         <div class="ml-auto">
-          <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_category), class: "btn btn-sm btn-primary" %>
+          <%= live_patch "New", to: ~p"/categories/new", class: "btn btn-sm btn-primary" %>
         </div>
       </div>
       <%= if Enum.empty?(@categories) do %>
-        <div class="d-flex mt-2 flex-justify-center">
+        <div class="flex mt-2 flex-justify-center">
           No categories yet
         </div>
       <% end %>
@@ -93,18 +92,19 @@
     </div>
   </div>
 
-  <div class="col-10 px-2">
-    <div class="d-flex">
+  <div class="w-10/12 px-2">
+    <div class="flex">
       <div class="col align-items-center">
         <span class="h5">Transactions</span>
       </div>
-      <div class="col-auto mx-auto">
+      <div class="mx-auto">
         <.form
           id="dates-switch"
-          for={:dates}
+          for={%{}}
+          as={:dates}
           phx-change="update-dates"
         >
-          <div>
+          <div class="flex">
             <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
             <input name="date-start" type="date" class="form-control form-control-sm" value={Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}")} />
             <div class="d-inline px-1">to</div>
@@ -113,45 +113,36 @@
           </div>
         </.form>
       </div>
-      <div class="col-auto align-items-end">
-        <%= live_patch "New", to: Routes.budget_index_path(@socket, :new_transaction), class: "btn btn-sm btn-primary" %>
+      <div class="align-items-end">
+        <%= live_patch "New", to: ~p"/transactions/new", class: "btn btn-sm btn-primary" %>
         <%= if @live_action == :new_transaction do %>
-          <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
-            <:header_title>Transaction</:header_title>
-            <:body>
+          <.modal id="new-transaction" on_cancel={JS.patch(~p"/")} show>
               <.live_component
                 module={BudgetWeb.TransactionLive.FormComponent}
                 action={@live_action}
                 id={:new}
                 transaction={%Transaction{date: Timex.today()}}
-                return_to={Routes.budget_index_path(@socket, :index, from: "transaction")}
+                patch={~p"/?#{[from: "transaction"]}"}
               />
-            </:body>
-          </.dialog>
+          </.modal>
         <% end %>
       </div>
     </div>
 
     <%= if @live_action == :edit_transaction do %>
-      <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
-        <:header_title>Transaction</:header_title>
-        <:body>
+      <.modal id="edit-transaction" on_cancel={JS.patch(~p"/")} show>
           <.live_component
             module={BudgetWeb.TransactionLive.FormComponent}
             action={@live_action}
             id={@edit_transaction.id}
             transaction={@edit_transaction}
-            return_to={Routes.budget_index_path(@socket, :index, from: "transaction")}
+            patch={~p"/?#{[from: "transaction"]}"}
           />
-        </:body>
-      </.dialog>
+      </.modal>
     <% end %>
 
     <%= if @live_action == :delete_transaction do %>
-
-      <.dialog phx_hook="OpenDialog" data_return_to={Routes.budget_index_path(@socket, :index)} is_backdrop is_escapable>
-        <:header_title>Delete transaction</:header_title>
-        <:body>
+      <.modal id="delete-transaction" on_cancel={JS.patch(~p"/")} show>
           <%= case @confirm_delete.delete_state do %>
             <% :recurrency -> %>
               This transaction is associated to a recurrency. What do you want to do about it?
@@ -187,54 +178,56 @@
                 </button>
               </div>
           <% end %>
-        </:body>
-      </.dialog>
+      </.modal>
     <% end %>
 
-    <.box is_condensed class="my-2 list-group" phx_mounted={JS.dispatch("budget:sortable-setup")}>
-      <:header class="d-flex">
-        <div class="col-1 px-1">
-          Date
-        </div>
-        <div class="flex-1 px-1">
-          Description
-        </div>
-        <div class="col-2 px-1 text-center">
-          Category
-        </div>
-        <div class="col-2 px-1 text-center">
-          Account
-        </div>
+    <table class="my-2 w-full" phx_mounted={JS.dispatch("budget:sortable-setup")}>
+      <thead>
+        <tr>
+          <td class="col-1 px-1">
+            Date
+          </td>
+          <td class="flex-1 px-1">
+            Description
+          </td>
+          <td class="col-2 px-1 text-center">
+            Category
+          </td>
+          <td class="col-2 px-1 text-center">
+            Account
+          </td>
 
-        <div class="col-2 text-right px-1">
-          Value
-        </div>
+          <td class="col-2 text-right px-1">
+            Value
+          </td>
 
-        <div class="col-1 px-1">
-        </div>
-      </:header>
-      <:row id="previous-balance" class="d-flex">
-        <div class="col-1 px-1">
-          <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
-        </div>
-        <div class="flex-1 px-1">
-          Previous balance
-        </div>
-        <div class="col-4 px-1">
-        </div>
-        <div class={"col-1 text-right px-1"}>
-          <.currency value={Enum.at(@balances, 0)} />
-        </div>
-        <div class="col-1 px-1">
-        </div>
-      </:row>
+          <td class="col-1 px-1">
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr id="previous-balance">
+          <td class="col-1 px-1">
+            <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
+          </td>
+          <td class="flex-1 px-1">
+            Previous balance
+          </td>
+          <td class="col-4 px-1">
+          </td>
+          <td class={"col-1 text-right px-1"}>
+            <.currency value={Enum.at(@balances, 0)} />
+          </td>
+          <td class="col-1 px-1">
+          </td>
+        </tr>
 
-      <:row :for={transaction <- @transactions} is_hover_gray id={"transaction-#{transaction.id}"} class="d-flex flex-items-center list-group-item item-draggable">
-        <div class="col-1 px-1">
+      <tr :for={transaction <- @transactions} id={"transaction-#{transaction.id}"} class="list-group-item item-draggable">
+        <td class="col-1 px-1">
           <%= format_date(transaction.date) %>
-        </div>
-        <div class="flex-1 px-1 d-flex">
-          <%= live_patch description(transaction), to: Routes.budget_index_path(@socket, :edit_transaction, transaction.id) %>
+        </td>
+        <td class="flex-1 px-1 flex">
+          <%= live_patch description(transaction), to: ~p"/transactions/#{transaction}/edit" %>
           <div class="ml-auto">
             <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
               <span>
@@ -243,59 +236,61 @@
             <% end %>
             <%= if transaction.recurrency_transaction do %>
               <.tooltiped tooltip="Recurrency">
-                <.fa_icon icon="fa-repeat" />
+                <.icon name="hero-repeat" />
               </.tooltiped>
             <% end %>
           </div>
-        </div>
-        <div class="col-2 px-1 text-center">
+        </td>
+        <td class="col-2 px-1 text-center">
           <% originator = Transactions.originator(transaction) %>
 
           <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular, do: transaction.originator_regular.category.name %>
 
           <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
-            <.tooltiped tooltip="Transfer">
-              <.fa_icon icon="fa-money-bill-transfer" />
-            </.tooltiped>
+            Icone Transfer
           <% end %>
-        </div>
-        <div class="col-2 px-1 text-center">
+        </td>
+        <td class="col-2 px-1 text-center">
           <%= transaction.account.name %>
-        </div>
-        <div class={"col-2 text-right px-1"}>
+        </td>
+        <td class={"col-2 text-right px-1"}>
           <.currency value={transaction.value} />
-        </div>
-        <div class="col-1 px-1">
+        </td>
+        <td class="col-1 px-1">
           <.tooltiped tooltip="Delete">
-            <%= live_patch to: Routes.budget_index_path(@socket, :delete_transaction, transaction.id), data_testid: "delete-#{transaction.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
-              <.fa_icon icon="fa-trash" />
+            <%= live_patch to: ~p"/transactions/#{transaction}/delete", data_testid: "delete-#{transaction.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
+              Delete
             <% end %>
           </.tooltiped>
           <span class="btn-octicon sortable-handle">
-            <.fa_icon icon="fa-up-down" />
+            <.icon name="hero-fa-up-down" />
           </span>
-        </div>
-      </:row>
+        </td>
+      </tr>
 
-      <:row :if={Enum.empty?(@transactions)} is_hover_gray id={"empty-transactions"} class="d-flex flex-justify-center">
-        No transactions in this period.
-      </:row>
+      <tr :if={Enum.empty?(@transactions)} is_hover_gray id={"empty-transactions"} class="flex flex-justify-center">
+        <td>
+          No transactions in this period.
+        </td>
+      </tr>
 
-      <:row id="next-balance" class="d-flex">
-        <div class="col-1 px-1">
+      <tr id="next-balance">
+        <td class="col-1 px-1">
           <%= format_date(Enum.at(@dates, 1)) %>
-        </div>
-        <div class="flex-1 px-1">
+        </td>
+        <td class="flex-1 px-1">
           Next balance
-        </div>
-        <div class="col-4 px-1">
-        </div>
-        <div class={"col-1 text-right px-1"}>
+        </td>
+        <td class="col-4 px-1">
+        </td>
+        <td class={"col-1 text-right px-1"}>
           <.currency value={Enum.at(@balances, 1)} />
-        </div>
-        <div class="col-1 px-1">
-        </div>
-      </:row>
-    </.box>
+        </td>
+        <td class="col-1 px-1">
+        </td>
+      </tr>
+      </tbody>
+    </table>
   </div>
 </div>
+

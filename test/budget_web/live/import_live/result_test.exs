@@ -5,7 +5,6 @@ defmodule BudgetWeb.ImportLive.ResultTest do
   import Budget.TransactionsFixtures
 
   alias Budget.Importations
-  alias Budget.Repo
   alias Budget.Transactions
 
   setup do
@@ -19,9 +18,7 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     {:ok, key} =
       Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
 
-    {:ok, live, _html} = live(conn, Routes.import_result_path(conn, :index, key))
-
-    html = render(live)
+    {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
 
     form0 =
       live
@@ -46,8 +43,7 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     {:ok, key} =
       Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
 
-    {:ok, live, _html} = live(conn, Routes.import_result_path(conn, :index, key))
-
+    {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}") 
     live
     |> element("button", "Import")
     |> render_click()
@@ -61,8 +57,7 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     {:ok, key} =
       Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
 
-    {:ok, live, _html} = live(conn, Routes.import_result_path(conn, :index, key))
-
+    {:ok, live, _html} =live(conn, ~p"/imports/result/#{key}") 
     assert [] ==
              Transactions.transactions_in_period(
                [],
@@ -94,11 +89,10 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     )
     |> render_change()
 
-    {:ok, live, _html} =
-      live
-      |> element("button", "Import")
-      |> render_click()
-      |> follow_redirect(conn)
+    live
+    |> element("button", "Import")
+    |> render_click()
+    |> follow_redirect(conn)
 
     assert [
              %{

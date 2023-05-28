@@ -1,114 +1,143 @@
 <div>
-  <.form
-    let={f}
-    for={@changeset}
+  <.simple_form
+    for={@form}
     id="transaction-form"
     phx-target={@myself}
     phx-change="validate"
     phx-submit="save"
   >
-    <% transaction_loaded = @changeset.data.id %>
-    <% [regular_form] = inputs_for f, :regular %>
-    <% [transfer_form] = inputs_for f, :transfer %>
+    <% transaction_loaded = @form.data.id != nil %>
 
     <%= if !transaction_loaded do %>
-      <div class="d-flex flex-justify-center mb-3">
-        <.radio_group>
-          <:radio_button name={input_name(f, :originator)} value="regular" checked={input_value(f, :originator) == "regular"}></:radio_button>
-          <:radio_button name={input_name(f, :originator)} value="transfer" checked={input_value(f, :originator) == "transfer"}></:radio_button>
-        </.radio_group>
+      <div class="flex">
+        <.input field={@form[:originator]} type="radio" value="regular" label="Regular" />
+
+        <.input field={@form[:originator]} type="radio" value="transfer" label="Transfer" />
       </div>
     <% end %>
 
-    <div class="d-flex">
-      <.form_group form={f} field={:date} class="flex-1">
-        <.text_input form={f} field={:date} type="date" autocomplete="off" />
-      </.form_group>
+    <div class="flex">
+      <.input field={@form[:date]} label="Date" type="date" autocomplete="off" />
 
-      <%= if input_value(f, :originator) == "regular" do %>
-        <.form_group form={regular_form} field={:category_id} class="flex-1">
-          <.select form={regular_form} field={:category_id} options={Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})} class="mr-1" />
-        </.form_group>
+      <%= if @form[:originator].value == "regular" do %>
+        <.inputs_for :let={regular_form} field={@form[:regular]}>
+          <.input
+            field={regular_form[:category_id]}
+            type="select"
+            options={
+              Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})
+            }
+            label="Category"
+          />
+        </.inputs_for>
 
-        <.form_group form={f} field={:account_id} class="flex-1">
-          <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
-        </.form_group>
+        <.input
+          field={@form[:account_id]}
+          type="select"
+          options={Enum.map(@accounts, &{&1.name, &1.id})}
+          label="Account"
+        />
       <% end %>
 
-      <%= if input_value(f, :originator) == "transfer" do %>
-        <.form_group form={f} field={:account_id} class="flex-1">
-          <.select form={f} field={:account_id}  options={Enum.map(@accounts, &{&1.name, &1.id})} />
-        </.form_group>
+      <%= if @form[:originator].value == "transfer" do %>
+        <.input
+          field={@form[:account_id]}
+          type="select"
+          options={Enum.map(@accounts, &{&1.name, &1.id})}
+          label="Account"
+        />
 
-        <.form_group form={transfer_form} field={:other_account_id} class="flex-1">
-          <.select form={transfer_form} field={:other_account_id} options={Enum.map(@accounts, &{&1.name, &1.id})} />
-        </.form_group>
+        <.inputs_for :let={transfer_form} field={@form[:transfer]}>
+          <.input
+            field={transfer_form[:other_account_id]}
+            type="select"
+            options={Enum.map(@accounts, &{&1.name, &1.id})}
+            label="Other Account"
+          />
+        </.inputs_for>
       <% end %>
     </div>
 
-    <%= if input_value(f, :originator) == "regular" do %>
-      <.form_group form={regular_form} field={:description} >
-        <.text_input form={regular_form} field={:description} autocomplete="off" />
-      </.form_group>
+    <%= if @form[:originator].value == "regular" do %>
+      <.inputs_for :let={regular_form} field={@form[:regular]}>
+        <.input field={regular_form[:description]} label="Description" autocomplete="off" />
+      </.inputs_for>
     <% end %>
 
-    <.form_group form={f} field={:value}>
-      <.text_input form={f} field={:value} type="number" autocomplete="off" />
-    </.form_group>
+    <.input field={@form[:value]} type="number" label="Value" autocomplete="off" />
 
-    <div class="d-flex mb-3">
-      <.checkbox form={f} field={:is_carried_out} cass="flex-1" />
-      <.checkbox :if={!transaction_loaded && !match?("recurrency" <> _, @changeset.data.id)} form={f} field={:is_recurrency} class="flex-1" />
-      <.checkbox 
-        :if={!transaction_loaded} 
-        form={f} 
-        field={:keep_adding} 
-        class="flex-1"
-      >
-        <:label>Keep adding</:label>
-      </.checkbox>
+    <div class="flex mb-3">
+      <.input field={@form[:is_carried_out]} type="checkbox" label="Carried out" />
+      <.input
+        :if={!transaction_loaded && !match?("recurrency" <> _, @form.data.id)}
+        field={@form[:is_recurrency]}
+        type="checkbox"
+        label="Recurrency"
+      />
+      <.input :if={!transaction_loaded} field={@form[:keep_adding]} type="checkbox" label="Keep adding" />
     </div>
 
-    <% [recurrency_form] = inputs_for f, :recurrency %>
-
-    <%= if @changeset.data.is_recurrency do %>
-      <.checkbox form={f} field={:apply_forward} />
+    <%= if @form[:is_recurrency].value do %>
+      <.input field={@form[:apply_forward]} type="checkbox" label="Apply forward" />
     <% end %>
 
-    <%= if Ecto.Changeset.get_field(@changeset, :is_recurrency) && !transaction_loaded do %>
-
-      <.form_group form={recurrency_form} field={:frequency}>
-        <.select form={recurrency_form} field={:frequency} options={Ecto.Enum.mappings(Recurrency, :frequency)} />
-      </.form_group>
+    <.inputs_for
+      :let={recurrency_form}
+      :if={@form[:is_recurrency].value && !transaction_loaded}
+      field={@form[:recurrency]}
+    >
+      <.input
+        field={recurrency_form[:frequency]}
+        type="select"
+        options={Ecto.Enum.mappings(Recurrency, :frequency)}
+      />
 
       <% is_parcel = Ecto.Changeset.get_field(recurrency_form.source, :is_parcel) %>
       <% is_forever = Ecto.Changeset.get_field(recurrency_form.source, :is_forever) %>
-      <% has_end_date = Ecto.Changeset.get_field(recurrency_form.source, :date_end) %>
+      <% has_end_date = Ecto.Changeset.get_field(recurrency_form.source, :date_end) != nil %>
 
-      <div class="d-flex">
+      <div class="flex">
         <div class="flex-1">
-          <.checkbox form={recurrency_form} field={:is_parcel} disabled={transaction_loaded  || is_forever || has_end_date} />
-
-          <.form_group form={recurrency_form} field={:parcel_start}>
-            <.text_input form={recurrency_form} field={:parcel_start} type="number" autocomplete="off" disabled={transaction_loaded  || is_forever || has_end_date} class="width-small" />
-          </.form_group>
-          <.form_group form={recurrency_form} field={:parcel_end}>
-            <.text_input form={recurrency_form} field={:parcel_end} type="number" autocomplete="off" disabled={transaction_loaded  || is_forever || has_end_date} class="width-small" />
-          </.form_group>
+          <.input
+            field={recurrency_form[:is_parcel]}
+            type="checkbox"
+            disabled={transaction_loaded || is_forever || has_end_date}
+            label="Parcel"
+          />
+          <.input
+            field={recurrency_form[:parcel_start]}
+            type="number"
+            autocomplete="off"
+            disabled={transaction_loaded || is_forever || has_end_date}
+          />
+          <.input
+            field={recurrency_form[:parcel_end]}
+            type="number"
+            autocomplete="off"
+            disabled={transaction_loaded || is_forever || has_end_date}
+          />
         </div>
 
         <div class="flex-1">
-          <.checkbox form={recurrency_form} field={:is_forever} disabled={transaction_loaded  || is_parcel} />
-          <.form_group form={recurrency_form} field={:date_end}>
-            <.text_input form={recurrency_form} field={:date_end} type="date" autocomplete="off" disabled={input_value(recurrency_form, :is_forever) || is_parcel || transaction_loaded} class="width-small" />
-          </.form_group>
-        </div>
+          <.input
+            field={recurrency_form[:is_forever]}
+            type="checkbox"
+            disabled={transaction_loaded || is_parcel}
+            label="Forever"
+          />
 
+          <.input
+            field={recurrency_form[:date_end]}
+            type="date"
+            autocomplete="off"
+            disabled={transaction_loaded || is_forever || is_parcel}
+          />
+        </div>
       </div>
-    <% end %>
-  </.form>
+    </.inputs_for>
 
-  <div class="d-flex">
-    <%= submit "Save", phx_disable_with: "Saving...", form: "transaction-form", class: "btn btn-primary btn-sm", style: "width: 100%" %>
-  </div>
+    <:actions>
+      <.button phx-disable-with="Saving...">Save</.button>
+    </:actions>
+  </.simple_form>
 </div>

@@ -26,16 +26,16 @@ defmodule BudgetWeb.BudgetLiveTest do
 
   describe "accounts" do
     test "lists accounts", %{conn: conn, account: account} do
-      {:ok, _index_live, html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, _index_live, html} = live(conn, ~p"/")
 
       assert html =~ account.name
     end
 
     test "create new account", %{conn: conn} do
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
-      |> element("a[href='#{Routes.budget_index_path(conn, :new_account)}']")
+      |> element("a[href='#{~p"/accounts/new"}']")
       |> render_click()
 
       live
@@ -53,10 +53,10 @@ defmodule BudgetWeb.BudgetLiveTest do
 
   describe "transactions" do
     test "create new transaction", %{conn: conn, account: account, category: category} do
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
-      |> element("a[href='#{Routes.budget_index_path(conn, :new_transaction)}']")
+      |> element("a[href='#{~p"/transactions/new"}']")
       |> render_click()
 
       live
@@ -83,10 +83,10 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
 
     test "keeps adding transactions", %{conn: conn, account: account, category: category} do
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
-      |> element("a[href='#{Routes.budget_index_path(conn, :new_transaction)}']")
+      |> element("a[href='#{~p"/transactions/new"}']")
       |> render_click()
 
       live
@@ -100,7 +100,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           account_id: account.id,
           keep_adding: true,
           value: "200"
-        },
+        }
       )
       |> render_submit()
 
@@ -114,7 +114,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     test "editing transaction", %{conn: conn, account: account} do
       transaction = transaction_fixture(%{account_id: account.id})
 
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
       |> element("a", "Transaction description")
@@ -152,7 +152,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           account_id: account.id
         })
 
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       assert live |> element("#previous-balance") |> render =~ "420,50"
       assert live |> element("#transaction-#{today.id}") |> render =~ "200,00"
@@ -204,7 +204,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           account_id: account.id
         })
 
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       assert live |> element("#previous-balance") |> render =~ "420,50"
       assert live |> element("#transaction-#{today.id}") |> render =~ "200,00"
@@ -234,10 +234,10 @@ defmodule BudgetWeb.BudgetLiveTest do
 
   describe "recurrencies" do
     test "create transaction with recurrency", %{conn: conn, account: account, category: category} do
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
-      |> element("a[href='#{Routes.budget_index_path(conn, :new_transaction)}']")
+      |> element("a[href='#{~p"/transactions/new"}']")
       |> render_click()
 
       live
@@ -292,7 +292,9 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       assert live |> element("#previous-balance") |> render =~ "320,50"
 
-      assert live |> element("#transaction-recurrency-#{recurrency.id}-#{next_month_transaction}-0") |> render =~
+      assert live
+             |> element("#transaction-recurrency-#{recurrency.id}-#{next_month_transaction}-0")
+             |> render =~
                "200,00"
 
       assert live |> element("#next-balance") |> render =~ "520,50"
@@ -301,7 +303,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     test "edit existing transaction from recurrency", %{conn: conn} do
       recurrency = recurrency_fixture()
 
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
       |> element("a", "Transaction description")
@@ -334,7 +336,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       recurrency = recurrency_fixture()
       another_category = category_fixture()
 
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
       |> element("button", ">>")
@@ -381,7 +383,7 @@ defmodule BudgetWeb.BudgetLiveTest do
         |> Enum.at(0)
         |> Transactions.Transaction.Form.apply_update(%{})
 
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
       |> element("button", ">>")
@@ -392,7 +394,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       path = assert_patch(live)
-      assert path == BudgetWeb.Router.Helpers.budget_index_path(conn, :edit_transaction, id)
+      assert path == ~p"/transactions/#{id}/edit"
 
       live
       |> form("#transaction-form",
@@ -418,9 +420,9 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
 
     test "apply changes forward", %{conn: conn} do
-      recurrency = recurrency_fixture()
+      recurrency_fixture()
 
-      {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
       |> element("button", ">>")
@@ -464,7 +466,7 @@ defmodule BudgetWeb.BudgetLiveTest do
   test "delete single transaction", %{conn: conn, account: account} do
     transaction = transaction_fixture(%{account_id: account.id})
 
-    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, ~p"/")
 
     live
     |> element("[data-testid=delete-#{transaction.id}]")
@@ -480,7 +482,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     transaction = recurrency.recurrency_transactions |> Enum.at(0) |> then(& &1.transaction)
 
-    {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, html} = live(conn, ~p"/")
 
     assert html =~ "Transaction description"
 
@@ -504,7 +506,7 @@ defmodule BudgetWeb.BudgetLiveTest do
   test "delete recurrent transient transaction", %{conn: conn} do
     recurrency_fixture()
 
-    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, ~p"/")
 
     html =
       live
@@ -540,7 +542,7 @@ defmodule BudgetWeb.BudgetLiveTest do
   test "delete recurrent transient with future persisted", %{conn: conn} do
     recurrency_fixture()
 
-    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, ~p"/")
 
     live
     |> element("button", ">>")
@@ -600,10 +602,10 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   test "create new category", %{conn: conn} do
-    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, ~p"/")
 
     live
-    |> element("a[href='#{Routes.budget_index_path(conn, :new_category)}']")
+    |> element("a[href='#{~p"/categories/new"}']")
     |> render_click()
 
     live
@@ -617,10 +619,10 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   test "create new child category", %{conn: conn, category: category} do
-    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, ~p"/")
 
     live
-    |> element("a[href='#{Routes.budget_index_path(conn, :new_category_child, category)}']")
+    |> element("a[href='#{~p"/categories/#{category}/children/new"}']")
     |> render_click()
 
     assert render(live) =~ "Creating a child category of &#39;root category&#39;"
@@ -636,10 +638,10 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   test "edit category", %{conn: conn, category: category} do
-    {:ok, live, _html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, _html} = live(conn, ~p"/")
 
     live
-    |> element("a[href='#{Routes.budget_index_path(conn, :edit_category, category)}']")
+    |> element("a[href='#{~p"/categories/#{category}/edit"}']")
     |> render_click()
 
     live
@@ -668,7 +670,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       })
     )
 
-    {:ok, live, html} = live(conn, Routes.budget_index_path(conn, :index))
+    {:ok, live, html} = live(conn, ~p"/")
 
     assert html =~
              ~r/Transaction 1[\s\S]*Transaction 2[\s\S]*Transaction 3[\s\S]*Transaction 4[\s\S]*Transaction 5/

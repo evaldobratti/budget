@@ -1,23 +1,21 @@
 <div>
-  <.form
-    let={f}
-    for={@changeset}
+  <.header>
+    <%= @title %>
+  </.header>
+  <.simple_form
+    for={@form}
     id="account-form"
     phx-target={@myself}
     phx-change="validate"
     phx-submit="save"
     >
+
+    <.input field={@form[:name]} autocomplete="off" label="Name" />
+    <.input field={@form[:initial_balance]} autocomplete="off" type="number" label="Initial Balance" />
   
-    <.form_group form={f} field={:name}>
-      <.text_input form={f} field={:name} autocomplete="off" />
-    </.form_group>
   
-    <.form_group form={f} field={:initial_balance}>
-      <.text_input form={f} field={:initial_balance} autocomplete="off" classes={%{validation_message: "oxe"}} />
-    </.form_group>
-  
-    <div class="d-flex">
-      <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary btn-block" %>
-    </div>
-  </.form>
+    <:actions>
+      <.button phx-disable-with="Saving...">Save</.button>
+    </:actions>
+  </.simple_form>
 </div>
