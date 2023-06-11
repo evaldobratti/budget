@@ -249,8 +249,8 @@ defmodule BudgetWeb.BudgetLive.Index do
           <%= if length(category.path) > 0, do: "└ " %><%=category.name %>
         </div>
         <div class="ml-auto">
-          <%= live_patch "Edit", to: ~p"/categories/#{category}/edit" %>
-          <%= live_patch "+", to: ~p"/categories/#{category}/children/new", class: "btn btn-sm btn-primary" %>
+          <.link_button patch={~p"/categories/#{category}/edit"}>Edit</.link_button>
+          <.link_button patch={~p"/categories/#{category}/children/new"}>+</.link_button>
         </div>
       </div>
       <div class="pl-1 ml-1" style="border-left: solid 1px">

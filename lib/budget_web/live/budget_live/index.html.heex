@@ -52,8 +52,8 @@
         <div class="col align-items-center">
           <span class="h5">Accounts</span>
         </div>
-        <div class="ml-auto">
-          <%= live_patch "New", to: ~p"/accounts/new", class: "btn btn-sm btn-primary" %>
+        <div class="flex items-start ml-auto">
+          <.link_button patch={~p"/accounts/new"}>New</.link_button>
         </div>
       </div>
       <%= if Enum.empty?(@accounts) do %>
@@ -68,7 +68,7 @@
             <%= account.name %>
           </div>
           <div class="ml-auto">
-            <%= live_patch "Edit", to: ~p"/accounts/#{account}/edit" %>
+            <.link_button patch={~p"/accounts/#{account}/edit"}>Edit</.link_button>
           </div>
         </div>
       <% end %>
@@ -80,7 +80,7 @@
           <span class="h5">Categories</span>
         </div>
         <div class="ml-auto">
-          <%= live_patch "New", to: ~p"/categories/new", class: "btn btn-sm btn-primary" %>
+          <.link_button patch={~p"/categories/new"}>New</.link_button>
         </div>
       </div>
       <%= if Enum.empty?(@categories) do %>
@@ -94,13 +94,13 @@
 
   <div class="w-10/12 px-2">
     <div class="flex">
-      <div class="col align-items-center">
+      <div>
         <span class="h5">Transactions</span>
       </div>
       <div class="mx-auto">
         <% dates_form = to_form(%{
-          "date_start" => Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}"), 
-          "date_end" =>Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}") 
+          "date_start" => Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}"),
+          "date_end" =>Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")
         }) %>
         <.form
           id="dates-switch"
@@ -108,17 +108,17 @@
           as={:dates}
           phx-change="update-dates"
         >
-          <div class="flex">
-            <button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></button>
+          <div class="flex items-end">
+            <.button class="btn btn-sm btn-primary" phx-click="month-previous" type="button"><%= "<<" %></.button>
             <.input field={dates_form[:date_start]} type="date" />
             <div class="d-inline px-1">to</div>
             <.input field={dates_form[:date_end]} type="date" />
-            <button class="btn btn-sm btn-primary" phx-click="month-next" type="button"><%= ">>" %></button>
+            <.button class="btn btn-sm btn-primary" phx-click="month-next" type="button"><%= ">>" %></.button>
           </div>
         </.form>
       </div>
-      <div class="align-items-end">
-        <%= live_patch "New", to: ~p"/transactions/new", class: "btn btn-sm btn-primary" %>
+      <div class="flex items-start">
+        <.link_button patch={~p"/transactions/new"}>New</.link_button>
         <%= if @live_action == :new_transaction do %>
           <.modal id="new-transaction" on_cancel={JS.patch(~p"/")} show>
               <.live_component
@@ -152,34 +152,34 @@
               This transaction is associated to a recurrency. What do you want to do about it?
 
               <div>
-                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
+                <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
                   Delete just this transaction
-                </button>
-                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
+                </.button>
+                <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
                   Delete this transaction and future transactions
-                </button>
+                </.button>
               </div>
 
             <% :recurrency_with_future -> %>
               This transaction is associated to a recurrency. Future transactions from this recurrency have already been updated, so what do you want to do about it?
                 <div>
-                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
+                  <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
                     Delete just this transaction
-                  </button>
-                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-keep-future">
+                  </.button>
+                  <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-keep-future">
                     Delete this transaction with future ones but keep changed ones
-                  </button>
-                  <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
+                  </.button>
+                  <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
                     Delete this transaction and all future ones
-                  </button>
+                  </.button>
                 </div>
 
             <% :regular -> %>
               Do you confirm deleting this transaction?
               <div>
-                <button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
+                <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
                   Yes
-                </button>
+                </.button>
               </div>
           <% end %>
       </.modal>
@@ -262,8 +262,8 @@
         </td>
         <td class="col-1 px-1">
           <.tooltiped tooltip="Delete">
-            <%= live_patch to: ~p"/transactions/#{transaction}/delete", data_testid: "delete-#{transaction.id}", class: "btn-octicon btn-octicon-danger p-0"  do %>
-              Delete
+            <%= live_patch to: ~p"/transactions/#{transaction}/delete", data_testid: "delete-#{transaction.id}", class: "flex" do %>
+              <.icon name="hero-trash" />
             <% end %>
           </.tooltiped>
           <span class="btn-octicon sortable-handle">
@@ -297,4 +297,3 @@
     </table>
   </div>
 </div>
-
