@@ -76,7 +76,7 @@ defmodule Budget.Importations.Worker do
           other
       end)
 
-    result = Map.put(result, :transactions, hinted_transactions |> Enum.slice(0, 2))
+    result = Map.put(result, :transactions, hinted_transactions)
 
     {:noreply, %{state | result: result}}
   end
