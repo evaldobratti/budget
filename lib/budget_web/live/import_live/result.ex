@@ -12,11 +12,10 @@ defmodule BudgetWeb.ImportLive.Result do
       |> Budget.Importations.find_process()
       |> case do
         nil ->
-
           Path.join([
-            :code.priv_dir(:budget), 
-            "static", 
-            "uploads", 
+            :code.priv_dir(:budget),
+            "static",
+            "uploads",
             file |> Path.basename()
           ])
           |> Budget.Importations.import()
@@ -31,10 +30,6 @@ defmodule BudgetWeb.ImportLive.Result do
       Worker.checkin(pid)
     end
 
-    result =
-      pid
-      |> Worker.result()
-
     accounts = Transactions.list_accounts()
     account = accounts |> Enum.at(0)
 
@@ -42,7 +37,7 @@ defmodule BudgetWeb.ImportLive.Result do
       :ok,
       socket
       |> assign(pid: pid)
-      |> assign(result: result)
+      |> assign(result: %{transactions: []})
       |> assign(changes: [])
       |> assign(accounts: accounts)
       |> assign(account: account)
@@ -89,7 +84,7 @@ defmodule BudgetWeb.ImportLive.Result do
   end
 
   def handle_event("import", _, socket) do
-    changesets = 
+    changesets =
       socket.assigns.changesets
       |> Enum.filter(& match?(%Changeset{}, &1))
       |> Enum.map(& Map.put(&1, :action, :insert))
@@ -106,11 +101,20 @@ defmodule BudgetWeb.ImportLive.Result do
       end
     else
       {
-        :noreply, 
-        socket 
+        :noreply,
+        socket
         |> assign(:changesets, changesets)
       }
     end
+  end
+
+  def handle_info(:finished, socket) do
+    {
+      :noreply,
+      socket
+      |> assign(result: Worker.result(socket.assigns.pid))
+      |> apply_changes()
+    }
   end
 
   defp apply_changes(socket) do

@@ -25,7 +25,7 @@ defmodule Budget.Importations.Worker do
 
   def checkin(pid) do
     Process.link(pid)
-    GenServer.cast(pid, :checked)
+    GenServer.cast(pid, {:checked, self()})
   end
 
   def result(pid) do
@@ -37,7 +37,7 @@ defmodule Budget.Importations.Worker do
     send(self(), :process)
     Process.send_after(self(), :check_alive, 2000)
 
-    {:ok, %{file: file, checked: false, result: :processing}}
+    {:ok, %{file: file, checked: false, live_view: nil, result: :processing}}
   end
 
   @impl true
@@ -78,6 +78,10 @@ defmodule Budget.Importations.Worker do
 
     result = Map.put(result, :transactions, hinted_transactions)
 
+    if state.live_view do
+      send(state.live_view, :finished)
+    end
+
     {:noreply, %{state | result: result}}
   end
 
@@ -102,9 +106,14 @@ defmodule Budget.Importations.Worker do
   end
 
   @impl true
-  def handle_cast(:checked, state) do
+  def handle_cast({:checked, live_view}, state) do
     Process.flag(:trap_exit, true)
-    {:noreply, %{state | checked: true}}
+
+    if state.result != :processing do
+      send(live_view, :finished)
+    end
+
+    {:noreply, %{state | checked: true, live_view: live_view}}
   end
 
   @impl true
