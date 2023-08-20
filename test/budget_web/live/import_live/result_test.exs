@@ -20,6 +20,8 @@ defmodule BudgetWeb.ImportLive.ResultTest do
 
     {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
 
+    render(live)
+
     form0 =
       live
       |> element("#transaction-0")
@@ -43,7 +45,8 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     {:ok, key} =
       Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
 
-    {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}") 
+    {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
+
     live
     |> element("button", "Import")
     |> render_click()
@@ -57,7 +60,8 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     {:ok, key} =
       Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
 
-    {:ok, live, _html} =live(conn, ~p"/imports/result/#{key}") 
+    {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
+
     assert [] ==
              Transactions.transactions_in_period(
                [],
@@ -116,5 +120,115 @@ defmodule BudgetWeb.ImportLive.ResultTest do
                Timex.today() |> Timex.end_of_month()
              )
              |> Enum.map(&simplify/1)
+
+    assert %{
+             name: "test/budget/importations/files/credit_card/nu_bank/simple.txt",
+             hashes: ["0-2022-08-30--2.29-Kabum - 5/6", "1-2022-08-30--4.01-Panvel Filial"]
+           } = Importations.list_import_files() |> Enum.at(0)
   end
+
+  # test "renders warning if reimporting file", %{conn: conn, category: category, account: account} do
+  #   {:ok, key} =
+  #     Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
+  #
+  #   {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
+  #
+  #   open_browser(live)
+  #
+  #   live
+  #   |> form("#transaction-0",
+  #     form: %{
+  #       date: Date.utc_today() |> Date.to_iso8601(),
+  #       regular: %{
+  #         description: "updated",
+  #         category_id: category.id
+  #       },
+  #       value: 11
+  #     }
+  #   )
+  #   |> render_change()
+  #
+  #   live
+  #   |> form("#transaction-1",
+  #     form: %{
+  #       date: Date.utc_today() |> Date.to_iso8601(),
+  #       regular: %{
+  #         category_id: category.id
+  #       }
+  #     }
+  #   )
+  #   |> render_change()
+  #
+  #   live
+  #   |> element("button", "Import")
+  #   |> render_click()
+  #   |> follow_redirect(conn)
+  #
+  #   assert 2 ==
+  #            Transactions.transactions_in_period(
+  #              [],
+  #              Timex.today() |> Timex.beginning_of_month(),
+  #              Timex.today() |> Timex.end_of_month()
+  #            )
+  #            |> length
+  #
+  #   {:ok, key} =
+  #     Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
+  #
+  #   {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
+  #
+  #   assert live
+  #          |> element(".hero-exclamation-circle")
+  #          |> has_element?()
+  # end
+  #
+  # test "removes transaction from import", %{conn: conn, category: category, account: account} do
+  #   {:ok, key} =
+  #     Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
+  #
+  #   {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
+  #
+  #   live
+  #   |> form("#transaction-0",
+  #     form: %{
+  #       date: Date.utc_today() |> Date.to_iso8601(),
+  #       regular: %{
+  #         description: "updated",
+  #         category_id: category.id
+  #       },
+  #       value: 11
+  #     }
+  #   )
+  #   |> render_change()
+  #
+  #   live
+  #   |> element("#delete-1")
+  #   |> render_click()
+  #
+  #   live
+  #   |> element("button", "Import")
+  #   |> render_click()
+  #   |> follow_redirect(conn)
+  #
+  #   assert 1 ==
+  #            Transactions.transactions_in_period(
+  #              [],
+  #              Timex.today() |> Timex.beginning_of_month(),
+  #              Timex.today() |> Timex.end_of_month()
+  #            )
+  #            |> length
+  #
+  #   {:ok, key} =
+  #     Importations.import("test/budget/importations/files/credit_card/nu_bank/simple.txt")
+  #
+  #   {:ok, live, _html} = live(conn, ~p"/imports/result/#{key}")
+  #
+  #   assert live
+  #          |> element("#warning-0")
+  #          |> has_element?()
+  #
+  #   refute live
+  #          |> element("#warning-1")
+  #          |> has_element?()
+  # end
 end

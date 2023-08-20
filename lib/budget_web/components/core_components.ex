@@ -229,10 +229,10 @@ defmodule BudgetWeb.CoreComponents do
     """
   end
 
-
   attr :class, :string, default: nil
   attr :rest, :global, include: ~w(disabled form name value patch navigate href)
   slot :inner_block, required: true
+
   def link_button(assigns) do
     ~H"""
       <.link
@@ -605,12 +605,13 @@ defmodule BudgetWeb.CoreComponents do
       <.icon name="hero-x-mark-solid" />
       <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
   """
+  attr :id, :string, default: nil
   attr :name, :string, required: true
   attr :class, :string, default: nil
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <span id={@id} class={[@name, @class]} />
     """
   end
 
@@ -713,15 +714,16 @@ defmodule BudgetWeb.CoreComponents do
   attr :tooltip, :string
   attr :rest, :global
   slot :inner_block
+
   def tooltiped(assigns) do
-      # <span class="tooltip"
-      #   phx-mounted={JS.dispatch("budget:tooltip-setup")}
-      #   phx-remove={JS.dispatch("budget:tooltip-cleanup")}
-      #   {@rest}
-      # >
-      #   <%= @tooltip %>
-      #   <div class="arrow"></div>
-      # </span>
+    # <span class="tooltip"
+    #   phx-mounted={JS.dispatch("budget:tooltip-setup")}
+    #   phx-remove={JS.dispatch("budget:tooltip-cleanup")}
+    #   {@rest}
+    # >
+    #   <%= @tooltip %>
+    #   <div class="arrow"></div>
+    # </span>
     ~H"""
       <%= render_slot(@inner_block) %>
     """

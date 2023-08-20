@@ -84,9 +84,11 @@
                 <.input field={form[:value]} type="number" label="Value" autocomplete="off" />
               </div>
               <div class="w-3/12">
-                <a href="#" phx-click={"delete-#{changeset.params["ix"]}"}>
+                <a href="#" id={"delete-#{changeset.params["ix"]}"} phx-click={"delete-#{changeset.params["ix"]}"}>
                   <.icon name="hero-trash" />
                 </a>
+                
+                <.icon :if={changeset.params["conflict"]} id={"warning-#{changeset.params["ix"]}"} name="hero-exclamation-circle" />
               </div>
             </div>
           </.simple_form>

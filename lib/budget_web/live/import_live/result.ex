@@ -92,7 +92,9 @@ defmodule BudgetWeb.ImportLive.Result do
     all_valid? = Enum.all?(changesets, & &1.valid?)
 
     if all_valid? do
-      case Importations.insert(changesets) do
+      file_data = Worker.import_file_data(socket.assigns.pid)
+
+      case Importations.insert(changesets, file_data) do
         {:ok, _} ->
           {:noreply, push_navigate(socket, to: "/")}
 
@@ -108,11 +110,12 @@ defmodule BudgetWeb.ImportLive.Result do
     end
   end
 
-  def handle_info(:finished, socket) do
+  def handle_info({:finished, result}, socket) do
+    IO.inspect(length(result.transactions))
     {
       :noreply,
       socket
-      |> assign(result: Worker.result(socket.assigns.pid))
+      |> assign(result: result)
       |> apply_changes()
     }
   end

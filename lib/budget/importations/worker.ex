@@ -1,6 +1,7 @@
 defmodule Budget.Importations.Worker do
   use GenServer, restart: :transient
 
+  alias Budget.Importations
   alias Budget.Hinter
   alias Budget.Importations.CreditCard.NuBank
 
@@ -32,10 +33,14 @@ defmodule Budget.Importations.Worker do
     GenServer.call(pid, :result)
   end
 
+  def import_file_data(pid) do
+    GenServer.call(pid, :import_file_data)
+  end
+
   @impl true
   def init(%{file: file}) do
     send(self(), :process)
-    Process.send_after(self(), :check_alive, 2000)
+    Process.send_after(self(), :check_alive, 20000)
 
     {:ok, %{file: file, checked: false, live_view: nil, result: :processing}}
   end
@@ -56,7 +61,7 @@ defmodule Budget.Importations.Worker do
 
           category = Hinter.hint_category(transaction.description, nil)
 
-          %{
+          transaction = %{
             "type" => :transaction,
             "ix" => transaction.ix,
             "date" => transaction.date,
@@ -72,6 +77,14 @@ defmodule Budget.Importations.Worker do
             }
           }
 
+          hash = build_hash(transaction)
+
+          conflict = Importations.has_conflict?(hash)
+
+          transaction
+          |> Map.put("conflict", conflict)
+          |> Map.put("hash", hash)
+
         other ->
           other
       end)
@@ -79,7 +92,7 @@ defmodule Budget.Importations.Worker do
     result = Map.put(result, :transactions, hinted_transactions)
 
     if state.live_view do
-      send(state.live_view, :finished)
+      send(state.live_view, {:finished, result})
     end
 
     {:noreply, %{state | result: result}}
@@ -106,11 +119,16 @@ defmodule Budget.Importations.Worker do
   end
 
   @impl true
+  def handle_info({:EXIT, _live_view, _}, state) do
+    {:stop, :shutdown, state}
+  end
+
+  @impl true
   def handle_cast({:checked, live_view}, state) do
     Process.flag(:trap_exit, true)
 
     if state.result != :processing do
-      send(live_view, :finished)
+      send(live_view, {:finished, state.result})
     end
 
     {:noreply, %{state | checked: true, live_view: live_view}}
@@ -119,5 +137,26 @@ defmodule Budget.Importations.Worker do
   @impl true
   def handle_call(:result, _pid, state) do
     {:reply, state.result, state}
+  end
+
+  @impl true
+  def handle_call(:import_file_data, _pid, %{file: file, result: result} = state) do
+    hashes =
+      result.transactions
+      |> Enum.filter(&(&1["type"] == :transaction))
+      |> Enum.map(&build_hash/1)
+
+    {:reply, %{name: file, hashes: hashes}, state}
+  end
+
+  defp build_hash(%{
+         "ix" => ix,
+         "date" => date,
+         "value" => value,
+         "regular" => %{
+           "original_description" => description
+         }
+       }) do
+    "#{ix}-#{date}-#{value}-#{description}"
   end
 end
