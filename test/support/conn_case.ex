@@ -29,6 +29,7 @@ defmodule BudgetWeb.ConnCase do
       import Phoenix.ConnTest
       import BudgetWeb.ConnCase
       import Budget.Simplifiers
+      import Budget.TimeHelper
     end
   end
 
