@@ -3,17 +3,18 @@ defmodule Budget.Importations.ImportFile do
   import Ecto.Changeset
 
   schema "import_files" do
-    field :name, :string
+    field :path, :string
+    field :state, :string, default: "new"
     field :hashes, {:array, :string}
 
     timestamps()
   end
 
   @doc false
-  def changeset(account, attrs) do
-    account
-    |> cast(attrs, [:name, :hashes])
-    |> validate_required([:name, :hashes])
+  def changeset(import_file, attrs) do
+    import_file
+    |> cast(attrs, [:path, :state, :hashes])
+    |> validate_required([:path, :state])
   end
 end
 

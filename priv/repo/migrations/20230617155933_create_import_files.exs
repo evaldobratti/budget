@@ -3,8 +3,9 @@ defmodule Budget.Repo.Migrations.CreateImportFiles do
 
   def change do
     create table(:import_files) do
-      add :name, :string
-      add :hashes, {:array, :string}, null: false
+      add :path, :string
+      add :state, :string
+      add :hashes, {:array, :string}
 
       timestamps()
     end

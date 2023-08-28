@@ -6,29 +6,10 @@ defmodule BudgetWeb.ImportLive.Result do
   alias Budget.Importations
   alias Budget.Importations.Worker
 
-  def mount(%{"result" => file}, _session, socket) do
-    pid =
-      file
-      |> Budget.Importations.find_process()
-      |> case do
-        nil ->
-          Path.join([
-            :code.priv_dir(:budget),
-            "static",
-            "uploads",
-            file |> Path.basename()
-          ])
-          |> Budget.Importations.import()
+  def mount(%{"id" => id}, _, socket) do
+    import_file = Importations.get_import_file!(id)
 
-          Budget.Importations.find_process(file)
-
-        pid ->
-          pid
-      end
-
-    if connected?(socket) do
-      Worker.checkin(pid)
-    end
+    Task.async(fn -> Worker.process(import_file.path) end)
 
     accounts = Transactions.list_accounts()
     account = accounts |> Enum.at(0)
@@ -36,7 +17,7 @@ defmodule BudgetWeb.ImportLive.Result do
     {
       :ok,
       socket
-      |> assign(pid: pid)
+      |> assign(import_file: import_file)
       |> assign(result: %{transactions: []})
       |> assign(changes: [])
       |> assign(accounts: accounts)
@@ -92,9 +73,7 @@ defmodule BudgetWeb.ImportLive.Result do
     all_valid? = Enum.all?(changesets, & &1.valid?)
 
     if all_valid? do
-      file_data = Worker.import_file_data(socket.assigns.pid)
-
-      case Importations.insert(changesets, file_data) do
+      case Importations.insert(socket.assigns.import_file, changesets) do
         {:ok, _} ->
           {:noreply, push_navigate(socket, to: "/")}
 
@@ -110,14 +89,17 @@ defmodule BudgetWeb.ImportLive.Result do
     end
   end
 
-  def handle_info({:finished, result}, socket) do
-    IO.inspect(length(result.transactions))
+  def handle_info({ref, result}, socket) when is_reference(ref) do
     {
       :noreply,
       socket
       |> assign(result: result)
       |> apply_changes()
     }
+  end
+
+  def handle_info({:DOWN, _, :process, _, :normal}, socket) do
+    {:noreply, socket}
   end
 
   defp apply_changes(socket) do

@@ -32,7 +32,7 @@ defmodule BudgetWeb.Router do
 
     live "/imports", ImportLive.Index, :index
     live "/imports/credit_card/nu_bank", ImportLive.CreditCard.NuBank, :index
-    live "/imports/result/:result", ImportLive.Result, :index
+    live "/imports/:id", ImportLive.Result, :index
 
     live("/users", UserLive.Index, :index)
     live("/users/new", UserLive.Index, :new)

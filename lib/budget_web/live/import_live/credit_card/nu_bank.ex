@@ -1,4 +1,5 @@
 defmodule BudgetWeb.ImportLive.CreditCard.NuBank do
+  alias Budget.Importations
   use BudgetWeb, :live_view
 
   def mount(_params, _session, socket) do
@@ -25,16 +26,17 @@ defmodule BudgetWeb.ImportLive.CreditCard.NuBank do
         {:ok, dest}
       end)
 
-
-    {:ok, key} = 
+    path =
       Path.join([
         :code.priv_dir(:budget), 
         "static", 
         "uploads", 
         file |> Path.basename()
       ])
-      |> Budget.Importations.import()
 
-    {:noreply, push_navigate(socket, to: "/imports/result/" <> key)}
+    {:ok, file} = Importations.create_import_file(path)
+
+    {:noreply, push_navigate(socket, to: ~p"/imports/" <> to_string(file.id))}
   end
+
 end
