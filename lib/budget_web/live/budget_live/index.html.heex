@@ -1,10 +1,4 @@
-<header class="px-4 sm:px-6 lg:px-8">
-  <div class="flex items-center space-x-4 border-b border-zinc-100 py-3 text-sm">
-    <%= live_redirect "Transactions", to: ~p"/" %>
-    <%= live_redirect "Import", to: ~p"/imports" %>
-  </div>
-</header>
-
+<.menu />
 <%= if @live_action in [:new_account, :edit_account] do %>
   <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show>
     <.live_component

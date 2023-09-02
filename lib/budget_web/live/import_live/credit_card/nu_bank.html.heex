@@ -1,7 +1,9 @@
+<.menu />
+
 <div class="container-xl">
   <form id="upload-form" phx-submit="save" phx-change="validate">
     <.live_file_input upload={@uploads.invoice} />
-    <button type="submit">Upload</button>
+    <.button>Upload</.button>
   </form>
 
   <%= for entry <- @uploads.invoice.entries do %>
@@ -15,5 +17,4 @@
   <%= for uploaded <- @uploaded_files do %>
     <%= uploaded |> to_string %>
   <% end %>
-
 </div>

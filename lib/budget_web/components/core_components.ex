@@ -19,6 +19,11 @@ defmodule BudgetWeb.CoreComponents do
   alias Phoenix.LiveView.JS
   import BudgetWeb.Gettext
 
+  use Phoenix.VerifiedRoutes,
+    endpoint: BudgetWeb.Endpoint,
+    router: BudgetWeb.Router,
+    statics: BudgetWeb.static_paths()
+
   @doc """
   Renders a modal.
 
@@ -224,10 +229,10 @@ defmodule BudgetWeb.CoreComponents do
     """
   end
 
-
   attr :class, :string, default: nil
   attr :rest, :global, include: ~w(disabled form name value patch navigate href)
   slot :inner_block, required: true
+
   def link_button(assigns) do
     ~H"""
       <.link
@@ -281,7 +286,7 @@ defmodule BudgetWeb.CoreComponents do
   slot :inner_block
 
   def input(%{field: %Phoenix.HTML.FormField{} = field, type: "radio", value: value} = assigns) do
-    assigns = 
+    assigns =
       assigns
       |> assign(field: nil, id: (assigns.id || field.id) <> "_" <> value)
       |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
@@ -347,7 +352,7 @@ defmodule BudgetWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class="mt-1 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm sm:leading-6"
         multiple={@multiple}
         {@rest}
       >
@@ -600,12 +605,13 @@ defmodule BudgetWeb.CoreComponents do
       <.icon name="hero-x-mark-solid" />
       <.icon name="hero-arrow-path" class="ml-1 w-3 h-3 animate-spin" />
   """
+  attr :id, :string, default: nil
   attr :name, :string, required: true
   attr :class, :string, default: nil
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <span id={@id} class={[@name, @class]} />
     """
   end
 
@@ -687,10 +693,10 @@ defmodule BudgetWeb.CoreComponents do
   def currency(assigns) do
     value = Map.get(assigns, :value)
 
-    assigns = 
+    assigns =
       assign(
-        assigns, 
-        :color,  
+        assigns,
+        :color,
         case Decimal.compare(value, 0) do
           :gt -> "color-fg-success"
           :lt -> "color-fg-danger"
@@ -708,15 +714,16 @@ defmodule BudgetWeb.CoreComponents do
   attr :tooltip, :string
   attr :rest, :global
   slot :inner_block
+
   def tooltiped(assigns) do
-      # <span class="tooltip" 
-      #   phx-mounted={JS.dispatch("budget:tooltip-setup")} 
-      #   phx-remove={JS.dispatch("budget:tooltip-cleanup")} 
-      #   {@rest}
-      # >
-      #   <%= @tooltip %>
-      #   <div class="arrow"></div>
-      # </span>
+    # <span class="tooltip"
+    #   phx-mounted={JS.dispatch("budget:tooltip-setup")}
+    #   phx-remove={JS.dispatch("budget:tooltip-cleanup")}
+    #   {@rest}
+    # >
+    #   <%= @tooltip %>
+    #   <div class="arrow"></div>
+    # </span>
     ~H"""
       <%= render_slot(@inner_block) %>
     """
@@ -724,5 +731,16 @@ defmodule BudgetWeb.CoreComponents do
 
   def format_date(date) do
     Timex.format!(date, "{0D}/{0M}/{YYYY}")
+  end
+
+  def menu(assigns \\ %{}) do
+    ~H"""
+    <header class="mb-4">
+      <div class="flex items-center space-x-4 border-b border-zinc-100 py-3 text-sm bg-slate-200">
+        <%= live_redirect "Transactions", to: ~p"/" %>
+        <%= live_redirect "Import", to: ~p"/imports" %>
+      </div>
+    </header>
+    """
   end
 end
