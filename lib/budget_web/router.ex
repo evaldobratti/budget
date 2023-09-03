@@ -17,28 +17,32 @@ defmodule BudgetWeb.Router do
   scope "/", BudgetWeb do
     pipe_through(:browser)
 
-    live "/", BudgetLive.Index, :index
+    live_session :authenticated, on_mount: [
+      BudgetWeb.Nav
+    ] do
+      live "/", BudgetLive.Index, :index
 
-    live "/accounts/new", BudgetLive.Index, :new_account
-    live "/accounts/:id/edit", BudgetLive.Index, :edit_account
+      live "/accounts/new", BudgetLive.Index, :new_account
+      live "/accounts/:id/edit", BudgetLive.Index, :edit_account
 
-    live "/categories/new", BudgetLive.Index, :new_category
-    live "/categories/:id/edit", BudgetLive.Index, :edit_category
-    live "/categories/:id/children/new", BudgetLive.Index, :new_category_child
+      live "/categories/new", BudgetLive.Index, :new_category
+      live "/categories/:id/edit", BudgetLive.Index, :edit_category
+      live "/categories/:id/children/new", BudgetLive.Index, :new_category_child
 
-    live "/transactions/new", BudgetLive.Index, :new_transaction
-    live "/transactions/:id/edit", BudgetLive.Index, :edit_transaction
-    live "/transactions/:id/delete", BudgetLive.Index, :delete_transaction
+      live "/transactions/new", BudgetLive.Index, :new_transaction
+      live "/transactions/:id/edit", BudgetLive.Index, :edit_transaction
+      live "/transactions/:id/delete", BudgetLive.Index, :delete_transaction
 
-    live "/imports", ImportLive.Index, :index
-    live "/imports/credit_card/nu_bank", ImportLive.CreditCard.NuBank, :index
-    live "/imports/:id", ImportLive.Result, :index
+      live "/imports", ImportLive.Index, :index
+      live "/imports/credit_card/nu_bank", ImportLive.CreditCard.NuBank, :index
+      live "/imports/:id", ImportLive.Result, :index
 
-    live("/users", UserLive.Index, :index)
-    live("/users/new", UserLive.Index, :new)
-    live("/users/:id/edit", UserLive.Index, :edit)
-    live("/users/:id", UserLive.Show, :show)
-    live("/users/:id/show/edit", UserLive.Show, :edit)
+      live("/users", UserLive.Index, :index)
+      live("/users/new", UserLive.Index, :new)
+      live("/users/:id/edit", UserLive.Index, :edit)
+      live("/users/:id", UserLive.Show, :show)
+      live("/users/:id/show/edit", UserLive.Show, :edit)
+    end
 
   end
 

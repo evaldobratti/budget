@@ -230,6 +230,7 @@ defmodule BudgetWeb.CoreComponents do
   end
 
   attr :class, :string, default: nil
+  attr :small, :boolean, default: false
   attr :rest, :global, include: ~w(disabled form name value patch navigate href)
   slot :inner_block, required: true
 
@@ -237,9 +238,10 @@ defmodule BudgetWeb.CoreComponents do
     ~H"""
       <.link
         class={[
-          "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
-          "text-sm font-semibold leading-6 text-white active:text-white/80",
-          @class
+          "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700",
+          "text-sm font-semibold text-white active:text-white/80",
+          @class,
+          (if @small, do: "p-1 text-xs", else: "leading-6 py-2 px-3")
         ]}
         {@rest}
       >
@@ -278,6 +280,7 @@ defmodule BudgetWeb.CoreComponents do
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
   attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
+  attr :margin, :boolean, default: true
 
   attr :rest, :global,
     include: ~w(autocomplete cols disabled form list max maxlength min minlength
@@ -352,7 +355,10 @@ defmodule BudgetWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm sm:leading-6"
+        class={[
+          "block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm sm:leading-6",
+          @margin && "mt-2"
+        ]}
         multiple={@multiple}
         {@rest}
       >
@@ -372,10 +378,11 @@ defmodule BudgetWeb.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
           "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
           "min-h-[6rem] border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          @errors != [] && "border-rose-400 focus:border-rose-400",
+          @margin && "mt-2"
         ]}
         {@rest}
       ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
@@ -395,10 +402,11 @@ defmodule BudgetWeb.CoreComponents do
         id={@id}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
           "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
           "border-zinc-300 focus:border-zinc-400",
-          @errors != [] && "border-rose-400 focus:border-rose-400"
+          @errors != [] && "border-rose-400 focus:border-rose-400",
+          @margin && "mt-2"
         ]}
         {@rest}
       />
@@ -733,12 +741,21 @@ defmodule BudgetWeb.CoreComponents do
     Timex.format!(date, "{0D}/{0M}/{YYYY}")
   end
 
+  def menu_link(assigns) do
+    ~H"""
+    <%= live_redirect @label, to: @to, class: ["px-4 py-2 rounded-lg", (if @active, do: "bg-green-300")] %>
+    """
+  end
+
   def menu(assigns \\ %{}) do
     ~H"""
-    <header class="mb-4">
-      <div class="flex items-center space-x-4 border-b border-zinc-100 py-3 text-sm bg-slate-200">
-        <%= live_redirect "Transactions", to: ~p"/" %>
-        <%= live_redirect "Import", to: ~p"/imports" %>
+    <header class="mb-4 w-1/5 h-full bg-slate-50">
+      <div class="flex flex-col border-b border-zinc-100 py-3 text-sm  p-4">
+        <div class="flex p-4">
+          <.icon name="hero-currency-dollar" /> Budget
+        </div>
+        <.menu_link label="Transactions" active={@active_tab == :transactions} to={~p"/"} />
+        <.menu_link label="Import" active={@active_tab == :import} to={~p"/imports"} />
       </div>
     </header>
     """
