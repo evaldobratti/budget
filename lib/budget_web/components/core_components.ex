@@ -749,7 +749,7 @@ defmodule BudgetWeb.CoreComponents do
 
   def menu(assigns \\ %{}) do
     ~H"""
-    <header class="mb-4 w-1/5 h-full bg-slate-50">
+    <header class="mb-4 w-1/5 h-full bg-slate-100">
       <div class="flex flex-col border-b border-zinc-100 py-3 text-sm  p-4">
         <div class="flex p-4">
           <.icon name="hero-currency-dollar" /> Budget
