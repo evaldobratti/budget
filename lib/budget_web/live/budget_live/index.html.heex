@@ -2,11 +2,10 @@
   <.menu active_tab={@active_tab} />
   <div class="flex flex-grow flex-col p-4">
     <%= if @live_action in [:new_account, :edit_account] do %>
-      <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show>
+      <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show title={@account.id && "Edit account" || "New Account"}>
         <.live_component
           module={BudgetWeb.AccountLive.FormComponent}
           id={@account.id || :new}
-          title={@account.id && "Edit account" || "New Account"}
           action={@live_action}
           account={@account}
           patch={~p"/?#{[from: "account"]}"}
@@ -47,11 +46,11 @@
           <div class="col align-items-center border p-2 rounded-lg">
             <button 
               type="button" 
-              phx-click={JS.toggle(to: "#transaction-filters")}
+              phx-click={JS.toggle(to: ".transaction-filters")}
             >
               Accounts
             </button>
-            <div id="transaction-filters" class="hidden flex flex-col">
+            <div class="transaction-filters hidden flex flex-col">
               <div class="flex items-start mt-2">
                 <.link_button small class="w-full text-center" patch={~p"/accounts/new"}>New</.link_button>
               </div>
@@ -74,11 +73,11 @@
           <div class="col align-items-center border p-2 rounded-lg ml-2">
             <button 
               type="button" 
-              phx-click={JS.toggle(to: "#transaction-filters")}
+              phx-click={JS.toggle(to: ".transaction-filters")}
             >
               Categories
             </button>
-            <div id="transaction-filters" class="hidden flex flex-col">
+            <div class="transaction-filters hidden flex flex-col">
               <div class="flex items-start mt-2">
                 <.link_button small class="w-full text-center" patch={~p"/categories/new"}>New</.link_button>
               </div>
@@ -187,27 +186,27 @@
 
         <div class="flex flex-col space-y-2 mt-2">
           <div id="previous-balance" class="flex bg-slate-100 px-4 py-2 rounded-lg">
-            <div class="col-1 px-1">
+            <div class="w-[100px] px-1">
               <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
             </div>
             <div class="flex-1 px-1">
               Previous balance
             </div>
-            <div class="col-4 px-1">
+            <div class="w-[10%] px-1">
             </div>
-            <div class={"col-1 text-right px-1"}>
+            <div class={"w-[10%] text-right px-1"}>
               <.currency value={Enum.at(@balances, 0)} />
             </div>
-            <div class="col-1 px-1">
+            <div class="w-[5%] px-1">
             </div>
           </div>
 
           <div 
             :for={transaction <- @transactions} 
             id={"transaction-#{transaction.id}"} 
-            class="list-group-item item-draggable flex bg-slate-100 px-4 py-2 rounded-lg"
+            class="list-group-item item-draggable flex bg-slate-100 px-4 py-2 rounded-lg items-center"
           >
-            <div class="col-1 px-1">
+            <div class="px-1 w-[100px]">
               <%= format_date(transaction.date) %>
             </div>
             <div class="flex-1 px-1 flex">
@@ -225,24 +224,27 @@
                 <% end %>
               </div>
             </div>
-            <div class="col-2 px-1 text-center">
+            <div class="w-[10%] px-1 text-center">
               <% originator = Transactions.originator(transaction) %>
 
               <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular, do: transaction.originator_regular.category.name %>
 
               <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
-                Icone Transfer
+                <.icon name="hero-arrows-up-down" />
               <% end %>
             </div>
-            <div class="col-2 px-1 text-center">
+            <div class="w-[10%] px-1 text-center">
               <%= transaction.account.name %>
             </div>
-            <div class={"col-2 text-right px-1"}>
+            <div class={"w-[10%] text-right px-1"}>
               <.currency value={transaction.value} />
             </div>
-            <div class="col-1 px-1">
+            <div class="w-[5%] px-1">
               <.tooltiped tooltip="Delete">
-                <%= live_patch to: ~p"/transactions/#{transaction}/delete", data_testid: "delete-#{transaction.id}", class: "flex" do %>
+                <%= live_patch to: ~p"/transactions/#{transaction}/delete", 
+                  data_testid: "delete-#{transaction.id}", 
+                  class: "flex" do 
+                %>
                   <.icon name="hero-trash" />
                 <% end %>
               </.tooltiped>
@@ -252,25 +254,27 @@
             </div>
           </div>
 
-          <div :if={Enum.empty?(@transactions)} is_hover_gray id={"empty-transactions"} class="flex flex-justify-center">
-            <div>
-              No transactions in this period.
-            </div>
+          <div 
+            :if={Enum.empty?(@transactions)} 
+            id={"empty-transactions"} 
+            class=" text-center bg-slate-100 px-4 py-2 rounded-lg"
+          >
+            No transactions in this period.
           </div>
 
           <div id="next-balance" class="flex bg-slate-100 px-4 py-2 rounded-lg">
-            <div class="col-1 px-1">
+            <div class="w-[100px] px-1">
               <%= format_date(Enum.at(@dates, 1)) %>
             </div>
             <div class="flex-1 px-1">
               Next balance
             </div>
-            <div class="col-4 px-1">
+            <div class="w-[10%] px-1">
             </div>
-            <div class={"col-1 text-right px-1"}>
+            <div class={"w-[10%] text-right px-1"}>
               <.currency value={Enum.at(@balances, 1)} />
             </div>
-            <div class="col-1 px-1">
+            <div class="w-[5%] px-1">
             </div>
           </div>
         </div>

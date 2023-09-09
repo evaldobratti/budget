@@ -1,11 +1,13 @@
-<.menu active_tab={@active_tab} />
-<div class="container-xl">
-  Available imports:
-  <ul>
-    <li>
-      <.link href={~p"/imports/credit_card/nu_bank"}>
-        Credit card Nu Bank
-      </.link>
-    </li>
-  </ul>
+<div class="flex h-full">
+  <.menu active_tab={@active_tab} />
+  <div class="flex flex-grow flex-col p-4">
+    Available imports:
+    <ul>
+      <li>
+        <.link_button href={~p"/imports/credit_card/nu_bank"}>
+          Credit card Nu Bank
+        </.link_button>
+      </li>
+    </ul>
+  </div>
 </div>

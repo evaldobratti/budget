@@ -42,6 +42,7 @@ defmodule BudgetWeb.CoreComponents do
 
   """
   attr :id, :string, required: true
+  attr :title, :string, default: ""
   attr :show, :boolean, default: false
   attr :on_cancel, JS, default: %JS{}
   slot :inner_block, required: true
@@ -71,9 +72,10 @@ defmodule BudgetWeb.CoreComponents do
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
               phx-key="escape"
               phx-click-away={JS.exec("data-cancel", to: "##{@id}")}
-              class="shadow-zinc-700/10 ring-zinc-700/10 relative hidden rounded-2xl bg-white p-14 shadow-lg ring-1 transition"
+              class="shadow-zinc-700/10 ring-zinc-700/10 hidden rounded-2xl bg-white p-4 shadow-lg ring-1 transition"
             >
-              <div class="absolute top-6 right-5">
+              <div class="flex justify-between">
+                <.header><%= @title %></.header>
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
@@ -189,9 +191,9 @@ defmodule BudgetWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="mt-10 space-y-8 bg-white">
+      <div class="space-y-2 bg-white">
         <%= render_slot(@inner_block, f) %>
-        <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+        <div :for={action <- @actions} class="mt-2 flex justify-end gap-6">
           <%= render_slot(action, f) %>
         </div>
       </div>
@@ -706,8 +708,8 @@ defmodule BudgetWeb.CoreComponents do
         assigns,
         :color,
         case Decimal.compare(value, 0) do
-          :gt -> "color-fg-success"
-          :lt -> "color-fg-danger"
+          :gt -> "text-green-600"
+          :lt -> "text-red-600"
           :eq -> ""
         end
       )
