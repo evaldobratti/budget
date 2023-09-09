@@ -1,7 +1,4 @@
 <div>
-  <.header>
-    <%= @title %>
-  </.header>
   <.simple_form
     for={@form}
     id="account-form"
@@ -9,10 +6,8 @@
     phx-change="validate"
     phx-submit="save"
     >
-
     <.input field={@form[:name]} autocomplete="off" label="Name" />
     <.input field={@form[:initial_balance]} autocomplete="off" type="number" label="Initial Balance" />
-  
   
     <:actions>
       <.button phx-disable-with="Saving...">Save</.button>
