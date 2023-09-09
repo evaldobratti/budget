@@ -184,7 +184,7 @@
           </.modal>
         <% end %>
 
-        <div class="flex flex-col space-y-2 mt-2">
+        <div class="flex flex-col space-y-2 mt-4">
           <div id="previous-balance" class="flex bg-slate-100 px-4 py-2 rounded-lg">
             <div class="w-[100px] px-1">
               <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
