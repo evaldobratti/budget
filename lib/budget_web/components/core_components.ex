@@ -721,20 +721,22 @@ defmodule BudgetWeb.CoreComponents do
     """
   end
 
+  attr :id, :string
   attr :tooltip, :string
   attr :rest, :global
   slot :inner_block
 
   def tooltiped(assigns) do
-    # <span class="tooltip"
-    #   phx-mounted={JS.dispatch("budget:tooltip-setup")}
-    #   phx-remove={JS.dispatch("budget:tooltip-cleanup")}
-    #   {@rest}
-    # >
-    #   <%= @tooltip %>
-    #   <div class="arrow"></div>
-    # </span>
     ~H"""
+      <span 
+        id={@id}
+        phx-hook="Tooltip"
+        class="tooltip"
+        {@rest}
+      >
+        <%= @tooltip %>
+        <div class="arrow"></div>
+      </span>
       <%= render_slot(@inner_block) %>
     """
   end

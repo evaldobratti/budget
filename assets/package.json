@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@floating-ui/dom": "^1.5.1",
+    "alpinejs": "^3.13.0",
+    "sortablejs": "^1.15.0"
+  }
+}

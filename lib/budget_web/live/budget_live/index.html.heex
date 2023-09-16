@@ -1,6 +1,6 @@
 <div class="flex h-full">
   <.menu active_tab={@active_tab} />
-  <div class="flex flex-grow flex-col p-4">
+  <div class="flex flex-grow flex-col p-4 overflow-auto">
     <%= if @live_action in [:new_account, :edit_account] do %>
       <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show title={@account.id && "Edit account" || "New Account"}>
         <.live_component
@@ -184,8 +184,8 @@
           </.modal>
         <% end %>
 
-        <div class="flex flex-col space-y-2 mt-4">
-          <div id="previous-balance" class="flex bg-slate-100 px-4 py-2 rounded-lg">
+        <div id="transactions" class="flex flex-col space-y-1.5 mt-4" phx-hook="Sortable">
+          <div id="previous-balance" class="flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200">
             <div class="w-[100px] px-1">
               <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
             </div>
@@ -204,8 +204,9 @@
           <div 
             :for={transaction <- @transactions} 
             id={"transaction-#{transaction.id}"} 
-            class="list-group-item item-draggable flex bg-slate-100 px-4 py-2 rounded-lg items-center"
+            class="group list-group-item item-draggable flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
           >
+
             <div class="px-1 w-[100px]">
               <%= format_date(transaction.date) %>
             </div>
@@ -218,8 +219,8 @@
                   </span>
                 <% end %>
                 <%= if transaction.recurrency_transaction do %>
-                  <.tooltiped tooltip="Recurrency">
-                    <.icon name="hero-repeat" />
+                  <.tooltiped id={"tooltip-recurrency-#{transaction.id}"} tooltip={"Recurrency"}>
+                    <.icon name="hero-arrow-path" />
                   </.tooltiped>
                 <% end %>
               </div>
@@ -239,30 +240,30 @@
             <div class={"w-[10%] text-right px-1"}>
               <.currency value={transaction.value} />
             </div>
-            <div class="w-[5%] px-1">
-              <.tooltiped tooltip="Delete">
-                <%= live_patch to: ~p"/transactions/#{transaction}/delete", 
-                  data_testid: "delete-#{transaction.id}", 
-                  class: "flex" do 
-                %>
+            <div class="w-[5%] px-1 flex gap-x-1">
+              <%= live_patch to: ~p"/transactions/#{transaction}/delete", 
+                data_testid: "delete-#{transaction.id}", 
+                class: "flex" do 
+              %>
+                <.tooltiped id={"tooltip-delete-#{transaction.id}"} tooltip="Delete">
                   <.icon name="hero-trash" />
-                <% end %>
-              </.tooltiped>
-              <span class="btn-octicon sortable-handle">
-                <.icon name="hero-fa-up-down" />
-              </span>
+                </.tooltiped>
+              <% end %>
+              <div class="flex">
+                <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer" />
+              </div>
             </div>
           </div>
 
           <div 
             :if={Enum.empty?(@transactions)} 
             id={"empty-transactions"} 
-            class=" text-center bg-slate-100 px-4 py-2 rounded-lg"
+            class=" text-center bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
           >
             No transactions in this period.
           </div>
 
-          <div id="next-balance" class="flex bg-slate-100 px-4 py-2 rounded-lg">
+          <div id="next-balance" class="flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200">
             <div class="w-[100px] px-1">
               <%= format_date(Enum.at(@dates, 1)) %>
             </div>
