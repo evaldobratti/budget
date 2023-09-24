@@ -1501,7 +1501,7 @@ defmodule Budget.TransactionsTest do
                %{name: "root"} = root,
                %{name: "parent"} = parent,
                %{name: "child"} = child
-             ] = root |> Category.subtree() |> Budget.Repo.all()
+             ] = root |> Category.subtree() |> Budget.Repo.all() |> Enum.map(&Map.put(&1, :transactions_count, 0))
 
       assert [
                {^root,

@@ -1,44 +1,6 @@
 <div class="flex h-full">
   <.menu active_tab={@active_tab} />
   <div class="flex flex-grow flex-col p-4 overflow-auto">
-    <%= if @live_action in [:new_account, :edit_account] do %>
-      <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show title={@account.id && "Edit account" || "New Account"}>
-        <.live_component
-          module={BudgetWeb.AccountLive.FormComponent}
-          id={@account.id || :new}
-          action={@live_action}
-          account={@account}
-          patch={~p"/?#{[from: "account"]}"}
-        />
-      </.modal>
-    <% end %>
-
-    <%= if @live_action in [:new_category, :edit_category] do %>
-      <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
-          <.live_component
-            module={BudgetWeb.CategoryLive.FormComponent}
-            title={@category.id && "Edit category" || "New Category"}
-            id={@category.id || :new}
-            action={@live_action}
-            category={@category}
-            patch={~p"/?#{[from: "category"]}"}
-          />
-      </.modal>
-    <% end %>
-
-    <%= if @live_action == :new_category_child do %>
-      <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
-          <.live_component
-            module={BudgetWeb.CategoryLive.FormComponent}
-            id={@category.id || :new}
-            title={@category.id && "Edit category" || "New Category"}
-            action={:new_category}
-            category={%Transactions.Category{}}
-            parent={@category}
-            patch={~p"/?#{[from: "category"]}"}
-          />
-      </.modal>
-    <% end %>
 
     <div class="flex flex-col">
       <div class="border-bottom color-border-muted pb-4">
@@ -281,4 +243,44 @@
         </div>
     </div>
   </div>
+
+  <%= if @live_action in [:new_account, :edit_account] do %>
+    <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show title={@account.id && "Edit account" || "New Account"}>
+      <.live_component
+        module={BudgetWeb.AccountLive.FormComponent}
+        id={@account.id || :new}
+        action={@live_action}
+        account={@account}
+        patch={~p"/?#{[from: "account"]}"}
+      />
+    </.modal>
+  <% end %>
+
+  <%= if @live_action in [:new_category, :edit_category] do %>
+    <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
+        <.live_component
+          module={BudgetWeb.CategoryLive.FormComponent}
+          title={@category.id && "Edit category" || "New Category"}
+          id={@category.id || :new}
+          action={@live_action}
+          category={@category}
+          patch={~p"/?#{[from: "category"]}"}
+        />
+    </.modal>
+  <% end %>
+
+  <%= if @live_action == :new_category_child do %>
+    <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
+        <.live_component
+          module={BudgetWeb.CategoryLive.FormComponent}
+          id={@category.id || :new}
+          title={@category.id && "Edit category" || "New Category"}
+          action={:new_category}
+          category={%Transactions.Category{}}
+          parent={@category}
+          patch={~p"/?#{[from: "category"]}"}
+        />
+    </.modal>
+  <% end %>
 </div>
+

@@ -232,16 +232,27 @@ defmodule BudgetWeb.CoreComponents do
   end
 
   attr :class, :string, default: nil
+  attr :color, :string, default: "primary"
   attr :small, :boolean, default: false
   attr :rest, :global, include: ~w(disabled form name value patch navigate href)
   slot :inner_block, required: true
 
   def link_button(assigns) do
+    assigns = Map.put(
+      assigns, 
+      :class_color, 
+      case Map.get(assigns, :color) do
+        "primary" -> "bg-zinc-900 hover:bg-zinc-700"
+        "danger" -> "bg-rose-700 hover:bg-rose-500"
+      end
+    )
+
     ~H"""
       <.link
         class={[
-          "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700",
+          "phx-submit-loading:opacity-75 rounded-lg ",
           "text-sm font-semibold text-white active:text-white/80",
+          @class_color,
           @class,
           (if @small, do: "p-1 text-xs", else: "leading-6 py-2 px-3")
         ]}
