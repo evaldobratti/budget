@@ -193,7 +193,9 @@
               <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular, do: transaction.originator_regular.category.name %>
 
               <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
-                <.icon name="hero-arrows-up-down" />
+                <.tooltiped id={"transfer-icon-#{transaction.id}"} tooltip="Transfer">
+                  <.icon name="hero-arrows-up-down" />
+                </.tooltiped>
               <% end %>
             </div>
             <div class="w-[10%] px-1 text-center">
