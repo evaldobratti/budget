@@ -1,4 +1,5 @@
 defmodule Budget.Transactions do
+  alias Budget.Transactions.Originator
   alias Budget.Repo
 
   import Ecto.Query
@@ -410,7 +411,12 @@ defmodule Budget.Transactions do
   end
 
   def list_categories() do
-    Category
+    from(
+      c in Category,
+      left_join: r in Originator.Regular, on: r.category_id == c.id,
+      group_by: [c.id, c.name, c.path, c.inserted_at, c.updated_at],
+      select_merge: %{transactions_count: count(r.id)}
+    )
     |> Repo.all()
   end
 

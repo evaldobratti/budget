@@ -8,6 +8,8 @@ defmodule Budget.Transactions.Category do
     field :name, :string
     field :path, EctoMaterializedPath.Path, default: []
 
+    field :transactions_count, :integer, virtual: true
+
     timestamps()
   end
 

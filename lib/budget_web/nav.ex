@@ -21,6 +21,9 @@ defmodule BudgetWeb.Nav do
         {BudgetWeb.ImportLive.Result, _} ->
           :import
 
+        {BudgetWeb.ChartLive.Index, _} ->
+          :charts
+
         {_, _} ->
           nil
       end

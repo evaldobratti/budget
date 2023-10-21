@@ -7,3 +7,26 @@
 html, body, body > div {
   height: 100%
 }
+
+.tooltip {
+  width: max-content;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #222;
+  color: white;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 4px;
+  font-size: 90%;
+  display: none;
+}
+
+.arrow {
+  position: absolute;
+  background: #222;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+}
+
