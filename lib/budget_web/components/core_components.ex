@@ -765,13 +765,20 @@ defmodule BudgetWeb.CoreComponents do
   def menu(assigns \\ %{}) do
     ~H"""
     <header class="mb-4 w-1/5 h-full bg-slate-100">
-      <div class="flex flex-col border-b border-zinc-100 py-3 text-sm  p-4">
+      <div class="flex flex-col border-b border-zinc-100 py-3 text-sm p-4 h-full">
         <div class="flex p-4">
           <.icon name="hero-currency-dollar" /> Budget
         </div>
         <.menu_link label="Transactions" active={@active_tab == :transactions} to={~p"/"} />
         <.menu_link label="Import" active={@active_tab == :import} to={~p"/imports"} />
         <.menu_link label="Charts" active={@active_tab == :charts} to={~p"/charts"} />
+
+        <div class="flex p-4 mt-auto">
+          <div>
+            <.icon name="hero-user" /> <%= @user.name %>
+          </div>
+          <a href={~p"/logout"} class="ml-auto">Logout</a>
+        </div>
       </div>
     </header>
     """

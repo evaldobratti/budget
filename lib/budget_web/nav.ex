@@ -3,10 +3,13 @@ defmodule BudgetWeb.Nav do
 
   def render(_assigns), do: nil
 
-  def on_mount(:default, _params, _session, socket) do
-    {:cont,
-     socket
-     |> attach_hook(:active_tab, :handle_params, &set_active_tab/3)}
+  def on_mount(:default, _params, %{"profile" => profile}, socket) do
+    {
+      :cont,
+      socket
+      |> attach_hook(:active_tab, :handle_params, &set_active_tab/3)
+      |> assign(user: profile)
+    }
   end
 
   defp set_active_tab(_params, _url, socket) do

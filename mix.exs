@@ -52,7 +52,8 @@ defmodule Budget.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:ecto_materialized_trail, "~> 0.3.0"},
       {:timex, "~> 3.7.9"},
-      {:number, "~> 1.0.3"}
+      {:number, "~> 1.0.3"},
+      {:elixir_auth_google, "~> 1.6.9"}
     ]
   end
 
