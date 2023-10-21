@@ -21,20 +21,22 @@ defmodule Budget.Repo.Migrations.DevSeed do
       {:ok, c_lazer} = Transactions.create_category(%{name: "Lazer"})
       {:ok, c_receita} = Transactions.create_category(%{name: "Receitas"})
       {:ok, c_saude} = Transactions.create_category(%{name: "Saúde"})
-      {:ok, c_farmacia} = Transactions.create_category(%{name: "Farmácia", parent: c_saude})
-      {:ok, c_consultas} = Transactions.create_category(%{name: "Consultas", parent: c_saude})
+      {:ok, c_farmacia} = Transactions.create_category(%{name: "Farmácia"}, c_saude)
+      {:ok, c_consultas} = Transactions.create_category(%{name: "Consultas"}, c_saude)
       {:ok, c_moradia} = Transactions.create_category(%{name: "Moradia"})
       {:ok, c_transporte} = Transactions.create_category(%{name: "Transporte"})
       {:ok, c_impostos} = Transactions.create_category(%{name: "Impostos"})
       {:ok, c_vestuario} = Transactions.create_category(%{name: "Vestuário"})
       {:ok, c_presentes} = Transactions.create_category(%{name: "Presentes"})
       {:ok, c_viagem} = Transactions.create_category(%{name: "Viagem"})
+      {:ok, c_mensalidades} = Transactions.create_category(%{name: "Mensalidades"})
+      {:ok, c_educacao} = Transactions.create_category(%{name: "Educação"})
 
       month_first = Timex.beginning_of_month(Timex.today())
       month_fifth = Timex.shift(month_first, days: 5)
 
       [
-        %{date: month_fifth, originator: "regular", regular: %{description: "Salário", category_id: c_impostos.id}, account_id: acc_bb.id, value: 3000, recurrency: %{is_forever: true, frequency: :monthly}},
+        %{date: month_fifth, originator: "regular", regular: %{description: "Salário", category_id: c_receita.id}, account_id: acc_bb.id, value: 3000, recurrency: %{is_forever: true, frequency: :monthly}},
 
         %{date: month_fifth, originator: "regular", regular: %{description: "Aluguel", category_id: c_moradia.id}, account_id: acc_bb.id, value: -600, recurrency: %{is_forever: true, frequency: :monthly}},
         %{date: month_fifth, originator: "regular", regular: %{description: "Eletricidade", category_id: c_moradia.id}, account_id: acc_bb.id, value: -150, recurrency: %{is_forever: true, frequency: :monthly}},

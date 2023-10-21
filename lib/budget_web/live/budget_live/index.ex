@@ -259,8 +259,9 @@ defmodule BudgetWeb.BudgetLive.Index do
             </.tooltiped>
           <% end %>
         </div>
+
       </div>
-      <div class="pl-1 ml-1" style="border-left: solid 1px">
+      <div :if={length(children) > 0} class="pl-1 ml-3">
         <%= render_categories(children, @socket) %>
       </div>
     <% end %>

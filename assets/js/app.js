@@ -24,10 +24,12 @@ import topbar from "../vendor/topbar"
 import Alpine from 'alpinejs'
 import Tooltip from "./tooltip"
 import Sortable from "./sortable"
+import ChartCategories from "./chart-categories.js"
 
 const hooks = {
   Tooltip,
-  Sortable
+  Sortable,
+  ChartCategories
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

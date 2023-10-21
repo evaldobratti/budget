@@ -50,6 +50,7 @@ defmodule Budget.Hinter do
     end
   end
 
+  # TODO put this to work
   def process_descriptions(descriptions) do
     descriptions
     |> Enum.map(fn {original, transformed} ->

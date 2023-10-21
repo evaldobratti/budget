@@ -771,6 +771,7 @@ defmodule BudgetWeb.CoreComponents do
         </div>
         <.menu_link label="Transactions" active={@active_tab == :transactions} to={~p"/"} />
         <.menu_link label="Import" active={@active_tab == :import} to={~p"/imports"} />
+        <.menu_link label="Charts" active={@active_tab == :charts} to={~p"/charts"} />
       </div>
     </header>
     """
