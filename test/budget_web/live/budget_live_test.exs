@@ -469,7 +469,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     {:ok, live, _html} = live(conn, ~p"/")
 
     live
-    |> element("[data-testid=delete-#{transaction.id}]")
+    |> element("[data_testid=delete-#{transaction.id}]")
     |> render_click()
 
     assert live
@@ -477,6 +477,7 @@ defmodule BudgetWeb.BudgetLiveTest do
            |> render_click() =~ "Transaction successfully deleted!"
   end
 
+  @tag a: true
   test "delete recurrent transaction and the next transient one", %{conn: conn} do
     recurrency = recurrency_fixture()
 
@@ -488,7 +489,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     html =
       live
-      |> element("[data-testid=delete-#{transaction.id}]")
+      |> element("[data_testid=delete-#{transaction.id}]")
       |> render_click()
 
     assert html =~ "Delete just this transaction"
@@ -517,7 +518,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     html =
       live
-      |> element("[data-testid^=delete-]")
+      |> element("[data_testid^=delete-]")
       |> render_click()
 
     assert html =~ "Delete just this transaction"
@@ -578,7 +579,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     html =
       live
-      |> element("[data-testid^=delete-]")
+      |> element("[data_testid^=delete-]")
       |> render_click()
 
     assert html =~ "Delete just this transaction"
