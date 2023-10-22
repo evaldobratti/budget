@@ -1,10 +1,14 @@
 defmodule Budget.Repo.Migrations.DevSeed do
+  alias Budget.Users
   alias Budget.Transactions
 
   use Ecto.Migration
 
   def up do
     if Application.get_env(:budget, :environment, %{}) |> Map.get(:name) == :dev do
+      {:ok, user} = Users.create_user(%{email: "mocked@provider.com", google_id: "-1", name: "Dev User"})
+
+      Budget.Repo.put_user_id(user.id)
 
       {:ok, acc_bb} = Transactions.create_account(%{
         initial_balance: -100,

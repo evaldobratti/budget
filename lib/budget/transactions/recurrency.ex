@@ -13,6 +13,7 @@ defmodule Budget.Transactions.Recurrency do
     field :parcel_end, :integer
     field :parcel_start, :integer
     field :transaction_payload, :map
+    field :user_id, :integer
 
     has_many :recurrency_transactions, RecurrencyTransaction
 
@@ -105,6 +106,7 @@ defmodule Budget.Transactions.Recurrency do
             recurrency: recurrency
           }
         end
+        |> Budget.Repo.add_user_id()
 
       params = payload_at_date(payloads, date)
 

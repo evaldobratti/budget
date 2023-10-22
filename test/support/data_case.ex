@@ -13,6 +13,7 @@ defmodule Budget.DataCase do
   by setting `use Budget.DataCase, async: true`, although
   this option is not recommended for other databases.
   """
+  alias Budget.Users
 
   use ExUnit.CaseTemplate
 
@@ -39,6 +40,11 @@ defmodule Budget.DataCase do
   """
   def setup_sandbox(tags) do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Budget.Repo, shared: not tags[:async])
+
+    {:ok, user} = Users.create_user(%{email: "mocked@provider.com", google_id: "-1", name: "Dev User"})
+
+    Budget.Repo.put_user_id(user.id)
+
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
 
