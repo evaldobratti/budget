@@ -173,7 +173,9 @@
               <%= format_date(transaction.date) %>
             </div>
             <div class="flex-1 px-1 flex">
-              <%= live_patch description(transaction), to: ~p"/transactions/#{transaction}/edit" %>
+              <.link patch={~p"/transactions/#{transaction}/edit"}>
+                <%= description(transaction) %>
+              </.link>
               <div class="ml-auto">
                 <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
                   <span>
@@ -205,14 +207,13 @@
               <.currency value={transaction.value} />
             </div>
             <div class="w-[5%] px-1 flex gap-x-1">
-              <%= live_patch to: ~p"/transactions/#{transaction}/delete", 
-                data_testid: "delete-#{transaction.id}", 
-                class: "flex" do 
-              %>
+              <.link patch={~p"/transactions/#{transaction}/delete"} 
+                data-testid={"delete-#{transaction.id}"}
+                class="flex">
                 <.tooltiped id={"tooltip-delete-#{transaction.id}"} tooltip="Delete">
                   <.icon name="hero-trash" />
                 </.tooltiped>
-              <% end %>
+              </.link>
               <div class="flex">
                 <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer" />
               </div>

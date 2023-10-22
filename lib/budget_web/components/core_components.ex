@@ -758,7 +758,9 @@ defmodule BudgetWeb.CoreComponents do
 
   def menu_link(assigns) do
     ~H"""
-    <%= live_redirect @label, to: @to, class: ["px-4 py-2 rounded-lg", (if @active, do: "bg-green-300")] %>
+    <.link navigate={@to} class={["px-4 py-2 rounded-lg", (if @active, do: "bg-green-300")]}>
+      <%= @label %>
+    </.link>
     """
   end
 

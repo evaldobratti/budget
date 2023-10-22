@@ -469,7 +469,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     {:ok, live, _html} = live(conn, ~p"/")
 
     live
-    |> element("[data_testid=delete-#{transaction.id}]")
+    |> element("[data-testid=delete-#{transaction.id}]")
     |> render_click()
 
     assert live
@@ -489,7 +489,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     html =
       live
-      |> element("[data_testid=delete-#{transaction.id}]")
+      |> element("[data-testid=delete-#{transaction.id}]")
       |> render_click()
 
     assert html =~ "Delete just this transaction"
@@ -518,7 +518,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     html =
       live
-      |> element("[data_testid^=delete-]")
+      |> element("[data-testid^=delete-]")
       |> render_click()
 
     assert html =~ "Delete just this transaction"
@@ -579,7 +579,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     html =
       live
-      |> element("[data_testid^=delete-]")
+      |> element("[data-testid^=delete-]")
       |> render_click()
 
     assert html =~ "Delete just this transaction"
