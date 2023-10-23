@@ -426,6 +426,7 @@ defmodule Budget.Transactions do
   end
 
   def get_category!(id), do: Repo.get!(Category, id)
+  def get_category_by_name!(name), do: from(c in Category, where: c.name == ^name) |> Repo.one!()
 
   def update_order(old_index, new_index, transactions) do
     transaction_to_update = Enum.at(transactions, old_index)

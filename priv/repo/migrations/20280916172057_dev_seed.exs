@@ -20,21 +20,21 @@ defmodule Budget.Repo.Migrations.DevSeed do
         name: "CC NuBank"
       })
 
-      {:ok, c_alimentacao} = Transactions.create_category(%{name: "Alimentação"})
-      {:ok, c_mercado} = Transactions.create_category(%{name: "Mercado"})
-      {:ok, c_lazer} = Transactions.create_category(%{name: "Lazer"})
-      {:ok, c_receita} = Transactions.create_category(%{name: "Receitas"})
-      {:ok, c_saude} = Transactions.create_category(%{name: "Saúde"})
-      {:ok, c_farmacia} = Transactions.create_category(%{name: "Farmácia"}, c_saude)
-      {:ok, c_consultas} = Transactions.create_category(%{name: "Consultas"}, c_saude)
-      {:ok, c_moradia} = Transactions.create_category(%{name: "Moradia"})
-      {:ok, c_transporte} = Transactions.create_category(%{name: "Transporte"})
-      {:ok, c_impostos} = Transactions.create_category(%{name: "Impostos"})
-      {:ok, c_vestuario} = Transactions.create_category(%{name: "Vestuário"})
-      {:ok, c_presentes} = Transactions.create_category(%{name: "Presentes"})
-      {:ok, c_viagem} = Transactions.create_category(%{name: "Viagem"})
-      {:ok, c_mensalidades} = Transactions.create_category(%{name: "Mensalidades"})
-      {:ok, c_educacao} = Transactions.create_category(%{name: "Educação"})
+      c_alimentacao = Transactions.get_category_by_name!("Alimentação")
+      c_mercado = Transactions.get_category_by_name!("Mercado")
+      c_lazer = Transactions.get_category_by_name!("Lazer")
+      c_receita = Transactions.get_category_by_name!("Receitas")
+      c_saude = Transactions.get_category_by_name!("Saúde")
+      c_farmacia = Transactions.get_category_by_name!("Farmácia")
+      c_consultas = Transactions.get_category_by_name!("Consultas")
+      c_moradia = Transactions.get_category_by_name!("Moradia")
+      c_transporte = Transactions.get_category_by_name!("Transporte")
+      c_impostos = Transactions.get_category_by_name!("Impostos")
+      c_vestuario = Transactions.get_category_by_name!("Vestuário")
+      c_presentes = Transactions.get_category_by_name!("Presentes")
+      c_viagem = Transactions.get_category_by_name!("Viagem")
+      c_mensalidades = Transactions.get_category_by_name!("Mensalidades")
+      c_educacao = Transactions.get_category_by_name!("Educação")
 
       month_first = Timex.beginning_of_month(Timex.today())
       month_fifth = Timex.shift(month_first, days: 5)
@@ -70,6 +70,8 @@ defmodule Budget.Repo.Migrations.DevSeed do
       |> Enum.map(fn attrs -> 
         {:ok, _ } = Transactions.Transaction.Form.apply_insert(attrs)
       end)
+
+      Budget.Repo.put_user_id(nil)
     end
   end
 

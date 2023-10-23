@@ -22,7 +22,7 @@ defmodule BudgetWeb.GoogleAuthController do
       true ->
         conn
         |> render(:login, [
-          google_oauth_url: ElixirAuthGoogle.generate_oauth_url(conn)
+          google_oauth_url: ElixirAuthGoogle.generate_oauth_url(BudgetWeb.Endpoint.url())
         ])
     end
   end
