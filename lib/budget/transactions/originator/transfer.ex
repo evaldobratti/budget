@@ -11,7 +11,7 @@ defmodule Budget.Transactions.Originator.Transfer do
 
     field(:other_account_id, :integer, virtual: true)
 
-    field :user_id, :integer
+    field :profile_id, :integer
 
     timestamps()
   end
@@ -38,13 +38,13 @@ defmodule Budget.Transactions.Originator.Transfer do
           is_carried_out: false,
           position: 1
         }
-        |> Budget.Repo.add_user_id()
+        |> Budget.Repo.add_profile_id()
       },
       account_id: account.id,
       account: account,
       value: Decimal.new(Map.get(payload, "value"))
     }
-    |> Budget.Repo.add_user_id()
+    |> Budget.Repo.add_profile_id()
   end
 
   def get_recurrency_payload(transaction) do
@@ -81,9 +81,9 @@ defmodule Budget.Transactions.Originator.Transfer do
           position: Decimal.new(1),
           recurrency_transaction: recurrency_params.recurrency_transaction
         }
-        |> Budget.Repo.add_user_id()
+        |> Budget.Repo.add_profile_id()
       }
-      |> Budget.Repo.add_user_id(),
+      |> Budget.Repo.add_profile_id(),
       date: recurrency_params.date,
       account_id: params.account_id,
       account: params.account,
@@ -92,7 +92,7 @@ defmodule Budget.Transactions.Originator.Transfer do
       recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.value,
     }
-    |> Budget.Repo.add_user_id()
+    |> Budget.Repo.add_profile_id()
 
     counter_params = %{
       originator_transfer_counter_part: %__MODULE__{
@@ -105,9 +105,9 @@ defmodule Budget.Transactions.Originator.Transfer do
           recurrency_transaction: recurrency_params.recurrency_transaction,
           position: Decimal.new(1)
         }
-        |> Budget.Repo.add_user_id()
+        |> Budget.Repo.add_profile_id()
       }
-      |> Budget.Repo.add_user_id(),
+      |> Budget.Repo.add_profile_id(),
       date: recurrency_params.date,
       account_id: params.originator_transfer_part.counter_part.account_id,
       account: params.originator_transfer_part.counter_part.account,
@@ -116,7 +116,7 @@ defmodule Budget.Transactions.Originator.Transfer do
       recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.originator_transfer_part.counter_part.value,
     }
-    |> Budget.Repo.add_user_id()
+    |> Budget.Repo.add_profile_id()
 
     [
       %Budget.Transactions.Transaction{}

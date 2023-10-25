@@ -1,9 +1,9 @@
-defmodule Budget.Repo.Migrations.AddsUserIdEverywhere do
+defmodule Budget.Repo.Migrations.AddsProfileIdEverywhere do
   use Ecto.Migration
 
   def change do
     tables = [
-      :transactions, 
+      :transactions,
       :categories,
       :originators_regular,
       :originators_transfer,
@@ -16,10 +16,10 @@ defmodule Budget.Repo.Migrations.AddsUserIdEverywhere do
 
     for table_name <- tables do
       alter table(table_name) do
-        add :user_id, references(:users, on_delete: :nothing), null: false
+        add :profile_id, references(:profiles, on_delete: :nothing), null: false
       end
 
-      create index(table_name, [:user_id])
+      create index(table_name, [:profile_id])
     end
 
   end

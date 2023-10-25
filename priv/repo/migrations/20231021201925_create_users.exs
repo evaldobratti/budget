@@ -11,5 +11,14 @@ defmodule Budget.Repo.Migrations.CreateUsers do
 
       timestamps()
     end
+
+    create table(:profiles) do
+      add :user_id, references(:users, on_delete: :nothing)
+      add :name, :string
+
+      timestamps()
+    end
+
+    create index(:profiles, [:user_id])
   end
 end

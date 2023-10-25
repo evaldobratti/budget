@@ -5,12 +5,12 @@ defmodule BudgetWeb.GoogleAuthController do
 
   def login(conn, _params) do
     cond do
-      get_session(conn, :user) -> 
+      get_session(conn, :user) ->
         conn
         |> redirect(to: ~p"/")
 
       :budget
-      |> Application.get_env(:environment, %{}) 
+      |> Application.get_env(:environment, %{})
       |> Map.get(:name) == :dev ->
 
         dev_user = Users.get_user_by_email!("mocked@provider.com")
@@ -29,24 +29,26 @@ defmodule BudgetWeb.GoogleAuthController do
 
   def signin(conn, %{"code" => code}) do
     {:ok, token} = ElixirAuthGoogle.get_token(code, BudgetWeb.Endpoint.url())
-    {:ok, profile} = ElixirAuthGoogle.get_user_profile(token.access_token)
+    {:ok, google_profile} = ElixirAuthGoogle.get_user_profile(token.access_token)
 
-    user = 
-      case Users.fetch_user_by_google_id(profile.sub) do
-        :not_found -> 
-          {:ok, user} = 
-            profile
-            |> Map.put(:google_id, profile.sub)
+    user =
+      case Users.fetch_user_by_google_id(google_profile.sub) do
+        :not_found ->
+          {:ok, user} =
+          google_profile
+            |> Map.put(:google_id, google_profile.sub)
+            |> Map.put(:profiles, [%{name: "Padrão"}])
             |> Users.create_user()
 
           user
-        
+
         {:ok, user} ->
           user
       end
 
     conn
-    |> put_session(:user, Map.merge(profile, user))
+    |> put_session(:user, Map.merge(google_profile, user))
+    |> put_session(:active_profile, Enum.at(user.profiles, 0))
     |> redirect(to: ~p"/")
   end
 

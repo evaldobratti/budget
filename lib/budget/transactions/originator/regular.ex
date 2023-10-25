@@ -10,7 +10,7 @@ defmodule Budget.Transactions.Originator.Regular do
   schema "originators_regular" do
     field :description, :string
     belongs_to :category, Category
-    field :user_id, :integer
+    field :profile_id, :integer
 
     timestamps()
   end
@@ -34,12 +34,12 @@ defmodule Budget.Transactions.Originator.Regular do
         category: category,
         category_id: category.id
       }
-      |> Budget.Repo.add_user_id(),
+      |> Budget.Repo.add_profile_id(),
       value: Decimal.new(Map.get(payload, "value")),
       account_id: account.id,
       account: account,
     }
-    |> Budget.Repo.add_user_id()
+    |> Budget.Repo.add_profile_id()
   end
 
   def get_recurrency_payload(transaction) do

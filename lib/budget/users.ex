@@ -5,14 +5,14 @@ defmodule Budget.Users do
   alias Budget.Transactions
   alias Budget.Users.User
   alias Budget.Repo
-  
+
   def create_user(attrs \\ %{}) do
     %User{}
     |> User.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, user} ->
-        create_welcoming_data(user)
+      {:ok, %{profiles: [profile]} = user} ->
+        create_welcoming_data(profile)
 
         {:ok, user}
 
@@ -22,12 +22,13 @@ defmodule Budget.Users do
   end
 
   def fetch_user_by_google_id(google_id) do
-    user = 
+    user =
       from(
         u in User,
         where: u.google_id == ^google_id
       )
-      |> Repo.one(skip_user_id: true)
+      |> preload(:profiles)
+      |> Repo.one(skip_profile_id: true)
 
     case user do
       nil -> :not_found
@@ -40,11 +41,12 @@ defmodule Budget.Users do
       u in User,
       where: u.email == ^email
     )
-    |> Repo.one!(skip_user_id: true)
+    |> preload(:profiles)
+    |> Repo.one!(skip_profile_id: true)
   end
 
   def create_welcoming_data(user) do
-    Budget.Repo.put_user_id(user.id)
+    Budget.Repo.put_profile_id(user.id)
 
     {:ok, _} = Transactions.create_category(%{name: "Alimentação"})
     {:ok, _} = Transactions.create_category(%{name: "Mercado"})

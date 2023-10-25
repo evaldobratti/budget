@@ -41,9 +41,9 @@ defmodule Budget.DataCase do
   def setup_sandbox(tags) do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Budget.Repo, shared: not tags[:async])
 
-    {:ok, user} = Users.create_user(%{email: "mocked@provider.com", google_id: "-1", name: "Dev User"})
+    {:ok, %{profiles: [profile]}} = Users.create_user(%{email: "mocked@provider.com", google_id: "-1", name: "Test User", profiles: [%{name: "Padrão"}]})
 
-    Budget.Repo.put_user_id(user.id)
+    Budget.Repo.put_profile_id(profile.id)
 
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end

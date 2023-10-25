@@ -5,7 +5,7 @@ defmodule Budget.Hinter.HintDescription do
   schema "hint_descriptions" do
     field :original, :string
     field :transformed, :string
-    field :user_id, :integer
+    field :profile_id, :integer
 
     timestamps()
   end
@@ -15,6 +15,6 @@ defmodule Budget.Hinter.HintDescription do
     account
     |> cast(attrs, [:original, :transformed])
     |> validate_required([:original, :transformed])
-    |> Budget.Repo.add_user_id()
+    |> Budget.Repo.add_profile_id()
   end
 end

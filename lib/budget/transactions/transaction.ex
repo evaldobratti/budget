@@ -25,7 +25,7 @@ defmodule Budget.Transactions.Transaction do
 
     has_one(:recurrency_transaction, RecurrencyTransaction)
 
-    field :user_id, :integer
+    field :profile_id, :integer
 
     timestamps()
   end

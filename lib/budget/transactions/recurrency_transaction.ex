@@ -9,7 +9,7 @@ defmodule Budget.Transactions.RecurrencyTransaction do
     field :original_date, :date
     field :parcel, :integer
     field :parcel_end, :integer
-    field :user_id, :integer
+    field :profile_id, :integer
 
     belongs_to :recurrency, Recurrency
     belongs_to :transaction, Transaction

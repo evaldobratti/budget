@@ -4,7 +4,7 @@ defmodule Budget.Importations.Worker do
   alias Budget.Importations.CreditCard.NuBank
 
   def process(user, file, importer \\ NuBank) do
-    Budget.Repo.put_user_id(user.id)
+    Budget.Repo.put_profile_id(user.id)
 
     result = importer.import(file)
 

@@ -36,10 +36,14 @@ alias Budget.Users
 
   setup tags do
     Budget.DataCase.setup_sandbox(tags)
+    
+    user = Users.get_user_by_email!("mocked@provider.com")
+
     conn = 
       Phoenix.ConnTest.build_conn()
       |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_session("user", Users.get_user_by_email!("mocked@provider.com"))
+      |> Plug.Conn.put_session("user", user)
+      |> Plug.Conn.put_session("active_profile", Enum.at(user.profiles, 0))
 
     {:ok, conn: conn}
   end

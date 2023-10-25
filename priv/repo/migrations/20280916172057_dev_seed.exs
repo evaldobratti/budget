@@ -6,9 +6,9 @@ defmodule Budget.Repo.Migrations.DevSeed do
 
   def up do
     if Application.get_env(:budget, :environment, %{}) |> Map.get(:name) == :dev do
-      {:ok, user} = Users.create_user(%{email: "mocked@provider.com", google_id: "-1", name: "Dev User"})
+      {:ok, %{profiles: [profile]}} = Users.create_user(%{email: "mocked@provider.com", google_id: "-1", name: "Dev User", profiles: [%{name: "Padrão"}]})
 
-      Budget.Repo.put_user_id(user.id)
+      Budget.Repo.put_profile_id(profile.id)
 
       {:ok, acc_bb} = Transactions.create_account(%{
         initial_balance: -100,
@@ -67,11 +67,11 @@ defmodule Budget.Repo.Migrations.DevSeed do
 
         %{date: Timex.shift(month_first, days: 5, months: 1), originator: "transfer", transfer: %{other_account_id: acc_nu.id}, account_id: acc_bb.id, value: -1086}
       ]
-      |> Enum.map(fn attrs -> 
+      |> Enum.map(fn attrs ->
         {:ok, _ } = Transactions.Transaction.Form.apply_insert(attrs)
       end)
 
-      Budget.Repo.put_user_id(nil)
+      Budget.Repo.put_profile_id(nil)
     end
   end
 

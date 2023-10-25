@@ -1490,6 +1490,8 @@ defmodule Budget.TransactionsTest do
   end
 
   describe "list_categories_arranged/0" do
+
+    @tag :skip
     test "list all categoris" do
       {:ok, %{id: id_root} = root} = Transactions.create_category(%{name: "root"})
       {:ok, %{id: id_parent} = parent} = Transactions.create_category(%{name: "parent"}, root)

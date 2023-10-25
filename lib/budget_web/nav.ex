@@ -3,8 +3,8 @@ defmodule BudgetWeb.Nav do
 
   def render(_assigns), do: nil
 
-  def on_mount(:default, _params, %{"user" => user}, socket) do
-    Budget.Repo.put_user_id(user.id)
+  def on_mount(:default, _params, %{"user" => user, "active_profile" => profile}, socket) do
+    Budget.Repo.put_profile_id(profile.id)
 
     {
       :cont,

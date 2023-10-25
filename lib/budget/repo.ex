@@ -5,44 +5,44 @@ defmodule Budget.Repo do
 
   require Ecto.Query
 
-  @tenant_key {__MODULE__, :user_id}
+  @tenant_key {__MODULE__, :profile_id}
 
   @impl true
   def prepare_query(_operation, query, opts) do
     cond do
-      opts[:skip_user_id] || opts[:schema_migration] ->
+      opts[:skip_profile_id] || opts[:schema_migration] ->
         {query, opts}
 
-      user_id = opts[:user_id] ->
+      profile_id = opts[:profile_id] ->
         {
-          Ecto.Query.where(query, user_id: ^user_id), 
+          Ecto.Query.where(query, profile_id: ^profile_id),
           opts
         }
 
       true ->
-        raise "expected user_id or skip_user_id to be set"
-        
+        raise "expected profile_id or skip_profile_id to be set"
+
     end
   end
 
-  def put_user_id(user_id) do
-    Process.put(@tenant_key, user_id)
+  def put_profile_id(profile_id) do
+    Process.put(@tenant_key, profile_id)
   end
 
-  def get_user_id() do
+  def get_profile_id() do
     Process.get(@tenant_key)
   end
 
   @impl true
   def default_options(_operation) do
-    [user_id: get_user_id()]
+    [profile_id: get_profile_id()]
   end
 
-  def add_user_id(%Ecto.Changeset{} = changeset) do
-    Ecto.Changeset.put_change(changeset, :user_id, get_user_id())
+  def add_profile_id(%Ecto.Changeset{} = changeset) do
+    Ecto.Changeset.put_change(changeset, :profile_id, get_profile_id())
   end
 
-  def add_user_id(map) do
-    Map.put(map, :user_id, get_user_id())
+  def add_profile_id(map) do
+    Map.put(map, :profile_id, get_profile_id())
   end
 end
