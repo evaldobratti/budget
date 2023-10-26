@@ -17,6 +17,8 @@ defmodule BudgetWeb.GoogleAuthController do
 
         conn
         |> put_session(:user, dev_user)
+        |> put_session(:active_profile, Enum.at(dev_user.profiles, 0))
+
         |> redirect(to: ~p"/")
 
       true ->

@@ -64,7 +64,7 @@
       </.inputs_for>
     <% end %>
 
-    <.input field={@form[:value]} type="number" label="Value" autocomplete="off" />
+    <.input field={@form[:value]} type="number" label="Value" autocomplete="off" step="0.01" />
 
     <div class="flex mb-3">
       <.input field={@form[:is_carried_out]} type="checkbox" label="Carried out" />
