@@ -3,7 +3,9 @@ defmodule Budget.Importations.Worker do
   alias Budget.Hinter
   alias Budget.Importations.CreditCard.NuBank
 
-  def process(file, importer \\ NuBank) do
+  def process(user, file, importer \\ NuBank) do
+    Budget.Repo.put_profile_id(user.id)
+
     result = importer.import(file)
 
     hinted_transactions =

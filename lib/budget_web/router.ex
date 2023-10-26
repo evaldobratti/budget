@@ -1,6 +1,8 @@
 defmodule BudgetWeb.Router do
   use BudgetWeb, :router
 
+  import BudgetWeb.GoogleAuthController, only: [check_login: 2]
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -14,12 +16,22 @@ defmodule BudgetWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  pipeline :secure do
+    plug :check_login
+  end
+
   scope "/", BudgetWeb do
     pipe_through(:browser)
+
+    get "/login", GoogleAuthController, :login
+    get "/auth/google/callback", GoogleAuthController, :signin 
+    get "/logout", GoogleAuthController, :logout
 
     live_session :authenticated, on_mount: [
       BudgetWeb.Nav
     ] do
+      pipe_through :secure
+
       live "/", BudgetLive.Index, :index
 
       live "/accounts/new", BudgetLive.Index, :new_account
@@ -38,12 +50,6 @@ defmodule BudgetWeb.Router do
       live "/imports/:id", ImportLive.Result, :index
 
       live "/charts", ChartLive.Index, :index
-
-      live("/users", UserLive.Index, :index)
-      live("/users/new", UserLive.Index, :new)
-      live("/users/:id/edit", UserLive.Index, :edit)
-      live("/users/:id", UserLive.Show, :show)
-      live("/users/:id/show/edit", UserLive.Show, :edit)
     end
 
   end

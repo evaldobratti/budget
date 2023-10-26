@@ -5,6 +5,7 @@ defmodule Budget.Transactions.Account do
   schema "accounts" do
     field :initial_balance, :decimal
     field :name, :string
+    field :profile_id, :integer
 
     timestamps()
   end
@@ -14,5 +15,6 @@ defmodule Budget.Transactions.Account do
     account
     |> cast(attrs, [:name, :initial_balance])
     |> validate_required([:name, :initial_balance])
+    |> Budget.Repo.add_profile_id()
   end
 end

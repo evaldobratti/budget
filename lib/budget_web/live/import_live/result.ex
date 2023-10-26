@@ -9,7 +9,7 @@ defmodule BudgetWeb.ImportLive.Result do
   def mount(%{"id" => id}, _, socket) do
     import_file = Importations.get_import_file!(id)
 
-    Task.async(fn -> Worker.process(import_file.path) end)
+    Task.async(fn -> Worker.process(socket.assigns.user, import_file.path) end)
 
     accounts = Transactions.list_accounts()
     account = accounts |> Enum.at(0)

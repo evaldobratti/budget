@@ -24,6 +24,8 @@ defmodule Budget.Transactions.Transaction.Form do
 
     field(:apply_forward, :boolean)
 
+    field :profile_id, :integer
+
     embeds_one :regular, RegularForm do
       field(:category_id, :integer)
       field(:description)
@@ -41,6 +43,7 @@ defmodule Budget.Transactions.Transaction.Form do
       field(:parcel_start, :integer)
       field(:parcel_end, :integer)
     end
+
   end
 
   def insert_changeset(params) do
@@ -58,14 +61,15 @@ defmodule Budget.Transactions.Transaction.Form do
         :apply_forward
       ])
       |> validate_required([:date, :value, :account_id, :originator])
+      |> Budget.Repo.add_profile_id()
 
     originator = get_change(changeset, :originator) || "regular"
 
-    case originator do 
+    case originator do
       "regular" ->
         cast_embed(changeset, :regular, with: &changeset_regular/2, required: originator == "regular")
 
-      "transfer" -> 
+      "transfer" ->
         cast_embed(changeset, :transfer,
           with: fn transfer, params -> changeset_transfer(transfer, params, changeset) end,
           required: originator == "transfer"
@@ -173,14 +177,17 @@ defmodule Budget.Transactions.Transaction.Form do
         :recurrency_transactions,
         Enum.map(
           transactions,
-          &%RecurrencyTransaction{
+          &
+          %RecurrencyTransaction{
             original_date: get_field(changeset, :date),
             transaction_id: &1.id,
             parcel: get_field(recurrency, :parcel_start),
             parcel_end: get_field(recurrency, :parcel_end)
           }
+          |> Budget.Repo.add_profile_id()
         )
       )
+      |> Budget.Repo.add_profile_id()
       |> Budget.Repo.insert()
     end)
     |> Ecto.Multi.run(:result, fn _repo, %{transaction: transaction} ->
@@ -205,6 +212,7 @@ defmodule Budget.Transactions.Transaction.Form do
       category_id: get_change(regular, :category_id),
       description: get_change(regular, :description)
     }
+    |> Budget.Repo.add_profile_id()
 
     %Transaction{}
     |> change(%{
@@ -216,6 +224,7 @@ defmodule Budget.Transactions.Transaction.Form do
           Transactions.next_position_for_date(get_change(changeset, :date))
     })
     |> put_assoc(:originator_regular, originator)
+    |> Budget.Repo.add_profile_id()
     |> Budget.Repo.insert()
   end
 
@@ -225,14 +234,19 @@ defmodule Budget.Transactions.Transaction.Form do
     originator =
       %Transfer{}
       |> change()
-      |> put_assoc(:counter_part, %Transaction{
-        date: get_change(changeset, :date),
-        value: get_change(changeset, :value) |> Decimal.negate(),
-        account_id: get_change(transfer, :other_account_id),
-        position:
-          get_change(changeset, :position) ||
-            Transactions.next_position_for_date(get_change(changeset, :date))
-      })
+      |> Budget.Repo.add_profile_id()
+      |> put_assoc(:counter_part,
+        %Transaction{
+          date: get_change(changeset, :date),
+          value: get_change(changeset, :value) |> Decimal.negate(),
+          account_id: get_change(transfer, :other_account_id),
+          position:
+            get_change(changeset, :position) ||
+              Transactions.next_position_for_date(get_change(changeset, :date))
+        }
+        |> Budget.Repo.add_profile_id()
+      )
+      |> Budget.Repo.add_profile_id()
 
     %Transaction{}
     |> change(%{
@@ -243,6 +257,7 @@ defmodule Budget.Transactions.Transaction.Form do
         get_change(changeset, :position) ||
           Transactions.next_position_for_date(get_change(changeset, :date))
     })
+    |> Budget.Repo.add_profile_id()
     |> put_assoc(:originator_transfer_part, originator)
     |> Budget.Repo.insert()
   end
@@ -254,6 +269,7 @@ defmodule Budget.Transactions.Transaction.Form do
   def apply_insert(params) when is_map(params) do
     params
     |> insert_changeset()
+    |> Budget.Repo.add_profile_id()
     |> apply_insert()
   end
 
@@ -352,6 +368,7 @@ defmodule Budget.Transactions.Transaction.Form do
     |> Ecto.Multi.run(:inserted, fn _repo, _changes ->
       transaction
       |> Map.put(:id, nil)
+      |> Budget.Repo.add_profile_id()
       |> Budget.Repo.insert()
     end)
     |> Ecto.Multi.run(:result, fn _repo, %{inserted: inserted} ->
@@ -375,6 +392,7 @@ defmodule Budget.Transactions.Transaction.Form do
     |> Ecto.Multi.run(:transaction, fn _repo, _changes ->
       changeset
       |> change(apply_forward: false)
+      |> Budget.Repo.add_profile_id()
       |> apply_update(transaction)
     end)
     |> Ecto.Multi.run(:recurrency, fn _repo, %{transaction: transaction} ->

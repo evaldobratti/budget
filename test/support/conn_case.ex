@@ -14,6 +14,7 @@ defmodule BudgetWeb.ConnCase do
   by setting `use BudgetWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
+alias Budget.Users
 
   use ExUnit.CaseTemplate
 
@@ -35,6 +36,15 @@ defmodule BudgetWeb.ConnCase do
 
   setup tags do
     Budget.DataCase.setup_sandbox(tags)
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    
+    user = Users.get_user_by_email!("mocked@provider.com")
+
+    conn = 
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Test.init_test_session(%{})
+      |> Plug.Conn.put_session("user", user)
+      |> Plug.Conn.put_session("active_profile", Enum.at(user.profiles, 0))
+
+    {:ok, conn: conn}
   end
 end

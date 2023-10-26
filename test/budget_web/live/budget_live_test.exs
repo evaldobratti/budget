@@ -477,6 +477,7 @@ defmodule BudgetWeb.BudgetLiveTest do
            |> render_click() =~ "Transaction successfully deleted!"
   end
 
+  @tag a: true
   test "delete recurrent transaction and the next transient one", %{conn: conn} do
     recurrency = recurrency_fixture()
 

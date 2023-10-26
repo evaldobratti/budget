@@ -13,6 +13,7 @@ defmodule Budget.Transactions.Recurrency do
     field :parcel_end, :integer
     field :parcel_start, :integer
     field :transaction_payload, :map
+    field :profile_id, :integer
 
     has_many :recurrency_transactions, RecurrencyTransaction
 
@@ -72,7 +73,7 @@ defmodule Budget.Transactions.Recurrency do
 
     dates = dates(recurrency.frequency, 0, recurrency.date_start, first_end)
 
-    originator = 
+    originator =
       recurrency.transaction_payload
       |> Map.values()
       |> Enum.random()
@@ -105,6 +106,7 @@ defmodule Budget.Transactions.Recurrency do
             recurrency: recurrency
           }
         end
+        |> Budget.Repo.add_profile_id()
 
       params = payload_at_date(payloads, date)
 
@@ -116,7 +118,7 @@ defmodule Budget.Transactions.Recurrency do
       }, params)
       |> List.wrap()
       |> Enum.with_index()
-      |> Enum.map(fn {entry, ix} -> 
+      |> Enum.map(fn {entry, ix} ->
         id = "recurrency-#{recurrency.id}-#{Date.to_iso8601(date)}-#{ix}"
 
         Map.put(entry, :id, id)
