@@ -249,6 +249,19 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#transaction-#{next_month.id}") |> render =~ "400,00"
       assert live |> element("#next-balance") |> render =~ "1.020,50"
     end
+
+    test "shows tooltip for categories when category is child", %{conn: conn, account: account, category: category} do
+      category = category_fixture(%{name: "child", parent: category})
+
+      %{id: id} = transaction_fixture(%{
+        regular: %{description: "some", category_id: category.id}
+      })
+
+      {:ok, live, _html} = live(conn, ~p"/")
+
+      assert live |> has_element?("#category-detail-#{id}")
+    end
+
   end
 
   describe "recurrencies" do

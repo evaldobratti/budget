@@ -192,7 +192,18 @@
             <div class="w-[10%] px-1 text-center">
               <% originator = Transactions.originator(transaction) %>
 
-              <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular, do: transaction.originator_regular.category.name %>
+              <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
+                <%= if length(transaction.originator_regular.category.path) == 0 do %>
+                  <%= transaction.originator_regular.category.name %>
+                <% else %>
+                  <.tooltiped id={"category-detail-#{transaction.id}"} tooltip={category_tooltip(@categories, transaction.originator_regular.category)}>
+                    <span>
+                      <%= transaction.originator_regular.category.name %>
+                    </span>
+                  </.tooltiped>
+                <% end %>
+
+              <% end %>
 
               <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
                 <.tooltiped id={"transfer-icon-#{transaction.id}"} tooltip="Transfer">

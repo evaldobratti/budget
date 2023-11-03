@@ -298,4 +298,18 @@ defmodule BudgetWeb.BudgetLive.Index do
         end
     end
   end
+
+  def category_tooltip(categories, category) do
+    {tooltip, _} = 
+      Enum.reduce(category.path, {"", categories}, fn id, {acc, categories} ->
+        {category, children} = 
+          Enum.find(categories, fn {category, _} ->
+            category.id == id
+          end)
+
+        {acc <> category.name <> " > ", children}
+      end)
+
+    tooltip <> category.name
+  end
 end

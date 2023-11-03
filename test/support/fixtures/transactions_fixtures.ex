@@ -26,7 +26,7 @@ defmodule Budget.TransactionsFixtures do
       |> Enum.into(%{
         name: "root category"
       })
-      |> Budget.Transactions.create_category()
+      |> Budget.Transactions.create_category(Map.get(attrs, :parent))
 
     category
   end
