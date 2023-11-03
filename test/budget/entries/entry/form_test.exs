@@ -924,5 +924,35 @@ defmodule Budget.Transactions.Transaction.FormTest do
                recurrency_transaction: %{original_date: ~D[2022-02-01], parcel: nil, parcel_end: nil}
              } == transaction |> simplify()
     end
+
+    test "adjust position when updating date", data do
+      t_1 = transaction_fixture(%{date: Timex.today()})
+      t_2 = transaction_fixture(%{date: Timex.today() |> Timex.shift(days: 1)})
+      t_3 = transaction_fixture(%{date: Timex.today() |> Timex.shift(days: 2)})
+      
+      assert Decimal.new(1) == t_1.position 
+      assert Decimal.new(1) == t_2.position 
+      assert Decimal.new(1) == t_3.position 
+
+      {:ok, t_2} =
+        t_2
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: Timex.today(),
+        })
+        |> Form.apply_update(t_2)
+
+      assert Decimal.new(2) == t_2.position
+
+      {:ok, t_3} =
+        t_3
+        |> Form.decorate()
+        |> Form.update_changeset(%{
+          date: Timex.today(),
+        })
+        |> Form.apply_update(t_3)
+
+      assert Decimal.new(3) == t_3.position
+    end
   end
 end

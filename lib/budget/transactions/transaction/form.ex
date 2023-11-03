@@ -3,6 +3,8 @@ defmodule Budget.Transactions.Transaction.Form do
 
   import Ecto.Changeset
 
+  alias Ecto.Changeset
+
   alias Budget.Transactions
   alias Budget.Transactions.Originator.Transfer
   alias Budget.Transactions.Transaction
@@ -445,6 +447,7 @@ defmodule Budget.Transactions.Transaction.Form do
         description: regular.description
       )
     )
+    |> adjust_position
     |> Budget.Repo.update()
   end
 
@@ -463,6 +466,7 @@ defmodule Budget.Transactions.Transaction.Form do
         position: get_field(changeset, :position),
         is_carried_out: get_field(changeset, :is_carried_out)
       })
+      |> adjust_position
 
     {transaction_transfer_field, transfer_field} =
       if transaction.originator_transfer_part_id do
@@ -494,6 +498,7 @@ defmodule Budget.Transactions.Transaction.Form do
           value: get_field(changeset, :value) |> Decimal.negate(),
           is_carried_out: get_field(changeset, :is_carried_out)
         )
+        |> adjust_position
       )
     )
     |> Budget.Repo.update()
@@ -511,5 +516,14 @@ defmodule Budget.Transactions.Transaction.Form do
     |> decorate()
     |> update_changeset(params)
     |> apply_update(transaction)
+  end
+
+  defp adjust_position(%Changeset{valid?: true, changes: %{date: date} = changes} = changeset) when not is_map_key(changes, :position) do
+    changeset
+    |> put_change(:position, Transactions.next_position_for_date(date))
+  end
+
+  defp adjust_position(changeset) do
+    changeset
   end
 end
