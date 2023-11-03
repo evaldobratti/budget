@@ -63,5 +63,6 @@ defmodule Budget.Users do
     {:ok, _} = Transactions.create_category(%{name: "Viagem"})
     {:ok, _} = Transactions.create_category(%{name: "Mensalidades"})
     {:ok, _} = Transactions.create_category(%{name: "Educação"})
+    {:ok, _} = Transactions.create_category(%{name: "Pet"})
   end
 end

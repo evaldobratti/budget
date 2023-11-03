@@ -175,13 +175,13 @@
             <div class="flex-1 px-1 flex">
               <.link patch={~p"/transactions/#{transaction}/edit"}>
                 <%= description(transaction) %>
-              </.link>
-              <div class="ml-auto">
                 <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
                   <span>
                     <%= "(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})" %>
                   </span>
                 <% end %>
+              </.link>
+              <div class="ml-auto">
                 <%= if transaction.recurrency_transaction do %>
                   <.tooltiped id={"tooltip-recurrency-#{transaction.id}"} tooltip={"Recurrency"}>
                     <.icon name="hero-arrow-path" />
