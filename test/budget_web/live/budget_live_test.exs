@@ -82,8 +82,10 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#next-balance") |> render =~ "320,50"
     end
 
-    test "keeps adding transactions", %{conn: conn, account: account, category: category} do
+    test "keeps adding transactions and keeps date and account from previous transaction", %{conn: conn, account: account, category: category} do
       {:ok, live, _html} = live(conn, ~p"/")
+
+      another_account = account_fixture()
 
       live
       |> element("a[href='#{~p"/transactions/new"}']")
@@ -92,12 +94,12 @@ defmodule BudgetWeb.BudgetLiveTest do
       live
       |> form("#transaction-form",
         form: %{
-          date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
+          date: "2020-02-20",
           regular: %{
             description: "a description",
             category_id: category.id
           },
-          account_id: account.id,
+          account_id: another_account.id,
           keep_adding: true,
           value: "200"
         }
@@ -107,8 +109,25 @@ defmodule BudgetWeb.BudgetLiveTest do
       refute live |> element("#transaction-form") |> has_element?
 
       assert "/transactions/new" == assert_patch(live, 100)
-      assert "/?from=transaction&transaction-add-new=true" == assert_patch(live, 100)
+      assert "/?account_id=#{another_account.id}&date=2020-02-20&from=transaction&transaction-add-new=true" == assert_patch(live, 100)
       assert "/transactions/new" == assert_patch(live, 300)
+
+      assert ["2020-02-20"] == 
+          live
+          |> element("#transaction-form")
+          |> render()
+          |> Floki.parse_fragment!()
+          |> Floki.find("[name='form[date]']")
+          |> Floki.attribute("value")
+
+      assert [to_string(another_account.id)] == 
+          live
+          |> element("#transaction-form")
+          |> render()
+          |> Floki.parse_fragment!()
+          |> Floki.find("[selected='selected']")
+          |> Floki.attribute("value")
+
     end
 
     test "editing transaction", %{conn: conn, account: account} do

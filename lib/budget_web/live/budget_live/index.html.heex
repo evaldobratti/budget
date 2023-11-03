@@ -55,13 +55,13 @@
           <.link_button class="ml-auto" patch={~p"/transactions/new"}>New</.link_button>
           <%= if @live_action == :new_transaction do %>
             <.modal id="new-transaction" on_cancel={JS.patch(~p"/")} show>
-                <.live_component
-                  module={BudgetWeb.TransactionLive.FormComponent}
-                  action={@live_action}
-                  id={:new}
-                  transaction={%Transaction{date: Timex.today()}}
-                  patch={~p"/?#{[from: "transaction"]}"}
-                />
+              <.live_component
+                module={BudgetWeb.TransactionLive.FormComponent}
+                action={@live_action}
+                id={:new}
+                transaction={@new_transaction_payload}
+                patch={~p"/?#{[from: "transaction"]}"}
+              />
             </.modal>
           <% end %>
         </div>

@@ -17,21 +17,18 @@ defmodule BudgetWeb.BudgetLive.Index do
       )
       |> assign(confirm_delete: nil)
       |> assign(balances: [0, 0])
+      |> assign(new_transaction_payload: %Transaction{date: Timex.today()})
       |> reload_transactions()
     }
   end
 
   @impl true
   def handle_params(params, _url, socket) do
-    if Map.get(params, "transaction-add-new") do
-      Process.send_after(self(), :add_new_transaction, 200)
-    end
-
     {
       :noreply,
       socket
       |> apply_action(socket.assigns.live_action, params)
-      |> apply_return_from(Map.get(params, "from", ""))
+      |> apply_return_from(Map.get(params, "from", ""), params)
     }
   end
 
@@ -85,12 +82,25 @@ defmodule BudgetWeb.BudgetLive.Index do
     socket
   end
 
-  def apply_return_from(socket, from)
-      when from in ["account", "transaction", "delete", "category"] do
+  def apply_return_from(socket, "transaction", params) do
+    if Map.get(params, "transaction-add-new") do
+      Process.send_after(self(), :add_new_transaction, 200)
+      
+      socket
+      |> update(:new_transaction_payload, & %{ &1 | date: Map.get(params, "date")})
+      |> update(:new_transaction_payload, & %{ &1 | account_id: Map.get(params, "account_id")})
+    else
+      socket
+    end
+    |> reload_transactions()
+  end
+
+  def apply_return_from(socket, from, params)
+      when from in ["account", "delete", "category"] do
     reload_transactions(socket)
   end
 
-  def apply_return_from(socket, _), do: socket
+  def apply_return_from(socket, _, _), do: socket
 
   @impl true
   def handle_event("month-previous", _params, socket) do
