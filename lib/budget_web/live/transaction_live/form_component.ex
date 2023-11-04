@@ -1,6 +1,8 @@
 defmodule BudgetWeb.TransactionLive.FormComponent do
   use BudgetWeb, :live_component
 
+  alias Ecto.Changeset
+
   alias Budget.Transactions
   alias Budget.Transactions.Transaction
   alias Budget.Transactions.Recurrency
@@ -13,12 +15,13 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     |> Transaction.Form.update_changeset(params)
   end
 
-  defp changeset(%{action: :new_transaction}, params) do
+  defp changeset(%{action: :new_transaction, transaction: transaction}, params) do
     params =
       params
-      |> Map.put_new("date", Timex.today())
+      |> Map.put_new("date", transaction.date || Timex.today())
       |> Map.put_new("originator", "regular")
       |> Map.put_new("keep_adding", true)
+      |> Map.put_new("account_id", transaction.account_id)
 
     Transaction.Form.insert_changeset(params)
   end
@@ -73,14 +76,18 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     case Transaction.Form.apply_insert(changeset) do
       {:ok, _transaction} ->
         patch =
-          if Ecto.Changeset.get_change(changeset, :keep_adding) do
+          if Changeset.get_change(changeset, :keep_adding) do
             uri = URI.parse(socket.assigns.patch)
+            date = Changeset.get_change(changeset, :date)
+            account_id = Changeset.get_change(changeset, :account_id)
 
             query =
               uri.query
               |> URI.decode_query()
               |> Enum.into(%{})
               |> Map.put("transaction-add-new", true)
+              |> Map.put("account_id", account_id)
+              |> Map.put("date", date |> Date.to_iso8601())
               |> URI.encode_query()
 
             %{uri | query: query} |> URI.to_string()

@@ -7,7 +7,7 @@
     phx-submit="save"
     >
     <.input field={@form[:name]} autocomplete="off" label="Name" />
-    <.input field={@form[:initial_balance]} autocomplete="off" type="number" label="Initial Balance" />
+    <.input field={@form[:initial_balance]} autocomplete="off" type="number" label="Initial Balance" step="0.01" />
   
     <:actions>
       <.button phx-disable-with="Saving...">Save</.button>

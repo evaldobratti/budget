@@ -55,13 +55,13 @@
           <.link_button class="ml-auto" patch={~p"/transactions/new"}>New</.link_button>
           <%= if @live_action == :new_transaction do %>
             <.modal id="new-transaction" on_cancel={JS.patch(~p"/")} show>
-                <.live_component
-                  module={BudgetWeb.TransactionLive.FormComponent}
-                  action={@live_action}
-                  id={:new}
-                  transaction={%Transaction{date: Timex.today()}}
-                  patch={~p"/?#{[from: "transaction"]}"}
-                />
+              <.live_component
+                module={BudgetWeb.TransactionLive.FormComponent}
+                action={@live_action}
+                id={:new}
+                transaction={@new_transaction_payload}
+                patch={~p"/?#{[from: "transaction"]}"}
+              />
             </.modal>
           <% end %>
         </div>
@@ -166,7 +166,11 @@
           <div 
             :for={transaction <- @transactions} 
             id={"transaction-#{transaction.id}"} 
-            class="group list-group-item item-draggable flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
+            class={[
+              "group list-group-item item-draggable flex",
+              (if is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency"), do: "bg-slate-400", else: "bg-slate-100"),
+              "px-4 py-1.5 rounded-lg hover:bg-slate-200"
+            ]}
           >
 
             <div class="px-1 w-[100px]">
@@ -175,13 +179,13 @@
             <div class="flex-1 px-1 flex">
               <.link patch={~p"/transactions/#{transaction}/edit"}>
                 <%= description(transaction) %>
-              </.link>
-              <div class="ml-auto">
                 <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
                   <span>
                     <%= "(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})" %>
                   </span>
                 <% end %>
+              </.link>
+              <div class="ml-auto">
                 <%= if transaction.recurrency_transaction do %>
                   <.tooltiped id={"tooltip-recurrency-#{transaction.id}"} tooltip={"Recurrency"}>
                     <.icon name="hero-arrow-path" />
@@ -192,7 +196,18 @@
             <div class="w-[10%] px-1 text-center">
               <% originator = Transactions.originator(transaction) %>
 
-              <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular, do: transaction.originator_regular.category.name %>
+              <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
+                <%= if length(transaction.originator_regular.category.path) == 0 do %>
+                  <%= transaction.originator_regular.category.name %>
+                <% else %>
+                  <.tooltiped id={"category-detail-#{transaction.id}"} tooltip={category_tooltip(@categories, transaction.originator_regular.category)}>
+                    <span>
+                      <%= transaction.originator_regular.category.name %>
+                    </span>
+                  </.tooltiped>
+                <% end %>
+
+              <% end %>
 
               <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
                 <.tooltiped id={"transfer-icon-#{transaction.id}"} tooltip="Transfer">
