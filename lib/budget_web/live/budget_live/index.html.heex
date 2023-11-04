@@ -166,7 +166,11 @@
           <div 
             :for={transaction <- @transactions} 
             id={"transaction-#{transaction.id}"} 
-            class="group list-group-item item-draggable flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
+            class={[
+              "group list-group-item item-draggable flex",
+              (if is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency"), do: "bg-slate-400", else: "bg-slate-100"),
+              "px-4 py-1.5 rounded-lg hover:bg-slate-200"
+            ]}
           >
 
             <div class="px-1 w-[100px]">
