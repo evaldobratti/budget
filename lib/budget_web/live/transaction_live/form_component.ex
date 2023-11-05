@@ -34,7 +34,8 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       |> assign(assigns)
       |> assign(form: to_form(changeset(assigns)))
       |> assign(accounts: Transactions.list_accounts())
-      |> assign(categories: Transactions.list_categories())
+      |> assign(categories: arrange_categories())
+      |> assign(descriptions: Transactions.list_descriptions())
     }
   end
 
@@ -105,5 +106,24 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
+  end
+
+  def arrange_categories do
+    Transactions.list_categories_arranged()
+    |> Enum.flat_map(&flatten_categories/1)
+  end
+
+  def flatten_categories({category, []}) do
+    spaces = String.duplicate("&#160;", length(category.path) * 8)
+
+    [{{:safe, spaces <> category.name}, category.id}]
+  end
+
+  def flatten_categories({category, categories}) do
+    spaces = String.duplicate("&#160;", length(category.path) * 8)
+
+    [
+      {{:safe, spaces <> category.name}, category.id}
+    ] ++ Enum.flat_map(categories, &flatten_categories/1)
   end
 end

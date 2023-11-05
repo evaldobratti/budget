@@ -563,4 +563,14 @@ defmodule Budget.Transactions do
         raise "not a transfer transaction"
     end
   end
+
+  def list_descriptions do
+    from(
+      t in Transaction,
+      join: r in assoc(t, :originator_regular),
+      distinct: r.description,
+      select: r.description
+    )
+    |> Repo.all()
+  end
 end
