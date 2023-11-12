@@ -764,16 +764,21 @@ defmodule BudgetWeb.CoreComponents do
     """
   end
 
+  attr :active_tab, :string
+  attr :user, :any
+  slot :inner_block, required: false
   def menu(assigns \\ %{}) do
     ~H"""
     <header class="mb-4 w-1/5 h-full bg-slate-100">
-      <div class="flex flex-col border-b border-zinc-100 py-3 text-sm p-4 h-full">
+      <div class="flex flex-col border-b border-zinc-100 py-3 text-sm p-4 h-full max-h-full">
         <div class="flex p-4">
           <.icon name="hero-currency-dollar" /> Budget
         </div>
         <.menu_link label="Transactions" active={@active_tab == :transactions} to={~p"/"} />
         <.menu_link label="Import" active={@active_tab == :import} to={~p"/imports"} />
         <.menu_link label="Charts" active={@active_tab == :charts} to={~p"/charts"} />
+
+        <%= render_slot(@inner_block) %>
 
         <div class="flex p-4 mt-auto">
           <div>

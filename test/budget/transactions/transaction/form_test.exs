@@ -871,7 +871,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
         |> Form.insert_changeset()
         |> Form.apply_insert()
 
-      [transaction] = Transactions.transactions_in_period([], ~D[2022-02-01], ~D[2022-02-01])
+      [transaction] = Transactions.transactions_in_period(~D[2022-02-01], ~D[2022-02-01])
 
       other_account_id = account_fixture().id
       other_category_id = category_fixture().id

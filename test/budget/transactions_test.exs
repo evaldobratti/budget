@@ -457,19 +457,8 @@ defmodule Budget.TransactionsTest do
     setup :create_account
 
     test "retrieve regular transactions", %{account1: account} do
-      category = category_fixture()
-
-      {:ok, _} =
-        Transaction.Form.apply_insert(%{
-          date: ~D[2020-02-01],
-          originator: "regular",
-          regular: %{
-            description: "Description1",
-            category_id: category.id
-          },
-          account_id: account.id,
-          value: 200
-        })
+      category1 = category_fixture()
+      category2 = category_fixture()
 
       {:ok, _} =
         Transaction.Form.apply_insert(%{
@@ -477,7 +466,19 @@ defmodule Budget.TransactionsTest do
           originator: "regular",
           regular: %{
             description: "Description2",
-            category_id: category.id
+            category_id: category1.id
+          },
+          account_id: account.id,
+          value: 200
+        })
+
+      {:ok, _} =
+        Transaction.Form.apply_insert(%{
+          date: ~D[2020-02-01],
+          originator: "regular",
+          regular: %{
+            description: "Description1",
+            category_id: category1.id
           },
           account_id: account.id,
           value: 200
@@ -489,7 +490,7 @@ defmodule Budget.TransactionsTest do
           originator: "regular",
           regular: %{
             description: "Description3",
-            category_id: category.id
+            category_id: category1.id
           },
           account_id: account.id,
           value: 200
@@ -501,19 +502,23 @@ defmodule Budget.TransactionsTest do
           originator: "regular",
           regular: %{
             description: "Description4",
-            category_id: category.id
+            category_id: category2.id
           },
           account_id: account.id,
           value: 200
         })
 
-      transactions = Transactions.transactions_in_period([account.id], ~D[2020-02-01], ~D[2020-02-10])
-
+      transactions = Transactions.transactions_in_period(~D[2020-02-01], ~D[2020-02-10], account_ids: [account.id])
       assert length(transactions) == 2
 
-      transactions = Transactions.transactions_in_period([], ~D[2020-02-01], ~D[2020-02-10])
-
+      transactions = Transactions.transactions_in_period(~D[2020-02-01], ~D[2020-02-10])
       assert length(transactions) == 2
+
+      transactions = Transactions.transactions_in_period(~D[2020-02-01], ~D[2020-02-12], category_ids: [category1.id])
+      assert length(transactions) == 2
+
+      transactions = Transactions.transactions_in_period(~D[2020-02-01], ~D[2020-02-12], category_ids: [category2.id])
+      assert length(transactions) == 1
     end
 
     test "retrieve recurrency transactions", %{account1: account} do
@@ -539,7 +544,7 @@ defmodule Budget.TransactionsTest do
           }
         })
 
-      transactions = Transactions.transactions_in_period([], ~D[2020-01-01], ~D[2020-04-10])
+      transactions = Transactions.transactions_in_period(~D[2020-01-01], ~D[2020-04-10])
 
       value = Decimal.new(200)
 
@@ -567,26 +572,59 @@ defmodule Budget.TransactionsTest do
     setup :create_account
 
     test "balance with only initial balance", %{account1: account1, account2: account2} do
-      balance = Transactions.balance_at([account1.id, account2.id], ~D[2020-01-01])
+      balance = Transactions.balance_at(~D[2020-01-01], account_ids: [account1.id, account2.id])
 
       assert balance == Decimal.new(40)
     end
 
     test "balance with transactions", %{account1: account1, account2: account2} do
+      category1 = category_fixture()
+      category2 = category_fixture()
+
       {:ok, _} =
         Transaction.Form.apply_insert(%{
           date: ~D[2020-01-05],
           originator: "regular",
           regular: %{
             description: "Description",
-            category_id: category_fixture().id
+            category_id: category1.id
           },
           account_id: account1.id,
           value: 200
         })
 
-      assert Transactions.balance_at([account1.id, account2.id], ~D[2020-01-04]) == Decimal.new(40)
-      assert Transactions.balance_at([account1.id, account2.id], ~D[2020-01-05]) == Decimal.new(240)
+      {:ok, _} =
+        Transaction.Form.apply_insert(%{
+          date: ~D[2020-01-05],
+          originator: "regular",
+          regular: %{
+            description: "Description",
+            category_id: category2.id
+          },
+          account_id: account2.id,
+          value: 100
+        })
+
+      assert Transactions.balance_at(~D[2020-01-04], account_ids: [account1.id, account2.id]) == Decimal.new(40)
+      assert Transactions.balance_at(~D[2020-01-05], account_ids: [account1.id, account2.id]) == Decimal.new(340)
+
+      assert Transactions.balance_at(~D[2020-01-04], account_ids: []) == Decimal.new(40)
+      assert Transactions.balance_at(~D[2020-01-05], account_ids: []) == Decimal.new(340)
+
+      assert Transactions.balance_at(~D[2020-01-04], account_ids: [account1.id]) == Decimal.new(-10)
+      assert Transactions.balance_at(~D[2020-01-05], account_ids: [account1.id]) == Decimal.new(190)
+
+      assert Transactions.balance_at(~D[2020-01-04], category_ids: [category1.id, category2.id]) == Decimal.new(40)
+      assert Transactions.balance_at(~D[2020-01-05], category_ids: [category1.id, category2.id]) == Decimal.new(340)
+
+      assert Transactions.balance_at(~D[2020-01-04], category_ids: []) == Decimal.new(40)
+      assert Transactions.balance_at(~D[2020-01-05], category_ids: []) == Decimal.new(340)
+
+      assert Transactions.balance_at(~D[2020-01-04], category_ids: [category2.id]) == Decimal.new(40)
+      assert Transactions.balance_at(~D[2020-01-05], category_ids: [category2.id]) == Decimal.new(140)
+
+      assert Transactions.balance_at(~D[2020-01-04], account_ids: [account1.id], category_ids: [category1.id]) == Decimal.new(-10)
+      assert Transactions.balance_at(~D[2020-01-05], account_ids: [account1.id], category_ids: [category1.id]) == Decimal.new(190)
     end
 
     test "balance with recurrencies", %{account1: account} do
@@ -618,7 +656,7 @@ defmodule Budget.TransactionsTest do
         }
       })
 
-      balance = Transactions.balance_at([], ~D[2020-06-01])
+      balance = Transactions.balance_at(~D[2020-06-01], [])
 
       assert balance == Decimal.new(1040)
     end
@@ -661,9 +699,7 @@ defmodule Budget.TransactionsTest do
       {:ok, _} = Transaction.Form.apply_update(transient, %{value: 500, apply_forward: true})
 
       transactions =
-        transient.account_id
-        |> List.wrap()
-        |> Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15])
+        Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15], account_ids: [transient.account_id])
 
       assert %{date: ~D[2022-10-15], value: Decimal.new(133)} ==
                Enum.at(transactions, 0) |> Map.take([:date, :value])
@@ -707,14 +743,12 @@ defmodule Budget.TransactionsTest do
       assert transient.originator_regular.description == "Transaction description"
       assert transient.recurrency_transaction.parcel == 3
       assert transient.recurrency_transaction.parcel_end == 6
-      assert transient.position == Decimal.new(1)
+      assert transient.position == Decimal.new(999999)
 
       {:ok, _} = Transaction.Form.apply_update(transient, %{value: 500, apply_forward: true})
 
       transactions =
-        transient.account_id
-        |> List.wrap()
-        |> Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15])
+        Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15], account_ids: [transient.account_id])
 
       assert %{
                date: ~D[2022-10-15],
@@ -854,9 +888,7 @@ defmodule Budget.TransactionsTest do
              } = Transactions.get_recurrency!(recurrency.id).transaction_payload
 
       transactions =
-        transient.account_id
-        |> List.wrap()
-        |> Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15])
+        Transactions.transactions_in_period(~D[2022-10-15], ~D[2023-10-15], account_ids: [transient.account_id])
 
       assert Decimal.new(133) == Enum.at(transactions, 0).value
 
@@ -963,7 +995,7 @@ defmodule Budget.TransactionsTest do
                {from_account_id, Decimal.new(200)},
                {to_account_id, Decimal.new(-200)}
              ] ==
-               Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-01-01])
+               Transactions.transactions_in_period(~D[2022-01-01], ~D[2022-01-01])
                |> Enum.map(&{&1.account_id, &1.value})
     end
 
@@ -987,7 +1019,7 @@ defmodule Budget.TransactionsTest do
                  value: 200
                })
 
-      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period(~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
@@ -1013,7 +1045,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _persisted} = Transaction.Form.apply_update(Enum.at(transactions, 2), %{})
 
-      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period(~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
@@ -1059,7 +1091,7 @@ defmodule Budget.TransactionsTest do
                  value: 200
                })
 
-      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period(~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200), "part"},
@@ -1092,7 +1124,7 @@ defmodule Budget.TransactionsTest do
           apply_forward: true
         })
 
-      transactions = Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-04-01])
+      transactions = Transactions.transactions_in_period(~D[2022-01-01], ~D[2022-04-01])
 
       assert [
                {~D[2022-01-01], from_account_id, Decimal.new(200)},
@@ -1133,7 +1165,7 @@ defmodule Budget.TransactionsTest do
                {from_account_id, Decimal.new(400), transaction.originator_transfer_part_id, nil},
                {to_account_id, Decimal.new(-400), nil, transaction.originator_transfer_part_id}
              ] ==
-               Transactions.transactions_in_period([], ~D[2022-01-01], ~D[2022-01-01])
+               Transactions.transactions_in_period(~D[2022-01-01], ~D[2022-01-01])
                |> Enum.map(
                  &{&1.account_id, &1.value, &1.originator_transfer_part_id,
                   &1.originator_transfer_counter_part_id}
@@ -1402,9 +1434,9 @@ defmodule Budget.TransactionsTest do
 
           recurrency = Transactions.get_recurrency!(transaction.recurrency_transaction.recurrency.id)
 
-          [transient | _] = Transactions.transactions_in_period([], ~D[2020-02-01], ~D[2020-02-01])
+          [transient | _] = Transactions.transactions_in_period(~D[2020-02-01], ~D[2020-02-01])
 
-          [future | _] = Transactions.transactions_in_period([], ~D[2020-03-01], ~D[2020-03-01])
+          [future | _] = Transactions.transactions_in_period(~D[2020-03-01], ~D[2020-03-01])
 
           {:ok, persisted} = Transaction.Form.apply_update(future, %{})
 
@@ -1446,8 +1478,8 @@ defmodule Budget.TransactionsTest do
             })
             |> Transaction.Form.apply_insert()
 
-          [transient | _] = Transactions.transactions_in_period([], ~D[2020-02-01], ~D[2020-02-01])
-          [future | _] = Transactions.transactions_in_period([], ~D[2020-03-01], ~D[2020-03-01])
+          [transient | _] = Transactions.transactions_in_period(~D[2020-02-01], ~D[2020-02-01])
+          [future | _] = Transactions.transactions_in_period(~D[2020-03-01], ~D[2020-03-01])
 
           {:ok, persisted} = Transaction.Form.apply_update(future, %{})
 
@@ -1531,7 +1563,7 @@ defmodule Budget.TransactionsTest do
 
       assert Decimal.new("1.5") == updated.position
 
-      transactions = Transactions.transactions_in_period([], Timex.today(), Timex.today())
+      transactions = Transactions.transactions_in_period(Timex.today(), Timex.today())
 
       assert [
                {id1, Decimal.new(1)},
@@ -1546,7 +1578,7 @@ defmodule Budget.TransactionsTest do
 
       assert Decimal.new("1.5") == updated.position
 
-      transactions = Transactions.transactions_in_period([], Timex.today(), Timex.today())
+      transactions = Transactions.transactions_in_period(Timex.today(), Timex.today())
 
       assert [
                {id3, Decimal.new("1.5")},
@@ -1562,7 +1594,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_2, nil])
 
-      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-21])
+      transactions = Transactions.transactions_in_period(~D[2023-01-17], ~D[2023-01-21])
 
       assert [
                {id2, Decimal.new(1), ~D[2023-01-21]},
@@ -1577,7 +1609,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.put_transaction_between(transaction_2, [nil, transaction_1])
 
-      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-21])
+      transactions = Transactions.transactions_in_period(~D[2023-01-17], ~D[2023-01-21])
 
       assert [
                {id2, Decimal.new("0.5"), ~D[2023-01-17]},
@@ -1593,7 +1625,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.put_transaction_between(transaction_3, [nil, transaction_1])
 
-      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period(~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id3, Decimal.new("0.5"), ~D[2023-01-17]},
@@ -1610,7 +1642,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.put_transaction_between(transaction_3, [transaction_1, transaction_2])
 
-      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period(~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id1, Decimal.new(1), ~D[2023-01-17]},
@@ -1627,7 +1659,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_2, transaction_3])
 
-      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period(~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id2, Decimal.new(1), ~D[2023-01-18]},
@@ -1644,7 +1676,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_3, nil])
 
-      transactions = Transactions.transactions_in_period([], ~D[2023-01-17], ~D[2023-01-19])
+      transactions = Transactions.transactions_in_period(~D[2023-01-17], ~D[2023-01-19])
 
       assert [
                {id2, Decimal.new(1), ~D[2023-01-18]},
@@ -1663,7 +1695,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.put_transaction_between(transaction_1, [transaction_3, transaction_4])
 
-      transactions = Transactions.transactions_in_period([], ~D[2023-01-01], ~D[2023-01-31])
+      transactions = Transactions.transactions_in_period(~D[2023-01-01], ~D[2023-01-31])
 
       assert [
                {id2, Decimal.new("4.75"), ~D[2023-01-01]},
@@ -1686,7 +1718,7 @@ defmodule Budget.TransactionsTest do
 
       {:ok, _} = Transactions.update_order(0, 2, [transaction_1, transaction_2, transaction_3, transaction_4, transaction_5])
 
-      transactions = Transactions.transactions_in_period([], Timex.today(), Timex.today())
+      transactions = Transactions.transactions_in_period(Timex.today(), Timex.today())
 
       assert [id2, id3, id1, id4, id5] == transactions |> Enum.map(& &1.id)
     end

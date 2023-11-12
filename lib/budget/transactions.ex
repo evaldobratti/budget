@@ -111,16 +111,22 @@ defmodule Budget.Transactions do
     Repo.get(transaction_query(), id)
   end
 
-  def balance_at(accounts_ids, date) do
+  def balance_at(date, opts \\ []) do
+    account_ids = Keyword.get(opts, :account_ids, [])
+    category_ids = Keyword.get(opts, :category_ids, [])
+
     transactions =
       from(
         t in Transaction,
         join: a in assoc(t, :account),
         as: :account,
+        left_join: r in assoc(t, :originator_regular),
+        left_join: c in assoc(r, :category),
+        as: :category,
         where: t.date <= ^date,
         select: coalesce(sum(t.value), 0)
       )
-      |> where_account_in(accounts_ids)
+      |> where_opts(opts)
       |> Repo.one()
 
     initials =
@@ -129,14 +135,26 @@ defmodule Budget.Transactions do
         as: :account,
         select: coalesce(sum(a.initial_balance), 0)
       )
-      |> where_account_in(accounts_ids)
+      |> where_opts(opts)
       |> Repo.one()
 
+    # TODO make this function use transactions_in_period()
     recurrencies =
       find_recurrencies()
       |> Enum.map(&recurrency_transactions(&1, date))
       |> List.flatten()
-      |> Enum.filter(&(&1.account_id in accounts_ids || accounts_ids == []))
+      |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
+      |> Enum.filter(fn transaction ->
+        if category_ids == [] do
+          true
+        else
+          if transaction.originator_regular do
+            transaction.originator_regular.category_id in category_ids
+          else
+            true
+          end
+        end
+      end)
       |> Enum.map(& &1.value)
       |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
 
@@ -173,9 +191,9 @@ defmodule Budget.Transactions do
     |> Repo.all()
   end
 
-  def transactions_in_period(account_ids, date_start, date_end) do
-    regular = regular_transactions_in_period(account_ids, date_start, date_end)
-    recurrency = recurrency_transactions_in_period(account_ids, date_start, date_end)
+  def transactions_in_period(date_start, date_end, opts \\ []) do
+    regular = regular_transactions_in_period(date_start, date_end, opts)
+    recurrency = recurrency_transactions_in_period(date_start, date_end, opts)
 
     (regular ++ recurrency)
     |> Enum.sort_by(
@@ -199,6 +217,7 @@ defmodule Budget.Transactions do
       left_join: r in assoc(re, :recurrency),
       left_join: regular in assoc(e, :originator_regular),
       left_join: c in assoc(regular, :category),
+      as: :category,
       left_join: tp in assoc(e, :originator_transfer_part),
       left_join: tpe in assoc(tp, :counter_part),
       left_join: tpea in assoc(tpe, :account),
@@ -217,16 +236,19 @@ defmodule Budget.Transactions do
     )
   end
 
-  defp regular_transactions_in_period(account_ids, date_start, date_end) do
+  defp regular_transactions_in_period(date_start, date_end, opts) do
     query =
       transaction_query()
       |> where([transaction: t], t.date >= ^date_start and t.date <= ^date_end)
-      |> where_account_in(account_ids)
+      |> where_opts(opts)
 
     Repo.all(query)
   end
 
-  defp recurrency_transactions_in_period(account_ids, date_start, date_end) do
+  defp recurrency_transactions_in_period(date_start, date_end, opts) do
+    account_ids = Keyword.get(opts, :account_ids, [])
+    category_ids = Keyword.get(opts, :category_ids, [])
+
     recurrencies = find_recurrencies()
 
     recurrencies
@@ -235,13 +257,43 @@ defmodule Budget.Transactions do
     end)
     |> List.flatten()
     |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
+    |> Enum.filter(fn transaction ->
+      if category_ids == [] do
+        true
+      else
+        if transaction.originator_regular do
+          transaction.originator_regular.category_id in category_ids
+        else
+          true
+        end
+      end
+    end)
     |> Enum.filter(&Timex.between?(&1.date, date_start, date_end, inclusive: true))
   end
 
-  defp where_account_in(query, account_ids) do
-    from([account: a] in query,
-      where: a.id in ^account_ids or fragment("?::int = 0", ^length(account_ids))
-    )
+  defp where_opts(query, opts) do
+    account_ids = Keyword.get(opts, :account_ids, [])
+    category_ids = Keyword.get(opts, :category_ids, [])
+
+    query = 
+      if has_named_binding?(query, :account) do
+       from([account: a] in query,
+          where: a.id in ^account_ids or fragment("?::int = 0", ^length(account_ids))
+        )
+      else
+        query
+      end
+
+    query = 
+      if has_named_binding?(query, :category) do
+        from([category: c] in query,
+          where: c.id in ^category_ids or fragment("?::int = 0", ^length(category_ids))
+        )
+      else
+        query
+      end
+
+    query
   end
 
   def get_recurrency!(id) do
