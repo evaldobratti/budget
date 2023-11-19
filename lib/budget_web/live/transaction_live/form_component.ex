@@ -6,6 +6,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   alias Budget.Transactions
   alias Budget.Transactions.Transaction
   alias Budget.Transactions.Recurrency
+  alias Budget.Hinter
 
   defp changeset(assigns, params \\ %{})
 
@@ -40,15 +41,44 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"form" => form_params}, socket) do
+  def handle_event("validate", %{"_target" => target, "form" => form_params}, socket) do
     form =
       socket.assigns
       |> changeset(form_params)
+      |> hint_category(target)
       |> Map.put(:action, :validate)
       |> to_form
 
     {:noreply, assign(socket, form: form)}
   end
+
+  def hint_category(changeset, ["form", "regular", "description"]) do
+    account_id = Changeset.get_field(changeset, :accunt_id)
+    description = 
+      changeset
+      |> Changeset.get_change(:regular)
+      |> Changeset.get_field(:description)
+
+
+    case Hinter.hint_category(description, account_id) do
+      nil -> changeset
+      
+      category ->
+        regular_changeset =
+          changeset
+          |> Changeset.get_change(:regular)
+          |> Changeset.put_change(:category_id, category.id)
+
+        Changeset.put_embed(
+          changeset,
+          :regular,
+          regular_changeset
+        )
+    end
+  end
+
+  def hint_category(changeset, _), do: changeset
+
 
   def handle_event("save", %{"form" => form_params}, socket) do
     save_transaction(
