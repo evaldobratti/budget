@@ -41,11 +41,11 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"_target" => target, "form" => form_params}, socket) do
+  def handle_event("validate", %{"form" => form_params} = params, socket) do
     form =
       socket.assigns
       |> changeset(form_params)
-      |> hint_category(target)
+      |> hint_category(Map.get(params, "_target"))
       |> Map.put(:action, :validate)
       |> to_form
 
