@@ -12,6 +12,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       :ok,
       socket
       |> assign(accounts_selected_ids: [])
+      |> assign(category_selected_ids: [])
       |> assign(
         dates: [Timex.beginning_of_month(Timex.today()), Timex.end_of_month(Timex.today())]
       )
@@ -163,6 +164,25 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
+  def handle_event("toggle-category", %{"category-id" => category_id}, socket) do
+    {category_id, _} = Integer.parse(category_id)
+
+    # TODO select children categories too
+    category_selected_ids =
+      if category_id in socket.assigns.category_selected_ids do
+        List.delete(socket.assigns.category_selected_ids, category_id)
+      else
+        [category_id | socket.assigns.category_selected_ids]
+      end
+
+    {
+      :noreply,
+      socket
+      |> assign(category_selected_ids: category_selected_ids)
+      |> reload_transactions()
+    }
+  end
+
   def handle_event("update-dates", %{"date_start" => date_start, "date_end" => date_end}, socket) do
     {:ok, date_start} = Timex.parse(date_start, "{YYYY}-{0M}-{0D}")
     {:ok, date_end} = Timex.parse(date_end, "{YYYY}-{0M}-{0D}")
@@ -223,13 +243,15 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   defp reload_transactions(socket) do
-    accounts_ids = socket.assigns.accounts_selected_ids
+    account_ids = socket.assigns.accounts_selected_ids
+    category_ids = socket.assigns.category_selected_ids
+
     [date_start, date_end] = socket.assigns.dates
 
-    previous_balance = Transactions.balance_at(accounts_ids, Timex.shift(date_start, days: -1))
-    next_balance = Transactions.balance_at(accounts_ids, date_end)
+    previous_balance = Transactions.balance_at(Timex.shift(date_start, days: -1), account_ids: account_ids, category_ids: category_ids)
+    next_balance = Transactions.balance_at(date_end, account_ids: account_ids, category_ids: category_ids)
 
-    transactions = Transactions.transactions_in_period(accounts_ids, date_start, date_end)
+    transactions = Transactions.transactions_in_period(date_start, date_end, account_ids: account_ids, category_ids: category_ids)
 
     socket
     |> assign(categories: Transactions.list_categories_arranged())
@@ -249,20 +271,24 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def render_categories([], _socket), do: nil
 
-  def render_categories(categories, socket) do
-    assigns = %{categories: categories, socket: socket}
+  def render_categories(categories, category_selected_ids, socket) do
+    assigns = %{categories: categories, socket: socket, category_selected_ids: category_selected_ids}
 
     ~H"""
     <%= for {category, children} <- @categories do %>
       <div class="flex mt-2">
         <div>
-          <%= if length(category.path) > 0, do: "└ " %><%=category.name %>
+
+          <%= if length(category.path) > 0, do: "└ " %> 
+          <input type="checkbox" phx-click="toggle-category" phx-value-category-id={category.id} checked={category.id in @category_selected_ids} />
+          <.link patch={~p"/categories/#{category}/edit"}>
+            <%= category.name %>
+          </.link>
         </div>
         <div class="ml-auto">
-          <.link_button patch={~p"/categories/#{category}/edit"}>Edit</.link_button>
-          <.link_button patch={~p"/categories/#{category}/children/new"}>+</.link_button>
+          <.link_button patch={~p"/categories/#{category}/children/new"} small class="px-2">+</.link_button>
           <%= if category.transactions_count == 0 do %>
-            <.link_button patch={~p"/categories/#{category}/delete"} color="danger">-</.link_button>
+            <.link_button patch={~p"/categories/#{category}/delete"} small color="danger" class="px-2">-</.link_button>
           <% else %>
             <.tooltiped id={"not-delete-#{category.id}"} tooltip="You cannot delete this category because it has transactions associated.">
               <.icon name="hero-exclamation-circle" />
@@ -272,7 +298,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
       </div>
       <div :if={length(children) > 0} class="pl-1 ml-3">
-        <%= render_categories(children, @socket) %>
+        <%= render_categories(children, @category_selected_ids, @socket) %>
       </div>
     <% end %>
     """

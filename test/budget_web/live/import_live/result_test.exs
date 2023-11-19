@@ -61,7 +61,6 @@ defmodule BudgetWeb.ImportLive.ResultTest do
 
     assert [] ==
              Transactions.transactions_in_period(
-               [],
                Timex.today() |> Timex.beginning_of_month(),
                Timex.today() |> Timex.end_of_month()
              )
@@ -114,7 +113,6 @@ defmodule BudgetWeb.ImportLive.ResultTest do
              }
            ] ==
              Transactions.transactions_in_period(
-               [],
                Timex.today() |> Timex.beginning_of_month(),
                Timex.today() |> Timex.end_of_month()
              )
@@ -162,7 +160,6 @@ defmodule BudgetWeb.ImportLive.ResultTest do
 
     assert 2 ==
              Transactions.transactions_in_period(
-               [],
                Timex.today() |> Timex.beginning_of_month(),
                Timex.today() |> Timex.end_of_month()
              )
@@ -213,7 +210,6 @@ defmodule BudgetWeb.ImportLive.ResultTest do
 
     assert 1 ==
              Transactions.transactions_in_period(
-               [],
                Timex.today() |> Timex.beginning_of_month(),
                Timex.today() |> Timex.end_of_month()
              )

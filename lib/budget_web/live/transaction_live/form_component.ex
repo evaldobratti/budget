@@ -6,6 +6,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   alias Budget.Transactions
   alias Budget.Transactions.Transaction
   alias Budget.Transactions.Recurrency
+  alias Budget.Hinter
 
   defp changeset(assigns, params \\ %{})
 
@@ -34,20 +35,50 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       |> assign(assigns)
       |> assign(form: to_form(changeset(assigns)))
       |> assign(accounts: Transactions.list_accounts())
-      |> assign(categories: Transactions.list_categories())
+      |> assign(categories: arrange_categories())
+      |> assign(descriptions: Transactions.list_descriptions())
     }
   end
 
   @impl true
-  def handle_event("validate", %{"form" => form_params}, socket) do
+  def handle_event("validate", %{"form" => form_params} = params, socket) do
     form =
       socket.assigns
       |> changeset(form_params)
+      |> hint_category(Map.get(params, "_target"))
       |> Map.put(:action, :validate)
       |> to_form
 
     {:noreply, assign(socket, form: form)}
   end
+
+  def hint_category(changeset, ["form", "regular", "description"]) do
+    account_id = Changeset.get_field(changeset, :accunt_id)
+    description = 
+      changeset
+      |> Changeset.get_change(:regular)
+      |> Changeset.get_field(:description)
+
+
+    case Hinter.hint_category(description, account_id) do
+      nil -> changeset
+      
+      category ->
+        regular_changeset =
+          changeset
+          |> Changeset.get_change(:regular)
+          |> Changeset.put_change(:category_id, category.id)
+
+        Changeset.put_embed(
+          changeset,
+          :regular,
+          regular_changeset
+        )
+    end
+  end
+
+  def hint_category(changeset, _), do: changeset
+
 
   def handle_event("save", %{"form" => form_params}, socket) do
     save_transaction(
@@ -105,5 +136,24 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
+  end
+
+  def arrange_categories do
+    Transactions.list_categories_arranged()
+    |> Enum.flat_map(&flatten_categories/1)
+  end
+
+  def flatten_categories({category, []}) do
+    spaces = String.duplicate("&#160;", length(category.path) * 8)
+
+    [{{:safe, spaces <> category.name}, category.id}]
+  end
+
+  def flatten_categories({category, categories}) do
+    spaces = String.duplicate("&#160;", length(category.path) * 8)
+
+    [
+      {{:safe, spaces <> category.name}, category.id}
+    ] ++ Enum.flat_map(categories, &flatten_categories/1)
   end
 end

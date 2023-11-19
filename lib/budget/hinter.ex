@@ -20,6 +20,8 @@ defmodule Budget.Hinter do
     |> Repo.all()
   end
 
+  def hint_category(nil, _), do: nil
+  def hint_category("", _), do: nil
   def hint_category(description, account_id) do
     query = 
       from(

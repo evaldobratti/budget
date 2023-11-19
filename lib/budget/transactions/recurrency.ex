@@ -114,7 +114,7 @@ defmodule Budget.Transactions.Recurrency do
         date: date,
         is_recurrency: true,
         recurrency_transaction: recurrency_transaction,
-        position: Decimal.new(1)
+        position: Decimal.new(999999)
       }, params)
       |> List.wrap()
       |> Enum.with_index()

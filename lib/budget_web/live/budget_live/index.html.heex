@@ -1,57 +1,65 @@
-<div class="flex h-full">
-  <.menu active_tab={@active_tab} user={@user} />
-  <div class="flex flex-grow flex-col p-4 overflow-auto">
-
+<div class="flex h-full max-h-full">
+  <.menu active_tab={@active_tab} user={@user}>
     <div class="flex flex-col">
-      <div class="border-bottom color-border-muted pb-4">
+      <div class="flex items-start mt-2">
+        Accounts
+        <.link_button small class="ml-auto text-center px-4" patch={~p"/accounts/new"}>New</.link_button>
+      </div>
+      <%= if Enum.empty?(@accounts) do %>
+        <div class="flex mt-2 flex-justify-center">
+          No accounts yet
+        </div>
+      <% end %>
+      <%= for account <- @accounts do %>
+        <div class="flex mt-2">
+          <div>
+            <input type="checkbox" phx-click="toggle-account" phx-value-account-id={account.id} checked={account.id in @accounts_selected_ids} />
+            <.link patch={~p"/accounts/#{account}/edit"}><%= account.name %></.link>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="flex flex-col mt-2 overflow-y-auto">
+      <div class="flex items-start mt-2">
+        Categories
+        <.link_button small class="ml-auto px-4 text-center" patch={~p"/categories/new"}>New</.link_button>
+      </div>
+      <%= if Enum.empty?(@categories) do %>
+        <div class="flex mt-2 flex-justify-center">
+          No categories yet
+        </div>
+      <% end %>
+      <div class="max-h-full overflow-y-auto">
+      <%= render_categories(@categories, @category_selected_ids, @socket) %>
+      </div>
+    </div>
+  </.menu>
+  <div class="flex flex-grow flex-col overflow-auto">
+
+    <div class="flex flex-col p-4">
+      <div class="flex">
+        <div class="mx-auto">
+          <% dates_form = to_form(%{
+            "date_start" => Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}"),
+            "date_end" =>Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")
+          }) %>
+          <.form
+            id="dates-switch"
+            for={dates_form}
+            as={:dates}
+            phx-change="update-dates"
+          >
+            <div class="flex items-center">
+              <.button class="btn btn-sm btn-primary mr-2" phx-click="month-previous" type="button"><%= "<<" %></.button>
+              <.input field={dates_form[:date_start]} type="date" margin={false} />
+              <div class="d-inline px-1">to</div>
+              <.input field={dates_form[:date_end]} type="date" margin={false}/>
+              <.button class="btn btn-sm btn-primary ml-2" phx-click="month-next" type="button"><%= ">>" %></.button>
+            </div>
+          </.form>
+        </div>
         <div class="flex items-start">
-          <div class="col align-items-center border p-2 rounded-lg">
-            <button 
-              type="button" 
-              phx-click={JS.toggle(to: ".transaction-filters")}
-            >
-              Accounts
-            </button>
-            <div class="transaction-filters hidden flex flex-col">
-              <div class="flex items-start mt-2">
-                <.link_button small class="w-full text-center" patch={~p"/accounts/new"}>New</.link_button>
-              </div>
-              <%= if Enum.empty?(@accounts) do %>
-                <div class="flex mt-2 flex-justify-center">
-                  No accounts yet
-                </div>
-              <% end %>
-              <%= for account <- @accounts do %>
-                <div class="flex mt-2">
-                  <div>
-                    <input type="checkbox" phx-click="toggle-account" phx-value-account-id={account.id} checked={account.id in @accounts_selected_ids} />
-                    <.link patch={~p"/accounts/#{account}/edit"}><%= account.name %></.link>
-                  </div>
-                </div>
-              <% end %>
-            </div>
-          </div>
-
-          <div class="col align-items-center border p-2 rounded-lg ml-2">
-            <button 
-              type="button" 
-              phx-click={JS.toggle(to: ".transaction-filters")}
-            >
-              Categories
-            </button>
-            <div class="transaction-filters hidden flex flex-col">
-              <div class="flex items-start mt-2">
-                <.link_button small class="w-full text-center" patch={~p"/categories/new"}>New</.link_button>
-              </div>
-              <%= if Enum.empty?(@categories) do %>
-                <div class="flex mt-2 flex-justify-center">
-                  No categories yet
-                </div>
-              <% end %>
-              <%= render_categories(@categories, @socket) %>
-            </div>
-          </div>
-
           <.link_button class="ml-auto" patch={~p"/transactions/new"}>New</.link_button>
           <%= if @live_action == :new_transaction do %>
             <.modal id="new-transaction" on_cancel={JS.patch(~p"/")} show>
@@ -68,31 +76,7 @@
       </div>
     </div>
 
-    <div class="flex flex-col">
-        <div class="flex">
-          <div class="mx-auto">
-            <% dates_form = to_form(%{
-              "date_start" => Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}"),
-              "date_end" =>Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")
-            }) %>
-            <.form
-              id="dates-switch"
-              for={dates_form}
-              as={:dates}
-              phx-change="update-dates"
-            >
-              <div class="flex items-center">
-                <.button class="btn btn-sm btn-primary mr-2" phx-click="month-previous" type="button"><%= "<<" %></.button>
-                <.input field={dates_form[:date_start]} type="date" margin={false} />
-                <div class="d-inline px-1">to</div>
-                <.input field={dates_form[:date_end]} type="date" margin={false}/>
-                <.button class="btn btn-sm btn-primary ml-2" phx-click="month-next" type="button"><%= ">>" %></.button>
-              </div>
-            </.form>
-          </div>
-          <div class="flex items-start">
-          </div>
-        </div>
+    <div class="flex flex-col overflow-y-auto px-4">
 
         <%= if @live_action == :edit_transaction do %>
           <.modal id="edit-transaction" on_cancel={JS.patch(~p"/")} show>
@@ -146,7 +130,7 @@
           </.modal>
         <% end %>
 
-        <div id="transactions" class="flex flex-col space-y-1.5 mt-4" phx-hook="Sortable">
+        <div id="transactions" class="flex flex-col space-y-1.5" phx-hook="Sortable">
           <div id="previous-balance" class="flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200">
             <div class="w-[100px] px-1">
               <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
@@ -193,7 +177,7 @@
                 <% end %>
               </div>
             </div>
-            <div class="w-[10%] px-1 text-center">
+            <div class="w-[200px] px-1 text-center">
               <% originator = Transactions.originator(transaction) %>
 
               <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
@@ -215,7 +199,7 @@
                 </.tooltiped>
               <% end %>
             </div>
-            <div class="w-[10%] px-1 text-center">
+            <div class="w-[200px] px-1 text-center">
               <%= transaction.account.name %>
             </div>
             <div class={"w-[10%] text-right px-1"}>

@@ -20,16 +20,6 @@
       <.input field={@form[:date]} label="Date" type="date" autocomplete="off" />
 
       <%= if @form[:originator].value == "regular" do %>
-        <.inputs_for :let={regular_form} field={@form[:regular]}>
-          <.input
-            field={regular_form[:category_id]}
-            type="select"
-            options={
-              Enum.map(@categories, &{String.duplicate(".", length(&1.path)) <> &1.name, &1.id})
-            }
-            label="Category"
-          />
-        </.inputs_for>
 
         <.input
           field={@form[:account_id]}
@@ -60,9 +50,22 @@
 
     <%= if @form[:originator].value == "regular" do %>
       <.inputs_for :let={regular_form} field={@form[:regular]}>
-        <.input field={regular_form[:description]} label="Description" autocomplete="off" />
+        <.input field={regular_form[:description]} label="Description" autocomplete="off" list="descriptions" />
+        <datalist id="descriptions">
+          <option :for={d <- @descriptions} value={d} />
+        </datalist>
+      </.inputs_for>
+
+      <.inputs_for :let={regular_form} field={@form[:regular]}>
+        <.input
+          field={regular_form[:category_id]}
+          type="select"
+          options={@categories}
+          label="Category"
+        />
       </.inputs_for>
     <% end %>
+
 
     <.input field={@form[:value]} type="number" label="Value" autocomplete="off" step="0.01" />
 
