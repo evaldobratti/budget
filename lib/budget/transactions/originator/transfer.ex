@@ -35,7 +35,7 @@ defmodule Budget.Transactions.Originator.Transfer do
           value: Decimal.new(Map.get(payload, "value")) |> Decimal.negate(),
           account_id: other_account.id,
           account: other_account,
-          is_carried_out: false,
+          paid: true,
           position: 1
         }
         |> Budget.Repo.add_profile_id()
@@ -77,7 +77,7 @@ defmodule Budget.Transactions.Originator.Transfer do
           value: params.originator_transfer_part.counter_part.value,
           account_id: params.originator_transfer_part.counter_part.account_id,
           account: params.originator_transfer_part.counter_part.account,
-          is_carried_out: false,
+          paid: true,
           position: Decimal.new(1),
           recurrency_transaction: recurrency_params.recurrency_transaction
         }
@@ -87,7 +87,7 @@ defmodule Budget.Transactions.Originator.Transfer do
       date: recurrency_params.date,
       account_id: params.account_id,
       account: params.account,
-      is_carried_out: false,
+      paid: true,
       position: Decimal.new(1),
       recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.value,
@@ -101,7 +101,7 @@ defmodule Budget.Transactions.Originator.Transfer do
           value: params.value,
           account_id: params.account_id,
           account: params.account,
-          is_carried_out: false,
+          paid: true,
           recurrency_transaction: recurrency_params.recurrency_transaction,
           position: Decimal.new(1)
         }
@@ -111,7 +111,7 @@ defmodule Budget.Transactions.Originator.Transfer do
       date: recurrency_params.date,
       account_id: params.originator_transfer_part.counter_part.account_id,
       account: params.originator_transfer_part.counter_part.account,
-      is_carried_out: false,
+      paid: true,
       position: Decimal.new(1),
       recurrency_transaction: recurrency_params.recurrency_transaction,
       value: params.originator_transfer_part.counter_part.value,

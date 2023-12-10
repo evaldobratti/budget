@@ -76,6 +76,7 @@
         type="checkbox"
         label="Recurrency"
       />
+      <.input field={@form[:paid]} type="checkbox" label="Paid" />
       <.input :if={!transaction_loaded} field={@form[:keep_adding]} type="checkbox" label="Keep adding" />
     </div>
 

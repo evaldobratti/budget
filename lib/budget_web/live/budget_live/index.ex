@@ -19,6 +19,8 @@ defmodule BudgetWeb.BudgetLive.Index do
       |> assign(confirm_delete: nil)
       |> assign(balances: [0, 0])
       |> assign(new_transaction_payload: %Transaction{date: Timex.today()})
+      |> assign(previous_balance: true)
+      |> assign(partial_balance: false)
       |> reload_transactions()
     }
   end
@@ -164,6 +166,28 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
+  def handle_event("toggle-previous-balance", _params, socket) do
+    previous_balance = not socket.assigns.previous_balance
+
+    {
+      :noreply,
+      socket
+      |> assign(previous_balance: previous_balance)
+      |> reload_transactions()
+    }
+  end
+
+  def handle_event("toggle-partial-balance", _params, socket) do
+    partial_balance = not socket.assigns.partial_balance
+
+    {
+      :noreply,
+      socket
+      |> assign(partial_balance: partial_balance)
+      |> reload_transactions()
+    }
+  end
+
   def handle_event("toggle-category", %{"category-id" => category_id}, socket) do
     {category_id, _} = Integer.parse(category_id)
 
@@ -248,16 +272,28 @@ defmodule BudgetWeb.BudgetLive.Index do
 
     [date_start, date_end] = socket.assigns.dates
 
-    previous_balance = Transactions.balance_at(Timex.shift(date_start, days: -1), account_ids: account_ids, category_ids: category_ids)
-    next_balance = Transactions.balance_at(date_end, account_ids: account_ids, category_ids: category_ids)
+    previous_balance = 
+      if socket.assigns.previous_balance do
+        Transactions.balance_at(Timex.shift(date_start, days: -1), account_ids: account_ids, category_ids: category_ids)
+      else
+        Decimal.new(0)
+      end
 
     transactions = Transactions.transactions_in_period(date_start, date_end, account_ids: account_ids, category_ids: category_ids)
+
+    [balances, _] = 
+      transactions
+      |> Enum.reduce([[previous_balance], previous_balance], fn ele, [acc, previous] ->
+        previous = Decimal.add(previous, ele.value)
+
+        [acc ++ [previous], previous]
+      end)
 
     socket
     |> assign(categories: Transactions.list_categories_arranged())
     |> assign(accounts: Transactions.list_accounts())
     |> assign(transactions: transactions)
-    |> assign(balances: [previous_balance, next_balance])
+    |> assign(balances: balances)
   end
 
   def accounts_selected(accounts_ids, accounts) when is_list(accounts_ids) do

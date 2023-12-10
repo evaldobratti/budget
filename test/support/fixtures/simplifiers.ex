@@ -62,7 +62,7 @@ defmodule Budget.Simplifiers do
       account_id: transaction.account_id,
       originator: originator,
       value: Decimal.to_float(transaction.value),
-      is_carried_out: transaction.is_carried_out
+      paid: transaction.paid
     }
     |> Map.merge(recurrency_data)
   end
