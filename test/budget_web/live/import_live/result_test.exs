@@ -100,14 +100,14 @@ defmodule BudgetWeb.ImportLive.ResultTest do
              %{
                account_id: account.id,
                date: Timex.today(),
-               is_carried_out: false,
+               paid: true,
                originator: %{category_id: category.id, description: "updated"},
                value: 11.0
              },
              %{
                account_id: account.id,
                date: Timex.today(),
-               is_carried_out: false,
+               paid: true,
                originator: %{category_id: category.id, description: "Panvel Filial"},
                value: -4.01
              }

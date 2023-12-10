@@ -8,7 +8,6 @@ defmodule Budget.Transactions.Transaction do
 
   schema "transactions" do
     field(:date, :date)
-    field(:is_carried_out, :boolean, default: false)
     field(:value, :decimal)
     field(:position, :decimal)
 
@@ -26,6 +25,8 @@ defmodule Budget.Transactions.Transaction do
     has_one(:recurrency_transaction, RecurrencyTransaction)
 
     field :profile_id, :integer
+
+    field :paid, :boolean, default: true
 
     timestamps()
   end

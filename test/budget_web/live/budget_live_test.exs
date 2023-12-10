@@ -283,7 +283,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           account_id: account.id,
           value: "200",
           is_recurrency: true
-        }
+        },
       )
       |> render_change()
 

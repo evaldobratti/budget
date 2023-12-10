@@ -14,7 +14,6 @@ defmodule Budget.Transactions.Transaction.Form do
 
   embedded_schema do
     field(:date, :date)
-    field(:is_carried_out, :boolean, default: false)
     field(:value, :decimal)
     field(:account_id, :integer)
     field(:position, :decimal)
@@ -24,6 +23,7 @@ defmodule Budget.Transactions.Transaction.Form do
 
     field(:keep_adding, :boolean)
 
+    field(:paid, :boolean, default: true)
     field(:apply_forward, :boolean)
 
     field :profile_id, :integer
@@ -53,16 +53,16 @@ defmodule Budget.Transactions.Transaction.Form do
       %__MODULE__{}
       |> cast(params, [
         :date,
-        :is_carried_out,
         :value,
         :account_id,
         :position,
         :originator,
         :is_recurrency,
         :keep_adding,
-        :apply_forward
+        :apply_forward,
+        :paid
       ])
-      |> validate_required([:date, :value, :account_id, :originator])
+      |> validate_required([:date, :value, :account_id, :originator, :paid])
       |> Budget.Repo.add_profile_id()
 
     originator = get_change(changeset, :originator) || "regular"
@@ -221,6 +221,7 @@ defmodule Budget.Transactions.Transaction.Form do
       date: get_change(changeset, :date),
       value: get_change(changeset, :value),
       account_id: get_change(changeset, :account_id),
+      paid: get_change(changeset, :paid, true),
       position:
         get_change(changeset, :position) ||
           Transactions.next_position_for_date(get_change(changeset, :date))
@@ -242,6 +243,7 @@ defmodule Budget.Transactions.Transaction.Form do
           date: get_change(changeset, :date),
           value: get_change(changeset, :value) |> Decimal.negate(),
           account_id: get_change(transfer, :other_account_id),
+          paid: get_change(changeset, :paid, true),
           position:
             get_change(changeset, :position) ||
               Transactions.next_position_for_date(get_change(changeset, :date))
@@ -255,6 +257,7 @@ defmodule Budget.Transactions.Transaction.Form do
       date: get_change(changeset, :date),
       value: get_change(changeset, :value),
       account_id: get_change(changeset, :account_id),
+      paid: get_change(changeset, :paid, true),
       position:
         get_change(changeset, :position) ||
           Transactions.next_position_for_date(get_change(changeset, :date))
@@ -291,7 +294,7 @@ defmodule Budget.Transactions.Transaction.Form do
     base = %__MODULE__{
       id: transaction.id,
       date: transaction.date,
-      is_carried_out: transaction.is_carried_out,
+      paid: transaction.paid,
       account_id: transaction.account_id,
       value: transaction.value,
       keep_adding: false,
@@ -343,7 +346,7 @@ defmodule Budget.Transactions.Transaction.Form do
       |> cast(params, [
         :date,
         :account_id,
-        :is_carried_out,
+        :paid,
         :position,
         :value,
         :apply_forward
@@ -351,7 +354,7 @@ defmodule Budget.Transactions.Transaction.Form do
       |> validate_required([
         :date,
         :account_id,
-        :is_carried_out,
+        :paid,
         :value
       ])
 
@@ -437,7 +440,7 @@ defmodule Budget.Transactions.Transaction.Form do
       account_id: get_field(changeset, :account_id),
       value: get_field(changeset, :value),
       position: get_field(changeset, :position),
-      is_carried_out: get_field(changeset, :is_carried_out)
+      paid: get_field(changeset, :paid, true)
     })
     |> put_assoc(
       :originator_regular,
@@ -464,7 +467,7 @@ defmodule Budget.Transactions.Transaction.Form do
         account_id: get_field(changeset, :account_id),
         value: get_field(changeset, :value),
         position: get_field(changeset, :position),
-        is_carried_out: get_field(changeset, :is_carried_out)
+        paid: get_field(changeset, :paid, true)
       })
       |> adjust_position
 
@@ -496,7 +499,7 @@ defmodule Budget.Transactions.Transaction.Form do
           account_id:
             Map.get(transfer || %{}, :other_account_id, current_counter_part.account_id),
           value: get_field(changeset, :value) |> Decimal.negate(),
-          is_carried_out: get_field(changeset, :is_carried_out)
+          paid: get_field(changeset, :paid, true)
         )
         |> adjust_position
       )

@@ -135,12 +135,25 @@
             <div class="w-[100px] px-1">
               <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
             </div>
-            <div class="flex-1 px-1">
+            <div class="flex-1 px-1 flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                phx-click="toggle-previous-balance" 
+                checked={@previous_balance} 
+              />
+
               Previous balance
             </div>
             <div class="w-[10%] px-1">
             </div>
-            <div class={"w-[10%] text-right px-1"}>
+            <div class={"w-[10%] px-1 flex items-center gap-2 justify-end"}>
+              <.tooltiped id={"tooltip-partial-balance"} tooltip={"Show partial balance"}>
+                <input 
+                  type="checkbox" 
+                  phx-click="toggle-partial-balance" 
+                  checked={@partial_balance} 
+                />
+              </.tooltiped>
               <.currency value={Enum.at(@balances, 0)} />
             </div>
             <div class="w-[5%] px-1">
@@ -148,11 +161,11 @@
           </div>
 
           <div 
-            :for={transaction <- @transactions} 
+            :for={{transaction, ix} <- Enum.with_index(@transactions)} 
             id={"transaction-#{transaction.id}"} 
             class={[
               "group list-group-item item-draggable flex",
-              (if is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency"), do: "bg-slate-400", else: "bg-slate-100"),
+              (if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency")) || not transaction.paid, do: "bg-slate-400", else: "bg-slate-100"),
               "px-4 py-1.5 rounded-lg hover:bg-slate-200"
             ]}
           >
@@ -205,6 +218,11 @@
             <div class={"w-[10%] text-right px-1"}>
               <.currency value={transaction.value} />
             </div>
+
+            <div :if={@partial_balance} class={"w-[10%] text-right px-1"}>
+              <.currency value={Enum.at(@balances, ix + 1)} />
+            </div>
+
             <div class="w-[5%] px-1 flex gap-x-1">
               <.link patch={~p"/transactions/#{transaction}/delete"} 
                 data-testid={"delete-#{transaction.id}"}
@@ -237,7 +255,7 @@
             <div class="w-[10%] px-1">
             </div>
             <div class={"w-[10%] text-right px-1"}>
-              <.currency value={Enum.at(@balances, 1)} />
+              <.currency value={Enum.at(@balances, -1)} />
             </div>
             <div class="w-[5%] px-1">
             </div>

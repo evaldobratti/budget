@@ -228,7 +228,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                 account_id: data.account_id,
                 date: ~D[2022-01-01],
                 value: 200.0,
-                is_carried_out: false,
+                paid: true,
                 originator: %{
                   category_id: data.category_id,
                   description: "Something"
@@ -281,7 +281,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                 account_id: data.account_id,
                 date: ~D[2022-01-01],
                 value: 200.0,
-                is_carried_out: false,
+                paid: true,
                 originator: %{
                   date: ~D[2022-01-01],
                   other_account_id: other_account_id,
@@ -330,7 +330,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                account_id: data.account_id,
                date: ~D[2022-01-01],
                id: transaction.id,
-               is_carried_out: false,
+               paid: true,
                is_recurrency: false,
                keep_adding: false,
                originator: "regular",
@@ -350,7 +350,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
         Form.update_changeset(form, %{
           date: nil,
           account_id: nil,
-          is_carried_out: nil,
+          paid: nil,
           value: nil,
           regular: %{
             description: "",
@@ -361,7 +361,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
       assert %{
                account_id: ["can't be blank"],
                date: ["can't be blank"],
-               is_carried_out: ["can't be blank"],
+               paid: ["can't be blank"],
                regular: %{category_id: ["can't be blank"], description: ["can't be blank"]},
                value: ["can't be blank"]
              } == errors_on(changeset)
@@ -389,7 +389,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                account_id: data.account_id,
                date: ~D[2022-01-01],
                id: transaction.id,
-               is_carried_out: false,
+               paid: true,
                is_recurrency: false,
                keep_adding: false,
                originator: "transfer",
@@ -406,7 +406,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
         Form.update_changeset(form, %{
           date: nil,
           account_id: nil,
-          is_carried_out: nil,
+          paid: nil,
           value: nil,
           transfer: %{
             other_account_id: nil
@@ -416,7 +416,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
       assert %{
                account_id: ["can't be blank"],
                date: ["can't be blank"],
-               is_carried_out: ["can't be blank"],
+               paid: ["can't be blank"],
                transfer: %{other_account_id: ["can't be blank"]},
                value: ["can't be blank"]
              } == errors_on(changeset)
@@ -429,7 +429,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
           account_id: data.account_id,
           value: 200,
           originator: "regular",
-          is_carried_out: false,
+          paid: true,
           regular: %{
             category_id: data.category_id,
             description: "Something"
@@ -448,7 +448,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
           date: ~D[2022-02-02],
           account_id: other_account_id,
           value: 300,
-          is_carried_out: true,
+          paid: true,
           regular: %{
             category_id: other_category_id,
             description: "Something updated"
@@ -461,7 +461,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                date: ~D[2022-02-02],
                originator: %{category_id: other_category_id, description: "Something updated"},
                value: 300.0,
-               is_carried_out: true
+               paid: true
              } == transaction |> simplify()
     end
 
@@ -474,7 +474,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
           account_id: data.account_id,
           value: 200,
           originator: "transfer",
-          is_carried_out: false,
+          paid: true,
           transfer: %{
             other_account_id: other_account_id
           }
@@ -492,7 +492,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
           date: ~D[2022-02-02],
           account_id: other_account_id_part,
           value: 300,
-          is_carried_out: true,
+          paid: true,
           transfer: %{
             other_account_id: other_account_id_counter_part
           }
@@ -507,7 +507,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  other_account_id: other_account_id_counter_part,
                  other_value: -300.0
                },
-               is_carried_out: true,
+               paid: true,
                value: 300.0
              } == transaction |> simplify()
 
@@ -519,7 +519,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  date: ~D[2022-02-02],
                  other_value: 300.0
                },
-               is_carried_out: true,
+               paid: true,
                value: -300.0
              } ==
                transaction.originator_transfer_part.counter_part.id
@@ -556,7 +556,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
           date: ~D[2022-02-02],
           account_id: other_account_id_part,
           value: 300,
-          is_carried_out: true,
+          paid: true,
           transfer: %{
             other_account_id: other_account_id_counter_part
           }
@@ -572,7 +572,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  other_value: -300.0
                },
                value: 300.0,
-               is_carried_out: true
+               paid: true
              } == counter_part_transaction |> simplify()
     end
 
@@ -620,7 +620,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                date: ~D[2022-02-02],
                originator: %{category_id: other_category_id, description: "Something updated"},
                value: 300.0,
-               is_carried_out: false,
+               paid: true,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -686,7 +686,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                date: ~D[2022-02-02],
                originator: %{category_id: other_category_id, description: "Something updated"},
                value: 300.0,
-               is_carried_out: false,
+               paid: true,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -756,7 +756,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  other_value: -300.0
                },
                value: 300.0,
-               is_carried_out: false,
+               paid: true,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -828,7 +828,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  other_value: -300.0
                },
                value: 300.0,
-               is_carried_out: false,
+               paid: true,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],
@@ -896,7 +896,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                date: ~D[2022-02-02],
                originator: %{category_id: other_category_id, description: "Something updated"},
                value: 300.0,
-               is_carried_out: false,
+               paid: true,
                recurrency: %{
                  date_end: ~D[2022-12-01],
                  date_start: ~D[2022-01-01],

@@ -6,14 +6,14 @@ defmodule Budget.Reports do
   alias Budget.Repo
 
   def expenses(%{date_start: date_start, date_end: date_end} = params) do
-    Transactions.transactions_in_period([], date_start, date_end)
+    Transactions.transactions_in_period(date_start, date_end)
     |> Enum.filter(& Decimal.negative?(&1.value))
     |> Enum.map(& %{ &1 | value: Decimal.negate(&1.value)})
     |> default_group_by(params)
   end
 
   def incomes(%{date_start: date_start, date_end: date_end} = params) do
-    Transactions.transactions_in_period([], date_start, date_end)
+    Transactions.transactions_in_period(date_start, date_end)
     |> Enum.filter(& Decimal.positive?(&1.value))
     |> default_group_by(params)
   end
