@@ -105,19 +105,33 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def apply_return_from(socket, _, _), do: socket
 
+  defp shift_dates(socket, direction) do
+    [date_start, date_end] = socket.assigns.dates
+
+    is_first_day = Timex.equal?(date_start, date_start |> Timex.beginning_of_month())
+
+    is_last_day =
+      Timex.equal?(date_end, date_end |> Timex.end_of_month() |> Timex.beginning_of_day())
+
+    if is_first_day and is_last_day do
+      date_start =
+        date_start
+        |> Timex.shift(months: direction)
+        |> Timex.beginning_of_month()
+
+      [
+        date_start,
+        Timex.end_of_month(date_start)
+      ]
+    else
+      socket.assigns.dates
+      |> Enum.map(&Timex.shift(&1, months: direction))
+    end
+  end
+
   @impl true
   def handle_event("month-previous", _params, socket) do
-    [date_start | _] = socket.assigns.dates
-
-    date_start =
-      date_start
-      |> Timex.shift(months: -1)
-      |> Timex.beginning_of_month()
-
-    dates = [
-      date_start,
-      Timex.end_of_month(date_start)
-    ]
+    dates = shift_dates(socket, -1)
 
     {
       :noreply,
@@ -128,17 +142,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def handle_event("month-next", _params, socket) do
-    [date_start | _] = socket.assigns.dates
-
-    date_start =
-      date_start
-      |> Timex.shift(months: 1)
-      |> Timex.beginning_of_month()
-
-    dates = [
-      date_start,
-      Timex.end_of_month(date_start)
-    ]
+    dates = shift_dates(socket, 1)
 
     {
       :noreply,

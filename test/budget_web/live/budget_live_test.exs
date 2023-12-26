@@ -256,6 +256,58 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#next-balance") |> render =~ "1.020,50"
     end
 
+    test "navigating through months with first and last month date selected", %{conn: conn} do
+      {:ok, live, _html} = live(conn, ~p"/")
+
+      live
+      |> form("#dates-switch")
+      |> render_change(%{
+        "date_start" => "2023-11-01",
+        "date_end" => "2023-11-30"
+      })
+
+      assert live |> element("#previous-balance") |> render =~ "31/10/2023"
+      assert live |> element("#next-balance") |> render =~ "30/11/2023"
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      assert live |> element("#previous-balance") |> render =~ "30/11/2023"
+      assert live |> element("#next-balance") |> render =~ "31/12/2023"
+
+      live
+      |> element("button", "<<")
+      |> render_click()
+
+      assert live |> element("#previous-balance") |> render =~ "31/10/2023"
+      assert live |> element("#next-balance") |> render =~ "30/11/2023"
+
+      live
+      |> form("#dates-switch")
+      |> render_change(%{
+        "date_start" => "2023-10-28",
+        "date_end" => "2023-11-28"
+      })
+
+      assert live |> element("#previous-balance") |> render =~ "27/10/2023"
+      assert live |> element("#next-balance") |> render =~ "28/11/2023"
+
+      live
+      |> element("button", ">>")
+      |> render_click()
+
+      assert live |> element("#previous-balance") |> render =~ "27/11/2023"
+      assert live |> element("#next-balance") |> render =~ "28/12/2023"
+
+      live
+      |> element("button", "<<")
+      |> render_click()
+
+      assert live |> element("#previous-balance") |> render =~ "27/10/2023"
+      assert live |> element("#next-balance") |> render =~ "28/11/2023"
+    end
+
     test "shows tooltip for categories when category is child", %{
       conn: conn,
       account: account,
@@ -725,5 +777,44 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   test "toggles previous balance", %{conn: conn} do
+    %{id: id} = transaction_fixture()
+
+    {:ok, live, _html} = live(conn, ~p"/")
+
+    refute live
+           |> element("#transaction-#{id}")
+           |> render() =~ "374,00"
+
+    assert live
+           |> element("#previous-balance")
+           |> render() =~ "241,00"
+
+    assert live
+           |> element("#next-balance")
+           |> render() =~ "374,00"
+
+    live
+    |> element("[phx-click='toggle-previous-balance']")
+    |> render_click()
+
+    assert live
+           |> element("#previous-balance")
+           |> render() =~ "0,00"
+
+    assert live
+           |> element("#next-balance")
+           |> render() =~ "133,00"
+
+    live
+    |> element("[phx-click='toggle-partial-balance']")
+    |> render_click()
+
+    live
+    |> element("[phx-click='toggle-previous-balance']")
+    |> render_click()
+
+    assert live
+           |> element("#transaction-#{id}")
+           |> render() =~ "374,00"
   end
 end
