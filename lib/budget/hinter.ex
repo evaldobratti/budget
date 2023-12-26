@@ -31,6 +31,7 @@ defmodule Budget.Hinter do
         left_join: c in assoc(r, :category),
         preload: [originator_regular: {r, category: c}],
         where: r.description == ^description,
+        order_by: [desc: :date],
         limit: 1
       )
 
