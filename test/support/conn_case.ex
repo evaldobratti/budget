@@ -14,7 +14,7 @@ defmodule BudgetWeb.ConnCase do
   by setting `use BudgetWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
-alias Budget.Users
+  alias Budget.Users
 
   use ExUnit.CaseTemplate
 
@@ -36,10 +36,10 @@ alias Budget.Users
 
   setup tags do
     Budget.DataCase.setup_sandbox(tags)
-    
+
     user = Users.get_user_by_email!("mocked@provider.com")
 
-    conn = 
+    conn =
       Phoenix.ConnTest.build_conn()
       |> Plug.Test.init_test_session(%{})
       |> Plug.Conn.put_session("user", user)

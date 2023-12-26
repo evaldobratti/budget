@@ -12,20 +12,18 @@ defmodule BudgetWeb.GoogleAuthController do
       :budget
       |> Application.get_env(:environment, %{})
       |> Map.get(:name) == :dev ->
-
         dev_user = Users.get_user_by_email!("mocked@provider.com")
 
         conn
         |> put_session(:user, dev_user)
         |> put_session(:active_profile, Enum.at(dev_user.profiles, 0))
-
         |> redirect(to: ~p"/")
 
       true ->
         conn
-        |> render(:login, [
+        |> render(:login,
           google_oauth_url: ElixirAuthGoogle.generate_oauth_url(BudgetWeb.Endpoint.url())
-        ])
+        )
     end
   end
 
@@ -37,7 +35,7 @@ defmodule BudgetWeb.GoogleAuthController do
       case Users.fetch_user_by_google_id(google_profile.sub) do
         :not_found ->
           {:ok, user} =
-          google_profile
+            google_profile
             |> Map.put(:google_id, google_profile.sub)
             |> Map.put(:profiles, [%{name: "Padrão"}])
             |> Users.create_user()

@@ -33,7 +33,7 @@ defmodule Budget.Transactions.Recurrency do
         :date_end,
         :parcel_start,
         :parcel_end,
-        :is_parcel,
+        :is_parcel
       ])
       |> validate_required([
         :is_parcel,
@@ -110,12 +110,15 @@ defmodule Budget.Transactions.Recurrency do
 
       params = payload_at_date(payloads, date)
 
-      originator.build_transactions(%{
-        date: date,
-        is_recurrency: true,
-        recurrency_transaction: recurrency_transaction,
-        position: Decimal.new(999999)
-      }, params)
+      originator.build_transactions(
+        %{
+          date: date,
+          is_recurrency: true,
+          recurrency_transaction: recurrency_transaction,
+          position: Decimal.new(999_999)
+        },
+        params
+      )
       |> List.wrap()
       |> Enum.with_index()
       |> Enum.map(fn {entry, ix} ->

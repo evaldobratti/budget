@@ -275,16 +275,16 @@ defmodule Budget.Transactions do
     account_ids = Keyword.get(opts, :account_ids, [])
     category_ids = Keyword.get(opts, :category_ids, [])
 
-    query = 
+    query =
       if has_named_binding?(query, :account) do
-       from([account: a] in query,
+        from([account: a] in query,
           where: a.id in ^account_ids or fragment("?::int = 0", ^length(account_ids))
         )
       else
         query
       end
 
-    query = 
+    query =
       if has_named_binding?(query, :category) do
         from([category: c] in query,
           where: c.id in ^category_ids or fragment("?::int = 0", ^length(category_ids))
@@ -402,7 +402,8 @@ defmodule Budget.Transactions do
 
   defp delete_with_recurrency(%Transaction{} = subject, transaction_ids, end_recurrency) do
     recurrency_change = fn repo, _ ->
-      if end_recurrency && subject.recurrency_transaction && subject.recurrency_transaction.recurrency do
+      if end_recurrency && subject.recurrency_transaction &&
+           subject.recurrency_transaction.recurrency do
         subject.recurrency_transaction.recurrency
         |> Ecto.Changeset.change(%{
           date_end: Timex.shift(subject.recurrency_transaction.original_date, days: -1)
@@ -465,7 +466,8 @@ defmodule Budget.Transactions do
   def list_categories() do
     from(
       c in Category,
-      left_join: r in Originator.Regular, on: r.category_id == c.id,
+      left_join: r in Originator.Regular,
+      on: r.category_id == c.id,
       group_by: [c.id, c.name, c.path, c.inserted_at, c.updated_at],
       select_merge: %{transactions_count: count(r.id)}
     )
@@ -529,7 +531,10 @@ defmodule Budget.Transactions do
     })
   end
 
-  def put_transaction_between(%Transaction{} = transaction, [transaction_before = %Transaction{}, transaction_after]) do
+  def put_transaction_between(%Transaction{} = transaction, [
+        transaction_before = %Transaction{},
+        transaction_after
+      ]) do
     position = transaction_before.position
 
     date =

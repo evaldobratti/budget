@@ -12,8 +12,8 @@ defmodule Budget.Hinter do
       h in HintDescription,
       order_by: fragment("similarity(original, ?) desc", ^cleaned),
       select: %{
-        original: h.original, 
-        suggestion: h.transformed, 
+        original: h.original,
+        suggestion: h.transformed,
         rank: fragment("similarity(original, ?)", ^cleaned)
       }
     )
@@ -22,8 +22,9 @@ defmodule Budget.Hinter do
 
   def hint_category(nil, _), do: nil
   def hint_category("", _), do: nil
+
   def hint_category(description, account_id) do
-    query = 
+    query =
       from(
         t in Transaction,
         join: r in assoc(t, :originator_regular),
@@ -33,7 +34,7 @@ defmodule Budget.Hinter do
         limit: 1
       )
 
-    query = 
+    query =
       if account_id do
         from(
           t in query,
@@ -46,7 +47,9 @@ defmodule Budget.Hinter do
     query
     |> Repo.all()
     |> case do
-      [] -> nil
+      [] ->
+        nil
+
       [%{originator_regular: regular}] ->
         regular.category
     end

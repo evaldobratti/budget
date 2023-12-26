@@ -1,5 +1,4 @@
 defmodule Budget.Users do
-
   import Ecto.Query
 
   alias Budget.Transactions

@@ -35,5 +35,4 @@ defmodule BudgetWeb.Nav do
 
     {:cont, assign(socket, active_tab: active_tab)}
   end
-
 end

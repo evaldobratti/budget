@@ -45,7 +45,6 @@ defmodule Budget.Transactions.Transaction.Form do
       field(:parcel_start, :integer)
       field(:parcel_end, :integer)
     end
-
   end
 
   def insert_changeset(params) do
@@ -69,7 +68,10 @@ defmodule Budget.Transactions.Transaction.Form do
 
     case originator do
       "regular" ->
-        cast_embed(changeset, :regular, with: &changeset_regular/2, required: originator == "regular")
+        cast_embed(changeset, :regular,
+          with: &changeset_regular/2,
+          required: originator == "regular"
+        )
 
       "transfer" ->
         cast_embed(changeset, :transfer,
@@ -179,14 +181,13 @@ defmodule Budget.Transactions.Transaction.Form do
         :recurrency_transactions,
         Enum.map(
           transactions,
-          &
-          %RecurrencyTransaction{
-            original_date: get_field(changeset, :date),
-            transaction_id: &1.id,
-            parcel: get_field(recurrency, :parcel_start),
-            parcel_end: get_field(recurrency, :parcel_end)
-          }
-          |> Budget.Repo.add_profile_id()
+          &(%RecurrencyTransaction{
+              original_date: get_field(changeset, :date),
+              transaction_id: &1.id,
+              parcel: get_field(recurrency, :parcel_start),
+              parcel_end: get_field(recurrency, :parcel_end)
+            }
+            |> Budget.Repo.add_profile_id())
         )
       )
       |> Budget.Repo.add_profile_id()
@@ -210,11 +211,12 @@ defmodule Budget.Transactions.Transaction.Form do
   def apply_insert(%Ecto.Changeset{valid?: true, changes: %{originator: "regular"}} = changeset) do
     regular = get_change(changeset, :regular)
 
-    originator = %Regular{
-      category_id: get_change(regular, :category_id),
-      description: get_change(regular, :description)
-    }
-    |> Budget.Repo.add_profile_id()
+    originator =
+      %Regular{
+        category_id: get_change(regular, :category_id),
+        description: get_change(regular, :description)
+      }
+      |> Budget.Repo.add_profile_id()
 
     %Transaction{}
     |> change(%{
@@ -238,7 +240,8 @@ defmodule Budget.Transactions.Transaction.Form do
       %Transfer{}
       |> change()
       |> Budget.Repo.add_profile_id()
-      |> put_assoc(:counter_part,
+      |> put_assoc(
+        :counter_part,
         %Transaction{
           date: get_change(changeset, :date),
           value: get_change(changeset, :value) |> Decimal.negate(),
@@ -336,7 +339,8 @@ defmodule Budget.Transactions.Transaction.Form do
         regular: regular_data,
         transfer: transfer_data,
         is_recurrency:
-          transaction.recurrency_transaction && Ecto.assoc_loaded?(transaction.recurrency_transaction)
+          transaction.recurrency_transaction &&
+            Ecto.assoc_loaded?(transaction.recurrency_transaction)
     }
   end
 
@@ -521,7 +525,8 @@ defmodule Budget.Transactions.Transaction.Form do
     |> apply_update(transaction)
   end
 
-  defp adjust_position(%Changeset{valid?: true, changes: %{date: date} = changes} = changeset) when not is_map_key(changes, :position) do
+  defp adjust_position(%Changeset{valid?: true, changes: %{date: date} = changes} = changeset)
+       when not is_map_key(changes, :position) do
     changeset
     |> put_change(:position, Transactions.next_position_for_date(date))
   end

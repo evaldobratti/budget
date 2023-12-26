@@ -82,7 +82,11 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#next-balance") |> render =~ "320,50"
     end
 
-    test "keeps adding transactions and keeps date and account from previous transaction", %{conn: conn, account: account, category: category} do
+    test "keeps adding transactions and keeps date and account from previous transaction", %{
+      conn: conn,
+      account: account,
+      category: category
+    } do
       {:ok, live, _html} = live(conn, ~p"/")
 
       another_account = account_fixture()
@@ -109,25 +113,27 @@ defmodule BudgetWeb.BudgetLiveTest do
       refute live |> element("#transaction-form") |> has_element?
 
       assert "/transactions/new" == assert_patch(live, 100)
-      assert "/?account_id=#{another_account.id}&date=2020-02-20&from=transaction&transaction-add-new=true" == assert_patch(live, 100)
+
+      assert "/?account_id=#{another_account.id}&date=2020-02-20&from=transaction&transaction-add-new=true" ==
+               assert_patch(live, 100)
+
       assert "/transactions/new" == assert_patch(live, 300)
 
-      assert ["2020-02-20"] == 
-          live
-          |> element("#transaction-form")
-          |> render()
-          |> Floki.parse_fragment!()
-          |> Floki.find("[name='form[date]']")
-          |> Floki.attribute("value")
+      assert ["2020-02-20"] ==
+               live
+               |> element("#transaction-form")
+               |> render()
+               |> Floki.parse_fragment!()
+               |> Floki.find("[name='form[date]']")
+               |> Floki.attribute("value")
 
-      assert [to_string(another_account.id)] == 
-          live
-          |> element("#transaction-form")
-          |> render()
-          |> Floki.parse_fragment!()
-          |> Floki.find("[selected='selected']")
-          |> Floki.attribute("value")
-
+      assert [to_string(another_account.id)] ==
+               live
+               |> element("#transaction-form")
+               |> render()
+               |> Floki.parse_fragment!()
+               |> Floki.find("[selected='selected']")
+               |> Floki.attribute("value")
     end
 
     test "editing transaction", %{conn: conn, account: account} do
@@ -250,18 +256,22 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert live |> element("#next-balance") |> render =~ "1.020,50"
     end
 
-    test "shows tooltip for categories when category is child", %{conn: conn, account: account, category: category} do
+    test "shows tooltip for categories when category is child", %{
+      conn: conn,
+      account: account,
+      category: category
+    } do
       category = category_fixture(%{name: "child", parent: category})
 
-      %{id: id} = transaction_fixture(%{
-        regular: %{description: "some", category_id: category.id}
-      })
+      %{id: id} =
+        transaction_fixture(%{
+          regular: %{description: "some", category_id: category.id}
+        })
 
       {:ok, live, _html} = live(conn, ~p"/")
 
       assert live |> has_element?("#category-detail-#{id}")
     end
-
   end
 
   describe "recurrencies" do
@@ -283,7 +293,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           account_id: account.id,
           value: "200",
           is_recurrency: true
-        },
+        }
       )
       |> render_change()
 
@@ -712,5 +722,8 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     assert render(live) =~
              ~r/Transaction 1[\s\S]*Transaction 5[\s\S]*Transaction 2[\s\S]*Transaction 3[\s\S]*Transaction 4/
+  end
+
+  test "toggles previous balance", %{conn: conn} do
   end
 end

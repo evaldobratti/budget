@@ -18,7 +18,10 @@ defmodule Budget.Repo.Migrations.AddOriginators do
     alter table(:transactions) do
       add :originator_regular_id, references(:originators_regular, on_delete: :nothing)
       add :originator_transfer_part_id, references(:originators_transfer, on_delete: :nothing)
-      add :originator_transfer_counter_part_id, references(:originators_transfer, on_delete: :nothing)
+
+      add :originator_transfer_counter_part_id,
+          references(:originators_transfer, on_delete: :nothing)
+
       remove_if_exists :description, :string
     end
 
