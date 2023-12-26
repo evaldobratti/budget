@@ -3,6 +3,5 @@ defmodule Budget.Repo.Migrations.EnablePgtrgm do
 
   def change do
     execute("CREATE EXTENSION pg_trgm")
-
   end
 end

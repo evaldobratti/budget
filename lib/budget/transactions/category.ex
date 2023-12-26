@@ -2,7 +2,6 @@ defmodule Budget.Transactions.Category do
   use Ecto.Schema
   import Ecto.Changeset
 
-
   use EctoMaterializedPath
 
   schema "categories" do

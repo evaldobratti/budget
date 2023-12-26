@@ -1,5 +1,4 @@
 defmodule Budget.Simplifiers do
-  
   alias Budget.Transactions.Transaction
 
   def simplify(%Transaction{} = transaction) do
@@ -70,5 +69,4 @@ defmodule Budget.Simplifiers do
   def simplify({:ok, %Transaction{} = transaction}) do
     {:ok, simplify(transaction)}
   end
-  
 end

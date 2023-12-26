@@ -1,15 +1,16 @@
 defmodule Budget.Importations do
-
   alias Budget.Importations.ImportFile
   alias Budget.Repo
 
   import Ecto.Query
 
   def create_import_file(path) do
-    Budget.Repo.insert(ImportFile.changeset(%ImportFile{}, %{
-      path: path,
-      state: "new"
-    }))
+    Budget.Repo.insert(
+      ImportFile.changeset(%ImportFile{}, %{
+        path: path,
+        state: "new"
+      })
+    )
   end
 
   def get_import_file!(id), do: Repo.get!(ImportFile, id)
@@ -19,12 +20,16 @@ defmodule Budget.Importations do
     |> Ecto.Multi.run(:inserts, fn _repo, _changes ->
       {:ok, Enum.map(changesets, &Budget.Transactions.Transaction.Form.apply_insert(&1))}
     end)
-    |> Ecto.Multi.update(:import_file, ImportFile.changeset(import_file,
-      %{
-        state: "imported",
-        hashes: changesets |> Enum.map(& &1.params["hash"])
-      }
-    ))
+    |> Ecto.Multi.update(
+      :import_file,
+      ImportFile.changeset(
+        import_file,
+        %{
+          state: "imported",
+          hashes: changesets |> Enum.map(& &1.params["hash"])
+        }
+      )
+    )
     |> Budget.Repo.transaction()
   end
 
@@ -35,7 +40,7 @@ defmodule Budget.Importations do
   def has_conflict?(hash) do
     Repo.exists?(
       from(
-        f in ImportFile, 
+        f in ImportFile,
         where: ^hash in f.hashes
       )
     )

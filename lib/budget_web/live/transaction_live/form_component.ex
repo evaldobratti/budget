@@ -54,15 +54,16 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
 
   def hint_category(changeset, ["form", "regular", "description"]) do
     account_id = Changeset.get_field(changeset, :accunt_id)
-    description = 
+
+    description =
       changeset
       |> Changeset.get_change(:regular)
       |> Changeset.get_field(:description)
 
-
     case Hinter.hint_category(description, account_id) do
-      nil -> changeset
-      
+      nil ->
+        changeset
+
       category ->
         regular_changeset =
           changeset
@@ -78,7 +79,6 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   end
 
   def hint_category(changeset, _), do: changeset
-
 
   def handle_event("save", %{"form" => form_params}, socket) do
     save_transaction(

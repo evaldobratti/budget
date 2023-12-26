@@ -1,5 +1,4 @@
 defmodule Budget.Importations.CreditCard.NuBank do
-
   @months_pt %{
     "JAN" => 1,
     "FEV" => 2,
@@ -13,10 +12,10 @@ defmodule Budget.Importations.CreditCard.NuBank do
     "OUT" => 10,
     "NOV" => 11,
     "DEZ" => 12
-    }
+  }
 
   def import(file) do
-    text = 
+    text =
       if String.ends_with?(file, "txt") do
         {:ok, text} = File.read(file)
         text
@@ -74,7 +73,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
             {:description, string}
         end
       end)
-      |> Enum.filter(& &1 != :ignore)
+      |> Enum.filter(&(&1 != :ignore))
       |> Enum.reduce(
         %{
           building: %{},
@@ -98,9 +97,16 @@ defmodule Budget.Importations.CreditCard.NuBank do
             month = Enum.at(splitted, -2)
             day = Enum.at(splitted, -3)
 
-            {:ok, base_date} = Date.new(String.to_integer(year), @months_pt[month], String.to_integer(day))
+            {:ok, base_date} =
+              Date.new(String.to_integer(year), @months_pt[month], String.to_integer(day))
 
-            %{acc | state: :transactions, base_date: base_date, base_year: year, base_month: month}
+            %{
+              acc
+              | state: :transactions,
+                base_date: base_date,
+                base_year: year,
+                base_month: month
+            }
 
           {:transactions, _transactions}, %{state: :transactions} = acc ->
             %{acc | state: :period}
@@ -109,7 +115,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
             %{acc | state: :values_description}
 
           {:description, _}, %{state: :values_description} = acc ->
-            %{acc | state: :date, }
+            %{acc | state: :date}
 
           {:date, date}, %{state: state} = acc when state in [:date, :values_description] ->
             acc
@@ -128,7 +134,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
             |> Map.put(:state, :value)
 
           {:value, value}, %{state: :value} = acc ->
-            adjusted = 
+            adjusted =
               if String.contains?(acc.building.description, "Pagamento em") do
                 String.to_float(value)
               else
@@ -159,26 +165,26 @@ defmodule Budget.Importations.CreditCard.NuBank do
         end
       )
 
-    uncomplete = 
+    uncomplete =
       result.uncomplete_descriptions
       |> Enum.zip(result.uncomplete_values)
-      |> Enum.map(fn {descriptions, value} -> 
-        adjusted = 
+      |> Enum.map(fn {descriptions, value} ->
+        adjusted =
           if String.contains?(descriptions.description, "Pagamento em") do
             String.to_float(value)
           else
             -String.to_float(value)
           end
-        
-        Map.put(descriptions, :value, adjusted) 
-      end)
-      |> Enum.map(& Map.put(&1, :uncomplete, true))
 
-    transactions = 
+        Map.put(descriptions, :value, adjusted)
+      end)
+      |> Enum.map(&Map.put(&1, :uncomplete, true))
+
+    transactions =
       result.transactions
       |> Enum.concat(uncomplete)
       |> Enum.sort_by(& &1.ix)
-      |> Enum.map(fn 
+      |> Enum.map(fn
         %{date: date} = transaction ->
           [day, month] = String.split(date, " ")
 
@@ -194,13 +200,13 @@ defmodule Budget.Importations.CreditCard.NuBank do
 
           %{transaction | date: date}
 
-        other -> 
+        other ->
           other
       end)
 
     %{
       transactions: transactions,
-      conversion: result.conversion,
+      conversion: result.conversion
     }
   end
 end

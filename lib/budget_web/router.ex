@@ -24,12 +24,13 @@ defmodule BudgetWeb.Router do
     pipe_through(:browser)
 
     get "/login", GoogleAuthController, :login
-    get "/auth/google/callback", GoogleAuthController, :signin 
+    get "/auth/google/callback", GoogleAuthController, :signin
     get "/logout", GoogleAuthController, :logout
 
-    live_session :authenticated, on_mount: [
-      BudgetWeb.Nav
-    ] do
+    live_session :authenticated,
+      on_mount: [
+        BudgetWeb.Nav
+      ] do
       pipe_through :secure
 
       live "/", BudgetLive.Index, :index
@@ -51,7 +52,6 @@ defmodule BudgetWeb.Router do
 
       live "/charts", ChartLive.Index, :index
     end
-
   end
 
   # Other scopes may use custom stacks.

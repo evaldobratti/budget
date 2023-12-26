@@ -88,10 +88,10 @@ defmodule BudgetWeb.BudgetLive.Index do
   def apply_return_from(socket, "transaction", params) do
     if Map.get(params, "transaction-add-new") do
       Process.send_after(self(), :add_new_transaction, 200)
-      
+
       socket
-      |> update(:new_transaction_payload, & %{ &1 | date: Map.get(params, "date")})
-      |> update(:new_transaction_payload, & %{ &1 | account_id: Map.get(params, "account_id")})
+      |> update(:new_transaction_payload, &%{&1 | date: Map.get(params, "date")})
+      |> update(:new_transaction_payload, &%{&1 | account_id: Map.get(params, "account_id")})
     else
       socket
     end
@@ -105,19 +105,33 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def apply_return_from(socket, _, _), do: socket
 
+  defp shift_dates(socket, direction) do
+    [date_start, date_end] = socket.assigns.dates
+
+    is_first_day = Timex.equal?(date_start, date_start |> Timex.beginning_of_month())
+
+    is_last_day =
+      Timex.equal?(date_end, date_end |> Timex.end_of_month() |> Timex.beginning_of_day())
+
+    if is_first_day and is_last_day do
+      date_start =
+        date_start
+        |> Timex.shift(months: direction)
+        |> Timex.beginning_of_month()
+
+      [
+        date_start,
+        Timex.end_of_month(date_start)
+      ]
+    else
+      socket.assigns.dates
+      |> Enum.map(&Timex.shift(&1, months: direction))
+    end
+  end
+
   @impl true
   def handle_event("month-previous", _params, socket) do
-    [date_start | _] = socket.assigns.dates
-
-    date_start =
-      date_start
-      |> Timex.shift(months: -1)
-      |> Timex.beginning_of_month()
-
-    dates = [
-      date_start,
-      Timex.end_of_month(date_start)
-    ]
+    dates = shift_dates(socket, -1)
 
     {
       :noreply,
@@ -128,17 +142,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def handle_event("month-next", _params, socket) do
-    [date_start | _] = socket.assigns.dates
-
-    date_start =
-      date_start
-      |> Timex.shift(months: 1)
-      |> Timex.beginning_of_month()
-
-    dates = [
-      date_start,
-      Timex.end_of_month(date_start)
-    ]
+    dates = shift_dates(socket, 1)
 
     {
       :noreply,
@@ -272,16 +276,23 @@ defmodule BudgetWeb.BudgetLive.Index do
 
     [date_start, date_end] = socket.assigns.dates
 
-    previous_balance = 
+    previous_balance =
       if socket.assigns.previous_balance do
-        Transactions.balance_at(Timex.shift(date_start, days: -1), account_ids: account_ids, category_ids: category_ids)
+        Transactions.balance_at(Timex.shift(date_start, days: -1),
+          account_ids: account_ids,
+          category_ids: category_ids
+        )
       else
         Decimal.new(0)
       end
 
-    transactions = Transactions.transactions_in_period(date_start, date_end, account_ids: account_ids, category_ids: category_ids)
+    transactions =
+      Transactions.transactions_in_period(date_start, date_end,
+        account_ids: account_ids,
+        category_ids: category_ids
+      )
 
-    [balances, _] = 
+    [balances, _] =
       transactions
       |> Enum.reduce([[previous_balance], previous_balance], fn ele, [acc, previous] ->
         previous = Decimal.add(previous, ele.value)
@@ -308,7 +319,11 @@ defmodule BudgetWeb.BudgetLive.Index do
   def render_categories([], _socket), do: nil
 
   def render_categories(categories, category_selected_ids, socket) do
-    assigns = %{categories: categories, socket: socket, category_selected_ids: category_selected_ids}
+    assigns = %{
+      categories: categories,
+      socket: socket,
+      category_selected_ids: category_selected_ids
+    }
 
     ~H"""
     <%= for {category, children} <- @categories do %>
@@ -362,9 +377,9 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def category_tooltip(categories, category) do
-    {tooltip, _} = 
+    {tooltip, _} =
       Enum.reduce(category.path, {"", categories}, fn id, {acc, categories} ->
-        {category, children} = 
+        {category, children} =
           Enum.find(categories, fn {category, _} ->
             category.id == id
           end)

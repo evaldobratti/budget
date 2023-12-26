@@ -85,7 +85,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                value: ["can't be blank"],
                regular: ["can't be blank"],
                recurrency: %{
-                 date_end: ["can't be blank"],
+                 date_end: ["can't be blank"]
                }
              } == errors_on(changeset)
 
@@ -250,7 +250,11 @@ defmodule Budget.Transactions.Transaction.FormTest do
                   parcel_end: nil,
                   parcel_start: nil
                 },
-                recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+                recurrency_transaction: %{
+                  original_date: ~D[2022-01-01],
+                  parcel: nil,
+                  parcel_end: nil
+                }
               }} == Form.apply_insert(changeset) |> simplify()
     end
 
@@ -303,7 +307,11 @@ defmodule Budget.Transactions.Transaction.FormTest do
                   parcel_end: nil,
                   parcel_start: nil
                 },
-                recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+                recurrency_transaction: %{
+                  original_date: ~D[2022-01-01],
+                  parcel: nil,
+                  parcel_end: nil
+                }
               }} == Form.apply_insert(changeset) |> simplify()
     end
   end
@@ -638,7 +646,11 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{
+                 original_date: ~D[2022-01-01],
+                 parcel: nil,
+                 parcel_end: nil
+               }
              } == transaction |> simplify()
     end
 
@@ -704,7 +716,11 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{
+                 original_date: ~D[2022-01-01],
+                 parcel: nil,
+                 parcel_end: nil
+               }
              } == transaction |> simplify()
     end
 
@@ -773,7 +789,11 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{
+                 original_date: ~D[2022-01-01],
+                 parcel: nil,
+                 parcel_end: nil
+               }
              } == transaction |> simplify()
     end
 
@@ -845,7 +865,11 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_transaction: %{original_date: ~D[2022-01-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{
+                 original_date: ~D[2022-01-01],
+                 parcel: nil,
+                 parcel_end: nil
+               }
              } == counter_part_transaction |> simplify()
     end
 
@@ -921,7 +945,11 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  parcel_end: nil,
                  parcel_start: nil
                },
-               recurrency_transaction: %{original_date: ~D[2022-02-01], parcel: nil, parcel_end: nil}
+               recurrency_transaction: %{
+                 original_date: ~D[2022-02-01],
+                 parcel: nil,
+                 parcel_end: nil
+               }
              } == transaction |> simplify()
     end
 
@@ -929,16 +957,16 @@ defmodule Budget.Transactions.Transaction.FormTest do
       t_1 = transaction_fixture(%{date: Timex.today()})
       t_2 = transaction_fixture(%{date: Timex.today() |> Timex.shift(days: 1)})
       t_3 = transaction_fixture(%{date: Timex.today() |> Timex.shift(days: 2)})
-      
-      assert Decimal.new(1) == t_1.position 
-      assert Decimal.new(1) == t_2.position 
-      assert Decimal.new(1) == t_3.position 
+
+      assert Decimal.new(1) == t_1.position
+      assert Decimal.new(1) == t_2.position
+      assert Decimal.new(1) == t_3.position
 
       {:ok, t_2} =
         t_2
         |> Form.decorate()
         |> Form.update_changeset(%{
-          date: Timex.today(),
+          date: Timex.today()
         })
         |> Form.apply_update(t_2)
 
@@ -948,7 +976,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
         t_3
         |> Form.decorate()
         |> Form.update_changeset(%{
-          date: Timex.today(),
+          date: Timex.today()
         })
         |> Form.apply_update(t_3)
 

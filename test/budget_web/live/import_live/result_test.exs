@@ -21,12 +21,11 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     {:ok, live, _html} = live(conn, ~p"/imports/#{import_file.id}")
 
     form0 =
-      wait_until(fn -> 
+      wait_until(fn ->
         live
         |> element("#transaction-0")
         |> render()
       end)
-
 
     assert form0 =~ "2022-08-30"
     assert form0 =~ "Kabum - 5/6"
@@ -42,7 +41,6 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     assert form1 =~ "4.01"
   end
 
-
   @tag :skip
   test "show errors when importing", %{conn: conn, import_file: import_file} do
     {:ok, live, _html} = live(conn, ~p"/imports/#{import_file.id}")
@@ -56,7 +54,12 @@ defmodule BudgetWeb.ImportLive.ResultTest do
     assert html =~ "can&#39;t be blank"
   end
 
-  test "imports file updating fields", %{conn: conn, category: category, account: account, import_file: import_file} do
+  test "imports file updating fields", %{
+    conn: conn,
+    category: category,
+    account: account,
+    import_file: import_file
+  } do
     {:ok, live, _html} = live(conn, ~p"/imports/#{import_file.id}")
 
     assert [] ==
@@ -124,7 +127,12 @@ defmodule BudgetWeb.ImportLive.ResultTest do
            } = Importations.list_import_files() |> Enum.at(0)
   end
 
-  test "renders warning if reimporting file", %{conn: conn, category: category, account: account, import_file: import_file} do
+  test "renders warning if reimporting file", %{
+    conn: conn,
+    category: category,
+    account: account,
+    import_file: import_file
+  } do
     {:ok, live, _html} = live(conn, ~p"/imports/#{import_file.id}")
 
     wait_until(fn ->
@@ -169,7 +177,7 @@ defmodule BudgetWeb.ImportLive.ResultTest do
 
     {:ok, live, _html} = live(conn, ~p"/imports/#{same_file.id}")
 
-    wait_until(fn -> 
+    wait_until(fn ->
       live
       |> element("#transaction-0")
       |> render()
@@ -181,7 +189,12 @@ defmodule BudgetWeb.ImportLive.ResultTest do
   end
 
   @tag a: true
-  test "removes transaction from import", %{conn: conn, category: category, account: account, import_file: import_file} do
+  test "removes transaction from import", %{
+    conn: conn,
+    category: category,
+    account: account,
+    import_file: import_file
+  } do
     {:ok, live, _html} = live(conn, ~p"/imports/#{import_file.id}")
 
     wait_until(fn ->
@@ -219,7 +232,7 @@ defmodule BudgetWeb.ImportLive.ResultTest do
 
     {:ok, live, _html} = live(conn, ~p"/imports/#{same_file.id}")
 
-    wait_until(fn -> 
+    wait_until(fn ->
       live
       |> element("#transaction-0")
       |> render()

@@ -8,6 +8,5 @@ defmodule Budget.Repo.Migrations.CreateHintDescriptions do
 
       timestamps()
     end
-
   end
 end

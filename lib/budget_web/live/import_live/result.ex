@@ -28,7 +28,7 @@ defmodule BudgetWeb.ImportLive.Result do
   end
 
   def handle_event("change-account-id", %{"account_id" => account_id}, socket) do
-    account = socket.assigns.accounts |> Enum.find(& &1.id == String.to_integer(account_id))
+    account = socket.assigns.accounts |> Enum.find(&(&1.id == String.to_integer(account_id)))
 
     {
       :noreply,
@@ -67,8 +67,8 @@ defmodule BudgetWeb.ImportLive.Result do
   def handle_event("import", _, socket) do
     changesets =
       socket.assigns.changesets
-      |> Enum.filter(& match?(%Changeset{}, &1))
-      |> Enum.map(& Map.put(&1, :action, :insert))
+      |> Enum.filter(&match?(%Changeset{}, &1))
+      |> Enum.map(&Map.put(&1, :action, :insert))
 
     all_valid? = Enum.all?(changesets, & &1.valid?)
 

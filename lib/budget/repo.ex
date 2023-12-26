@@ -21,7 +21,6 @@ defmodule Budget.Repo do
 
       true ->
         raise "expected profile_id or skip_profile_id to be set"
-
     end
   end
 

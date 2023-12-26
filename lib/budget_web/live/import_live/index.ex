@@ -4,9 +4,8 @@ defmodule BudgetWeb.ImportLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     {
-      :ok, 
+      :ok,
       socket
     }
   end
-  
 end

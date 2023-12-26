@@ -29,15 +29,16 @@ defmodule Budget.Transactions.Originator.Regular do
       |> Transactions.get_account!()
 
     %{
-      originator_regular: %__MODULE__{
-        description: Map.get(payload, "description"),
-        category: category,
-        category_id: category.id
-      }
-      |> Budget.Repo.add_profile_id(),
+      originator_regular:
+        %__MODULE__{
+          description: Map.get(payload, "description"),
+          category: category,
+          category_id: category.id
+        }
+        |> Budget.Repo.add_profile_id(),
       value: Decimal.new(Map.get(payload, "value")),
       account_id: account.id,
-      account: account,
+      account: account
     }
     |> Budget.Repo.add_profile_id()
   end

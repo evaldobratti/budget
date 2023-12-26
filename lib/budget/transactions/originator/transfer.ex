@@ -31,14 +31,15 @@ defmodule Budget.Transactions.Originator.Transfer do
 
     %{
       originator_transfer_part: %__MODULE__{
-        counter_part: %Transaction{
-          value: Decimal.new(Map.get(payload, "value")) |> Decimal.negate(),
-          account_id: other_account.id,
-          account: other_account,
-          paid: true,
-          position: 1
-        }
-        |> Budget.Repo.add_profile_id()
+        counter_part:
+          %Transaction{
+            value: Decimal.new(Map.get(payload, "value")) |> Decimal.negate(),
+            account_id: other_account.id,
+            account: other_account,
+            paid: true,
+            position: 1
+          }
+          |> Budget.Repo.add_profile_id()
       },
       account_id: account.id,
       account: account,
@@ -70,53 +71,59 @@ defmodule Budget.Transactions.Originator.Transfer do
   end
 
   def build_transactions(recurrency_params, params) do
-    part_params = %{
-      originator_transfer_part: %__MODULE__{
-        counter_part: %Transaction{
-          date: recurrency_params.date,
-          value: params.originator_transfer_part.counter_part.value,
-          account_id: params.originator_transfer_part.counter_part.account_id,
-          account: params.originator_transfer_part.counter_part.account,
-          paid: true,
-          position: Decimal.new(1),
-          recurrency_transaction: recurrency_params.recurrency_transaction
-        }
-        |> Budget.Repo.add_profile_id()
+    part_params =
+      %{
+        originator_transfer_part:
+          %__MODULE__{
+            counter_part:
+              %Transaction{
+                date: recurrency_params.date,
+                value: params.originator_transfer_part.counter_part.value,
+                account_id: params.originator_transfer_part.counter_part.account_id,
+                account: params.originator_transfer_part.counter_part.account,
+                paid: true,
+                position: Decimal.new(1),
+                recurrency_transaction: recurrency_params.recurrency_transaction
+              }
+              |> Budget.Repo.add_profile_id()
+          }
+          |> Budget.Repo.add_profile_id(),
+        date: recurrency_params.date,
+        account_id: params.account_id,
+        account: params.account,
+        paid: true,
+        position: Decimal.new(1),
+        recurrency_transaction: recurrency_params.recurrency_transaction,
+        value: params.value
       }
-      |> Budget.Repo.add_profile_id(),
-      date: recurrency_params.date,
-      account_id: params.account_id,
-      account: params.account,
-      paid: true,
-      position: Decimal.new(1),
-      recurrency_transaction: recurrency_params.recurrency_transaction,
-      value: params.value,
-    }
-    |> Budget.Repo.add_profile_id()
+      |> Budget.Repo.add_profile_id()
 
-    counter_params = %{
-      originator_transfer_counter_part: %__MODULE__{
-        part: %Transaction{
-          date: recurrency_params.date,
-          value: params.value,
-          account_id: params.account_id,
-          account: params.account,
-          paid: true,
-          recurrency_transaction: recurrency_params.recurrency_transaction,
-          position: Decimal.new(1)
-        }
-        |> Budget.Repo.add_profile_id()
+    counter_params =
+      %{
+        originator_transfer_counter_part:
+          %__MODULE__{
+            part:
+              %Transaction{
+                date: recurrency_params.date,
+                value: params.value,
+                account_id: params.account_id,
+                account: params.account,
+                paid: true,
+                recurrency_transaction: recurrency_params.recurrency_transaction,
+                position: Decimal.new(1)
+              }
+              |> Budget.Repo.add_profile_id()
+          }
+          |> Budget.Repo.add_profile_id(),
+        date: recurrency_params.date,
+        account_id: params.originator_transfer_part.counter_part.account_id,
+        account: params.originator_transfer_part.counter_part.account,
+        paid: true,
+        position: Decimal.new(1),
+        recurrency_transaction: recurrency_params.recurrency_transaction,
+        value: params.originator_transfer_part.counter_part.value
       }
-      |> Budget.Repo.add_profile_id(),
-      date: recurrency_params.date,
-      account_id: params.originator_transfer_part.counter_part.account_id,
-      account: params.originator_transfer_part.counter_part.account,
-      paid: true,
-      position: Decimal.new(1),
-      recurrency_transaction: recurrency_params.recurrency_transaction,
-      value: params.originator_transfer_part.counter_part.value,
-    }
-    |> Budget.Repo.add_profile_id()
+      |> Budget.Repo.add_profile_id()
 
     [
       %Budget.Transactions.Transaction{}
@@ -131,17 +138,25 @@ defmodule Budget.Transactions.Originator.Transfer do
   end
 
   def delete(transaction_ids) do
-    transfer_ids = from(
-      transaction in Transaction,
-      where: transaction.id in ^transaction_ids,
-      select: coalesce(transaction.originator_transfer_part_id, transaction.originator_transfer_counter_part_id)
-    )
+    transfer_ids =
+      from(
+        transaction in Transaction,
+        where: transaction.id in ^transaction_ids,
+        select:
+          coalesce(
+            transaction.originator_transfer_part_id,
+            transaction.originator_transfer_counter_part_id
+          )
+      )
 
-    part_counter_part_ids = from(
-      transaction in Transaction,
-      where: transaction.originator_transfer_part_id in subquery(transfer_ids) or transaction.originator_transfer_counter_part_id in subquery(transfer_ids),
-      select: transaction.id
-    )
+    part_counter_part_ids =
+      from(
+        transaction in Transaction,
+        where:
+          transaction.originator_transfer_part_id in subquery(transfer_ids) or
+            transaction.originator_transfer_counter_part_id in subquery(transfer_ids),
+        select: transaction.id
+      )
 
     fn _ ->
       Ecto.Multi.new()

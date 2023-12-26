@@ -321,7 +321,7 @@ defmodule Budget.Importations.CreditCard.NuBankTest do
                  description: "Airbnb Pagam*Airbnb *",
                  ix: 44,
                  type: :transaction,
-                 value: -233513.80
+                 value: -233_513.80
                },
                %{
                  date: ~D[2022-09-16],

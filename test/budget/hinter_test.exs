@@ -63,5 +63,20 @@ defmodule Budget.HinterTest do
 
       assert hint.id == transaction.originator_regular.category_id
     end
+
+    test "matches more recent first" do
+      other_category = category_fixture()
+
+      transaction1 = transaction_fixture(%{date: Timex.today() |> Timex.shift(days: -10)})
+
+      transaction_fixture(%{
+        account_id: transaction1.account_id,
+        regular: %{description: "Transaction description", category_id: other_category.id}
+      })
+
+      hint = Hinter.hint_category("Transaction description", transaction1.account_id)
+
+      assert hint.id == other_category.id
+    end
   end
 end

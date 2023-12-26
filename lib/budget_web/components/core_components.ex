@@ -238,14 +238,15 @@ defmodule BudgetWeb.CoreComponents do
   slot :inner_block, required: true
 
   def link_button(assigns) do
-    assigns = Map.put(
-      assigns, 
-      :class_color, 
-      case Map.get(assigns, :color) do
-        "primary" -> "bg-zinc-900 hover:bg-zinc-700"
-        "danger" -> "bg-rose-700 hover:bg-rose-500"
-      end
-    )
+    assigns =
+      Map.put(
+        assigns,
+        :class_color,
+        case Map.get(assigns, :color) do
+          "primary" -> "bg-zinc-900 hover:bg-zinc-700"
+          "danger" -> "bg-rose-700 hover:bg-rose-500"
+        end
+      )
 
     ~H"""
       <.link
@@ -767,6 +768,7 @@ defmodule BudgetWeb.CoreComponents do
   attr :active_tab, :string
   attr :user, :any
   slot :inner_block, required: false
+
   def menu(assigns \\ %{}) do
     ~H"""
     <header class="mb-4 w-1/5 h-full bg-slate-100">

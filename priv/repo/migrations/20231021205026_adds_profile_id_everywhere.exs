@@ -11,7 +11,7 @@ defmodule Budget.Repo.Migrations.AddsProfileIdEverywhere do
       :recurrency_transactions,
       :accounts,
       :hint_descriptions,
-      :import_files,
+      :import_files
     ]
 
     for table_name <- tables do
@@ -21,6 +21,5 @@ defmodule Budget.Repo.Migrations.AddsProfileIdEverywhere do
 
       create index(table_name, [:profile_id])
     end
-
   end
 end
