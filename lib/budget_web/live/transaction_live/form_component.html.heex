@@ -90,34 +90,41 @@
       field={@form[:recurrency]}
     >
       <.input
+        label="Frequency"
         field={recurrency_form[:frequency]}
         type="select"
         options={Ecto.Enum.mappings(Recurrency, :frequency)}
       />
 
       <.input
-        field={recurrency_form[:frequency]}
+        label="Type of duration"
+        field={recurrency_form[:type]}
         type="select"
         options={Ecto.Enum.mappings(Recurrency, :type)}
       />
 
-      <div :if={recurrency_form.value.type == :parcel} class="flex">
-        <div class="flex-1">
-          <.input
-            field={recurrency_form[:parcel_start]}
-            type="number"
-            autocomplete="off"
-            label="Parcel start"
-          />
-          <.input
-            field={recurrency_form[:parcel_end]}
-            type="number"
-            autocomplete="off"
-            label="Parcel end"
-          />
+      <div class="flex">
+        <div :if={recurrency_form[:type].value == :parcel} class="flex-1 flex">
+          <div>
+            <.input
+              field={recurrency_form[:parcel_start]}
+              type="number"
+              autocomplete="off"
+              label="Parcel start"
+            />
+            <.input
+              field={recurrency_form[:parcel_end]}
+              type="number"
+              autocomplete="off"
+              label="Parcel end"
+            />
+          </div>
+          <%= render_parcels(@form, recurrency_form) %>
+          
+
         </div>
 
-        <div :if={recurrency_form.value.type == :until_date} class="flex-1">
+        <div :if={recurrency_form[:type].value == :until_date} class="flex-1">
           <.input
             field={recurrency_form[:date_end]}
             type="date"

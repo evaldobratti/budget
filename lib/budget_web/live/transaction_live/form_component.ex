@@ -1,4 +1,5 @@
 defmodule BudgetWeb.TransactionLive.FormComponent do
+  require Decimal
   use BudgetWeb, :live_component
 
   alias Ecto.Changeset
@@ -155,5 +156,31 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     [
       {{:safe, spaces <> category.name}, category.id}
     ] ++ Enum.flat_map(categories, &flatten_categories/1)
+  end
+
+  def render_parcels(form, recurrency_form) do
+    recurrency_changeset = form[:recurrency].value
+    parcel_start = Changeset.get_field(recurrency_changeset, :parcel_start)
+    parcel_end = Changeset.get_field(recurrency_changeset, :parcel_end)
+    value = form[:value].value
+
+    assigns = %{
+      parcel_start: parcel_start,
+      parcel_end: parcel_end,
+      value: value
+    }
+
+    cond do
+      parcel_start == nil -> nil
+      parcel_end == nil -> nil
+      !Decimal.is_decimal(value) -> nil
+      true ->
+        ~H"""
+          <div>
+            Total cost: <%= Decimal.mult((@parcel_end - @parcel_start + 1), @value) %>
+          </div>
+        """
+
+    end
   end
 end
