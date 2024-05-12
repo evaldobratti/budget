@@ -71,8 +71,7 @@ defmodule Budget.TransactionsFixtures do
         },
         recurrency:
           %{
-            is_parcel: false,
-            is_forever: true,
+            type: :forever,
             frequency: :monthly
           }
           |> Map.merge(Map.get(attrs, :recurrency, %{}))

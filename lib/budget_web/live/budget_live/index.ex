@@ -98,7 +98,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     |> reload_transactions()
   end
 
-  def apply_return_from(socket, from, params)
+  def apply_return_from(socket, from, _params)
       when from in ["account", "delete", "category"] do
     reload_transactions(socket)
   end

@@ -7,9 +7,8 @@ defmodule Budget.Transactions.Recurrency do
   schema "recurrencies" do
     field :date_end, :date
     field :date_start, :date
+    field(:type, Ecto.Enum, values: [:until_date, :forever, :parcel])
     field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly], default: :monthly
-    field :is_forever, :boolean
-    field :is_parcel, :boolean, default: false
     field :parcel_end, :integer
     field :parcel_start, :integer
     field :transaction_payload, :map
@@ -26,46 +25,35 @@ defmodule Budget.Transactions.Recurrency do
       recurrency
       |> cast(attrs, [
         :frequency,
-        :is_parcel,
-        :is_forever,
+        :type,
         :frequency,
         :date_start,
         :date_end,
         :parcel_start,
-        :parcel_end,
-        :is_parcel
+        :parcel_end
       ])
       |> validate_required([
-        :is_parcel,
-        :frequency
+        :frequency,
+        :type
       ])
 
-    if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
-      # TODO allow this to happen
-      add_error(changeset, :is_forever, "Recurrency can't be infinite parcel")
+    if Ecto.get_meta(changeset.data, :state) == :loaded do
+      changeset
     else
-      if Ecto.get_meta(changeset.data, :state) == :loaded do
-        changeset
-      else
-        if get_field(changeset, :is_forever) do
-          put_change(changeset, :date_end, nil)
-        else
-          if get_field(changeset, :is_parcel) do
-            validate_required(changeset, [:parcel_start, :parcel_end])
-          else
-            validate_required(changeset, :date_end)
-          end
-        end
+      case get_field(changeset, :type) do
+        :forever -> put_change(changeset, :date_end, nil)
+        :parcel -> validate_required(changeset, [:parcel_start, :parcel_end])
+        :until_date -> validate_required(changeset, :date_end)
       end
     end
   end
 
   def transactions(%__MODULE__{} = recurrency, until_date) do
     first_end =
-      cond do
-        recurrency.is_forever -> [recurrency.date_end, until_date]
-        recurrency.is_parcel -> [recurrency.date_end, until_date, parcel_end_date(recurrency)]
-        true -> [recurrency.date_end, until_date]
+      case recurrency.type do
+        :forever -> [recurrency.date_end, until_date]
+        :parcel -> [recurrency.date_end, until_date, parcel_end_date(recurrency)]
+        :until_date -> [recurrency.date_end, until_date]
       end
       |> Enum.filter(& &1)
       |> Enum.sort(&Timex.before?/2)
@@ -91,7 +79,7 @@ defmodule Budget.Transactions.Recurrency do
     |> Enum.with_index()
     |> Enum.map(fn {date, ix} ->
       recurrency_transaction =
-        if recurrency.is_parcel do
+        if recurrency.type == :parcel do
           %RecurrencyTransaction{
             original_date: date,
             recurrency_id: recurrency.id,

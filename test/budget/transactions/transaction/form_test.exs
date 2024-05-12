@@ -85,7 +85,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                value: ["can't be blank"],
                regular: ["can't be blank"],
                recurrency: %{
-                 date_end: ["can't be blank"]
+                 type: ["can't be blank"]
                }
              } == errors_on(changeset)
 
@@ -93,7 +93,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
         Form.insert_changeset(%{
           originator: "regular",
           recurrency: %{
-            is_forever: false
+            type: :until_date
           }
         })
 
@@ -111,8 +111,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
         Form.insert_changeset(%{
           originator: "regular",
           recurrency: %{
-            is_forever: false,
-            is_parcel: true
+            type: :parcel
           }
         })
 
@@ -131,8 +130,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
         Form.insert_changeset(%{
           originator: "regular",
           recurrency: %{
-            is_forever: false,
-            is_parcel: false
+            type: :until_date
           }
         })
 
@@ -214,8 +212,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
             description: "Something"
           },
           recurrency: %{
-            is_parcel: false,
-            is_forever: false,
+            type: :until_date,
             date_end: ~D[2022-12-01],
             frequency: :monthly
           }
@@ -246,7 +243,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                     }
                   },
                   frequency: :monthly,
-                  is_parcel: false,
+                  type: :until_date,
                   parcel_end: nil,
                   parcel_start: nil
                 },
@@ -271,8 +268,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
             other_account_id: other_account_id
           },
           recurrency: %{
-            is_parcel: false,
-            is_forever: false,
+            type: :until_date,
             date_end: ~D[2022-12-01],
             frequency: :monthly
           }
@@ -303,7 +299,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                     }
                   },
                   frequency: :monthly,
-                  is_parcel: false,
+                  type: :until_date,
                   parcel_end: nil,
                   parcel_start: nil
                 },
@@ -596,8 +592,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
             description: "Something"
           },
           recurrency: %{
-            is_parcel: false,
-            is_forever: false,
+            type: :until_date,
             date_end: ~D[2022-12-01],
             frequency: :monthly
           }
@@ -642,7 +637,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                    }
                  },
                  frequency: :monthly,
-                 is_parcel: false,
+                 type: :until_date,
                  parcel_end: nil,
                  parcel_start: nil
                },
@@ -666,8 +661,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
             description: "Something"
           },
           recurrency: %{
-            is_parcel: false,
-            is_forever: false,
+            type: :until_date,
             date_end: ~D[2022-12-01],
             frequency: :monthly
           }
@@ -712,7 +706,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                    }
                  },
                  frequency: :monthly,
-                 is_parcel: false,
+                 type: :until_date,
                  parcel_end: nil,
                  parcel_start: nil
                },
@@ -737,8 +731,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
             other_account_id: other_account_id
           },
           recurrency: %{
-            is_parcel: false,
-            is_forever: false,
+            type: :until_date,
             date_end: ~D[2022-12-01],
             frequency: :monthly
           }
@@ -785,7 +778,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                    }
                  },
                  frequency: :monthly,
-                 is_parcel: false,
+                 type: :until_date,
                  parcel_end: nil,
                  parcel_start: nil
                },
@@ -810,8 +803,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
             other_account_id: other_account_id
           },
           recurrency: %{
-            is_parcel: false,
-            is_forever: false,
+            type: :until_date,
             date_end: ~D[2022-12-01],
             frequency: :monthly
           }
@@ -861,7 +853,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                    }
                  },
                  frequency: :monthly,
-                 is_parcel: false,
+                 type: :until_date,
                  parcel_end: nil,
                  parcel_start: nil
                },
@@ -886,8 +878,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
             description: "Something"
           },
           recurrency: %{
-            is_parcel: false,
-            is_forever: false,
+            type: :until_date,
             date_end: ~D[2022-12-01],
             frequency: :monthly
           }
@@ -941,7 +932,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
                    }
                  },
                  frequency: :monthly,
-                 is_parcel: false,
+                 type: :until_date,
                  parcel_end: nil,
                  parcel_start: nil
                },
@@ -953,7 +944,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
              } == transaction |> simplify()
     end
 
-    test "adjust position when updating date", data do
+    test "adjust position when updating date" do
       t_1 = transaction_fixture(%{date: Timex.today()})
       t_2 = transaction_fixture(%{date: Timex.today() |> Timex.shift(days: 1)})
       t_3 = transaction_fixture(%{date: Timex.today() |> Timex.shift(days: 2)})

@@ -310,7 +310,6 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     test "shows tooltip for categories when category is child", %{
       conn: conn,
-      account: account,
       category: category
     } do
       category = category_fixture(%{name: "child", parent: category})
@@ -361,7 +360,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           value: "200",
           is_recurrency: true,
           recurrency: %{
-            is_forever: true,
+            type: :forever,
             frequency: :monthly
           }
         }

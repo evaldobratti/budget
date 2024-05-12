@@ -80,7 +80,7 @@
       <.input :if={!transaction_loaded} field={@form[:keep_adding]} type="checkbox" label="Keep adding" />
     </div>
 
-    <%= if @form[:is_recurrency].value do %>
+    <%= if @form[:is_recurrency].value && transaction_loaded do %>
       <.input field={@form[:apply_forward]} type="checkbox" label="Apply forward" />
     <% end %>
 
@@ -95,45 +95,34 @@
         options={Ecto.Enum.mappings(Recurrency, :frequency)}
       />
 
-      <% is_parcel = Ecto.Changeset.get_field(recurrency_form.source, :is_parcel) %>
-      <% is_forever = Ecto.Changeset.get_field(recurrency_form.source, :is_forever) %>
-      <% has_end_date = Ecto.Changeset.get_field(recurrency_form.source, :date_end) != nil %>
+      <.input
+        field={recurrency_form[:frequency]}
+        type="select"
+        options={Ecto.Enum.mappings(Recurrency, :type)}
+      />
 
-      <div class="flex">
+      <div :if={recurrency_form.value.type == :parcel} class="flex">
         <div class="flex-1">
-          <.input
-            field={recurrency_form[:is_parcel]}
-            type="checkbox"
-            disabled={transaction_loaded || is_forever || has_end_date}
-            label="Parcel"
-          />
           <.input
             field={recurrency_form[:parcel_start]}
             type="number"
             autocomplete="off"
-            disabled={transaction_loaded || is_forever || has_end_date}
+            label="Parcel start"
           />
           <.input
             field={recurrency_form[:parcel_end]}
             type="number"
             autocomplete="off"
-            disabled={transaction_loaded || is_forever || has_end_date}
+            label="Parcel end"
           />
         </div>
 
-        <div class="flex-1">
-          <.input
-            field={recurrency_form[:is_forever]}
-            type="checkbox"
-            disabled={transaction_loaded || is_parcel}
-            label="Forever"
-          />
-
+        <div :if={recurrency_form.value.type == :until_date} class="flex-1">
           <.input
             field={recurrency_form[:date_end]}
             type="date"
             autocomplete="off"
-            disabled={transaction_loaded || is_forever || is_parcel}
+            label="Repeat until"
           />
         </div>
       </div>

@@ -49,7 +49,7 @@ defmodule Budget.Simplifiers do
               date_start: recurrency.date_start,
               date_end: recurrency.date_end,
               transaction_payload: recurrency.transaction_payload,
-              is_parcel: recurrency.is_parcel,
+              type: recurrency.type,
               parcel_start: recurrency.parcel_start,
               parcel_end: recurrency.parcel_end
             }

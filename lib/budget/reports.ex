@@ -1,8 +1,5 @@
 defmodule Budget.Reports do
-  import Ecto.Query
   alias Budget.Transactions
-  alias Budget.Transactions.Transaction
-  alias Budget.Repo
 
   def expenses(%{date_start: date_start, date_end: date_end} = params) do
     Transactions.transactions_in_period(date_start, date_end)

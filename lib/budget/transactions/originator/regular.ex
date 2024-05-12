@@ -1,6 +1,5 @@
 defmodule Budget.Transactions.Originator.Regular do
   use Ecto.Schema
-  import Ecto.Changeset
 
   import Ecto.Query
   alias Budget.Transactions.Transaction

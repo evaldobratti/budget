@@ -52,6 +52,14 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     {:noreply, assign(socket, form: form)}
   end
 
+  def handle_event("save", %{"form" => form_params}, socket) do
+    save_transaction(
+      socket,
+      socket.assigns.action,
+      changeset(socket.assigns, form_params)
+    )
+  end
+
   def hint_category(changeset, ["form", "regular", "description"]) do
     account_id = Changeset.get_field(changeset, :accunt_id)
 
@@ -79,14 +87,6 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   end
 
   def hint_category(changeset, _), do: changeset
-
-  def handle_event("save", %{"form" => form_params}, socket) do
-    save_transaction(
-      socket,
-      socket.assigns.action,
-      changeset(socket.assigns, form_params)
-    )
-  end
 
   def save_transaction(socket, :edit_transaction, changeset) do
     case Transaction.Form.apply_update(changeset, socket.assigns.transaction) do

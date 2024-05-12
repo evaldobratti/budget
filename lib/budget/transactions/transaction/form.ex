@@ -38,9 +38,8 @@ defmodule Budget.Transactions.Transaction.Form do
     end
 
     embeds_one :recurrency, RecurrencyForm do
+      field(:type, Ecto.Enum, values: [:until_date, :forever, :parcel])
       field(:frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly], default: :monthly)
-      field(:is_parcel, :boolean, default: false)
-      field(:is_forever, :boolean)
       field(:date_end, :date)
       field(:parcel_start, :integer)
       field(:parcel_end, :integer)
@@ -119,32 +118,21 @@ defmodule Budget.Transactions.Transaction.Form do
       recurrency
       |> cast(params, [
         :frequency,
-        :is_parcel,
-        :is_forever,
+        :type,
         :date_end,
         :parcel_start,
         :parcel_end
       ])
       |> validate_required([
+        :type,
         :frequency
       ])
 
-    if get_field(changeset, :is_forever) && get_field(changeset, :is_parcel) do
-      add_error(changeset, :is_forever, "Recurrency can't be infinite parcel")
-    else
-      if get_field(changeset, :is_forever) do
-        changeset
-        |> put_change(:parcel_start, nil)
-        |> put_change(:parcel_end, nil)
-      else
-        if get_field(changeset, :is_parcel) do
-          changeset
-          |> validate_required([:parcel_start, :parcel_end])
-        else
-          changeset
-          |> validate_required(:date_end)
-        end
-      end
+    case get_field(changeset, :type) do
+      :forever -> put_change(changeset, :date_end, nil)
+      :parcel -> validate_required(changeset, [:parcel_start, :parcel_end])
+      :until_date -> validate_required(changeset, :date_end)
+      nil -> changeset
     end
   end
 
@@ -165,8 +153,7 @@ defmodule Budget.Transactions.Transaction.Form do
         date_start: get_field(changeset, :date),
         date_end: get_field(recurrency, :date_end),
         frequency: get_field(recurrency, :frequency),
-        is_forever: get_field(recurrency, :is_forever),
-        is_parcel: get_field(recurrency, :is_parcel),
+        type: get_field(recurrency, :type),
         parcel_start: get_field(recurrency, :parcel_start),
         parcel_end: get_field(recurrency, :parcel_end),
         transaction_payload: %{
