@@ -570,7 +570,6 @@ defmodule BudgetWeb.BudgetLiveTest do
            |> render_click() =~ "Transaction successfully deleted!"
   end
 
-  @tag a: true
   test "delete recurrent transaction and the next transient one", %{conn: conn} do
     recurrency = recurrency_fixture()
 
@@ -816,4 +815,36 @@ defmodule BudgetWeb.BudgetLiveTest do
            |> element("#transaction-#{id}")
            |> render() =~ "374,00"
   end
+
+  test "editing a recurrency transfer shows correct accounts", %{
+    conn: conn,     
+    category: category,
+    account: account
+  } do
+    account_a = account_fixture(%{name: "A"})
+    account_b = account_fixture(%{name: "B"})
+
+    recurrency = recurrency_fixture(%{
+      date: ~D[2022-01-01],
+      account_id: account.id,
+      value: 200,
+      originator: "transfer",
+      transfer: %{
+        other_account_id: account_b.id
+      }
+    })
+
+    {:ok, live, _html} = live(conn, ~p"/transactions/#{"recurrency-" <> to_string(recurrency.id) <> "-2022-02-01-0"}/edit")
+
+    assert live
+            |> element("#form_transfer_0_other_account_id > option", "B")
+            |> render() =~ "selected"
+
+    {:ok, live, _html} = live(conn, ~p"/transactions/#{"recurrency-" <> to_string(recurrency.id) <> "-2022-02-01-1"}/edit")
+
+    assert live
+            |> element("#form_transfer_0_other_account_id > option", "Account Name")
+            |> render() =~ "selected"
+  end
+
 end
