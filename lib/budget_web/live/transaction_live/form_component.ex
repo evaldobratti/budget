@@ -1,4 +1,5 @@
 defmodule BudgetWeb.TransactionLive.FormComponent do
+  require Decimal
   use BudgetWeb, :live_component
 
   alias Ecto.Changeset
@@ -52,6 +53,14 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     {:noreply, assign(socket, form: form)}
   end
 
+  def handle_event("save", %{"form" => form_params}, socket) do
+    save_transaction(
+      socket,
+      socket.assigns.action,
+      changeset(socket.assigns, form_params)
+    )
+  end
+
   def hint_category(changeset, ["form", "regular", "description"]) do
     account_id = Changeset.get_field(changeset, :accunt_id)
 
@@ -79,14 +88,6 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   end
 
   def hint_category(changeset, _), do: changeset
-
-  def handle_event("save", %{"form" => form_params}, socket) do
-    save_transaction(
-      socket,
-      socket.assigns.action,
-      changeset(socket.assigns, form_params)
-    )
-  end
 
   def save_transaction(socket, :edit_transaction, changeset) do
     case Transaction.Form.apply_update(changeset, socket.assigns.transaction) do
@@ -155,5 +156,31 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     [
       {{:safe, spaces <> category.name}, category.id}
     ] ++ Enum.flat_map(categories, &flatten_categories/1)
+  end
+
+  def render_parcels(form, recurrency_form) do
+    recurrency_changeset = form[:recurrency].value
+    parcel_start = Changeset.get_field(recurrency_changeset, :parcel_start)
+    parcel_end = Changeset.get_field(recurrency_changeset, :parcel_end)
+    value = form[:value].value
+
+    assigns = %{
+      parcel_start: parcel_start,
+      parcel_end: parcel_end,
+      value: value
+    }
+
+    cond do
+      parcel_start == nil -> nil
+      parcel_end == nil -> nil
+      !Decimal.is_decimal(value) -> nil
+      true ->
+        ~H"""
+          <div>
+            Total cost: <%= Decimal.mult((@parcel_end - @parcel_start + 1), @value) %>
+          </div>
+        """
+
+    end
   end
 end

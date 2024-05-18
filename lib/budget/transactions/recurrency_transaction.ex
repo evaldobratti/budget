@@ -1,6 +1,5 @@
 defmodule Budget.Transactions.RecurrencyTransaction do
   use Ecto.Schema
-  import Ecto.Changeset
 
   alias Budget.Transactions.Transaction
   alias Budget.Transactions.Recurrency

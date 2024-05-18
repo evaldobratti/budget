@@ -35,8 +35,7 @@ defmodule Budget.TransactionsTest do
           date_start: "2022-10-01",
           date_end: "2022-10-01",
           account_id: account.id,
-          is_forever: false,
-          is_parcel: false,
+          type: :until_date,
           frequency: :monthly,
           transaction_payload: %{
             originator_regular: %{
@@ -53,8 +52,7 @@ defmodule Budget.TransactionsTest do
         Transactions.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
           account_id: account.id,
-          is_forever: false,
-          is_parcel: false,
+          type: :until_date,
           frequency: :monthly,
           transaction_payload: %{
             originator_regular: %{
@@ -76,8 +74,7 @@ defmodule Budget.TransactionsTest do
           date_end: "2022-10-01",
           value: "200",
           account_id: account.id,
-          is_forever: true,
-          is_parcel: false,
+          type: :forever,
           frequency: :monthly,
           transaction_payload: %{
             originator_regular: %{
@@ -92,34 +89,11 @@ defmodule Budget.TransactionsTest do
       assert Map.get(changes, :date_end) == nil
     end
 
-    test "infinite parcel", %{account1: account} do
-      changeset =
-        Transactions.change_recurrency(%Recurrency{}, %{
-          date_start: "2022-10-01",
-          date_end: "2022-10-01",
-          account_id: account.id,
-          is_forever: true,
-          is_parcel: true,
-          frequency: :monthly,
-          transaction_payload: %{
-            originator_regular: %{
-              description: "Some description",
-              category_id: category_fixture().id
-            },
-            value: "200"
-          }
-        })
-
-      assert %{valid?: false} = changeset
-      assert errors_on(changeset).is_forever == ["Recurrency can't be infinite parcel"]
-    end
-
     test "parcel", %{account1: account} do
       changeset =
         Transactions.change_recurrency(%Recurrency{}, %{
           date_start: "2022-10-01",
-          is_forever: false,
-          is_parcel: true,
+          type: :parcel,
           frequency: :monthly,
           account_id: account.id,
           transaction_payload: %{
@@ -149,7 +123,7 @@ defmodule Budget.TransactionsTest do
           },
           value: 200,
           recurrency: %{
-            is_forever: false,
+            type: :until_date,
             frequency: :monthly,
             date_end: ~D[2019-03-31]
           }
@@ -207,7 +181,7 @@ defmodule Budget.TransactionsTest do
           },
           value: 200,
           recurrency: %{
-            is_forever: false,
+            type: :until_date,
             frequency: :weekly,
             value: 200,
             date_end: ~D[2019-01-31]
@@ -265,7 +239,7 @@ defmodule Budget.TransactionsTest do
         recurrency_fixture(%{
           date: ~D[2019-01-31],
           recurrency: %{
-            is_forever: false,
+            type: :until_date,
             frequency: :monthly,
             date_end: ~D[2020-01-31]
           }
@@ -294,8 +268,7 @@ defmodule Budget.TransactionsTest do
           },
           value: 200,
           recurrency: %{
-            is_forever: false,
-            is_parcel: true,
+            type: :parcel,
             frequency: :weekly,
             parcel_start: 1,
             parcel_end: 6
@@ -395,8 +368,7 @@ defmodule Budget.TransactionsTest do
           },
           value: 200,
           recurrency: %{
-            is_forever: false,
-            is_parcel: true,
+            type: :parcel,
             frequency: :weekly,
             parcel_start: 3,
             parcel_end: 6
@@ -438,7 +410,7 @@ defmodule Budget.TransactionsTest do
         recurrency_fixture(%{
           date: ~D[2019-01-01],
           recurrency: %{
-            is_forever: false,
+            type: :until_date,
             description: "Some description",
             frequency: :monthly,
             value: 200,
@@ -547,11 +519,10 @@ defmodule Budget.TransactionsTest do
           },
           value: 200,
           recurrency: %{
-            is_parcel: false,
+            type: :until_date,
             date_start: ~D[2020-02-01],
             date_end: ~D[2021-02-01],
             frequency: :monthly,
-            is_forever: false,
             account_id: account.id
           }
         })
@@ -674,7 +645,7 @@ defmodule Budget.TransactionsTest do
             date_start: ~D[2020-02-01],
             date_end: ~D[2021-02-01],
             frequency: :monthly,
-            is_forever: false,
+            type: :until_date,
             value: 200,
             transaction_payload: %{
               value: 200,
@@ -762,8 +733,7 @@ defmodule Budget.TransactionsTest do
         recurrency_fixture(%{
           date: ~D[2022-10-15],
           recurrency: %{
-            is_forever: false,
-            is_parcel: true,
+            type: :parcel,
             parcel_start: 1,
             parcel_end: 6
           }
@@ -891,8 +861,7 @@ defmodule Budget.TransactionsTest do
           date: ~D[2022-10-15],
           recurrency: %{
             date_start: ~D[2022-10-15],
-            is_forever: false,
-            is_parcel: true,
+            type: :parcel,
             parcel_start: 1,
             parcel_end: 6
           }
@@ -999,8 +968,7 @@ defmodule Budget.TransactionsTest do
         },
         value: 200,
         recurrency: %{
-          is_forever: false,
-          is_parcel: true,
+          type: :parcel,
           parcel_start: 1,
           parcel_end: 6,
           frequency: :monthly
@@ -1048,7 +1016,7 @@ defmodule Budget.TransactionsTest do
                  is_recurrency: true,
                  recurrency: %{
                    frequency: :monthly,
-                   is_forever: true
+                   type: :forever,
                  },
                  originator: "transfer",
                  transfer: %{
@@ -1120,7 +1088,7 @@ defmodule Budget.TransactionsTest do
                  account_id: from_account_id,
                  recurrency: %{
                    frequency: :monthly,
-                   is_forever: true
+                   type: :forever,
                  },
                  originator: "transfer",
                  transfer: %{
@@ -1286,7 +1254,7 @@ defmodule Budget.TransactionsTest do
       },
       value: 200,
       recurrency: %{
-        is_forever: true,
+        type: :forever,
         frequency: :monthly
       }
     }
@@ -1350,8 +1318,8 @@ defmodule Budget.TransactionsTest do
               account_id: account_id,
               value: 200,
               recurrency: %{
+                type: :forever,
                 frequency: :monthly,
-                is_forever: true
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1374,7 +1342,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                is_forever: true
+                type: :forever,
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1409,7 +1377,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                is_forever: true
+                type: :forever,
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1443,7 +1411,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                is_forever: true
+                type: :forever
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1473,7 +1441,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                is_forever: true
+                type: :forever,
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1524,7 +1492,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                is_forever: true
+                type: :forever
               }
             })
             |> Transaction.Form.apply_insert()

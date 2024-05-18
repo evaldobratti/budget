@@ -134,3 +134,7 @@ html, body, body > div {
   background-color: #303030;
   opacity: 8%;
 }
+
+input[disabled] {
+  background-color: #d1d5db;
+}

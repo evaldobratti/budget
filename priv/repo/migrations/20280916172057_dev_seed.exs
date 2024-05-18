@@ -54,7 +54,7 @@ defmodule Budget.Repo.Migrations.DevSeed do
           regular: %{description: "Salário", category_id: c_receita.id},
           account_id: acc_bb.id,
           value: 3000,
-          recurrency: %{is_forever: true, frequency: :monthly}
+          recurrency: %{type: :forever, frequency: :monthly}
         },
         %{
           date: month_fifth,
@@ -62,7 +62,7 @@ defmodule Budget.Repo.Migrations.DevSeed do
           regular: %{description: "Aluguel", category_id: c_moradia.id},
           account_id: acc_bb.id,
           value: -600,
-          recurrency: %{is_forever: true, frequency: :monthly}
+          recurrency: %{type: :forever, frequency: :monthly}
         },
         %{
           date: month_fifth,
@@ -70,7 +70,7 @@ defmodule Budget.Repo.Migrations.DevSeed do
           regular: %{description: "Eletricidade", category_id: c_moradia.id},
           account_id: acc_bb.id,
           value: -150,
-          recurrency: %{is_forever: true, frequency: :monthly}
+          recurrency: %{type: :forever, frequency: :monthly}
         },
         %{
           date: month_fifth,
@@ -78,7 +78,7 @@ defmodule Budget.Repo.Migrations.DevSeed do
           regular: %{description: "Internet", category_id: c_moradia.id},
           account_id: acc_bb.id,
           value: -100,
-          recurrency: %{is_forever: true, frequency: :monthly}
+          recurrency: %{type: :forever, frequency: :monthly}
         },
         %{
           date: month_fifth,
@@ -86,7 +86,7 @@ defmodule Budget.Repo.Migrations.DevSeed do
           regular: %{description: "Imposto", category_id: c_impostos.id},
           account_id: acc_bb.id,
           value: -100,
-          recurrency: %{is_forever: true, frequency: :monthly}
+          recurrency: %{type: :forever, frequency: :monthly}
         },
         %{
           date: Timex.shift(month_first, days: 11),
@@ -129,7 +129,7 @@ defmodule Budget.Repo.Migrations.DevSeed do
           regular: %{description: "Tênis", category_id: c_vestuario.id},
           account_id: acc_nu.id,
           value: -100,
-          recurrency: %{is_parcel: true, frequency: :monthly, parcel_start: 1, parcel_end: 4}
+          recurrency: %{type: :parcel, frequency: :monthly, parcel_start: 1, parcel_end: 4}
         },
         %{
           date: Timex.shift(month_first, days: 22),

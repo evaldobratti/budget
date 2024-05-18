@@ -192,7 +192,6 @@ defmodule BudgetWeb.ImportLive.ResultTest do
   test "removes transaction from import", %{
     conn: conn,
     category: category,
-    account: account,
     import_file: import_file
   } do
     {:ok, live, _html} = live(conn, ~p"/imports/#{import_file.id}")
