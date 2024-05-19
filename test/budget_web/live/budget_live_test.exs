@@ -323,6 +323,41 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       assert live |> has_element?("#category-detail-#{id}")
     end
+
+    test "select children categories when filtering by a parent category", %{
+      conn: conn,
+    } do
+      categories = Transactions.list_categories()
+      category_saude = 
+        categories
+        |> Enum.find(& &1.name == "Saúde")
+
+
+      category_farmacia = 
+        categories
+        |> Enum.find(& &1.name == "Farmácia")
+
+      category_consultas = 
+        categories
+        |> Enum.find(& &1.name == "Consultas")
+
+      {:ok, live, _html} = live(conn, ~p"/")
+
+      live
+      |> element("[phx-click='toggle-category'][phx-value-category-id='#{category_saude.id}']")
+      |> render_click(%{"value" => "on"})
+
+      render(live)
+
+      assert live
+            |> element("[phx-value-category-id='#{category_farmacia.id}']")
+            |> render() =~ "checked"
+            
+
+      assert live
+            |> element("[phx-value-category-id='#{category_consultas.id}']")
+            |> render() =~ "checked"
+    end
   end
 
   describe "recurrencies" do
