@@ -1016,7 +1016,7 @@ defmodule Budget.TransactionsTest do
                  is_recurrency: true,
                  recurrency: %{
                    frequency: :monthly,
-                   type: :forever,
+                   type: :forever
                  },
                  originator: "transfer",
                  transfer: %{
@@ -1088,7 +1088,7 @@ defmodule Budget.TransactionsTest do
                  account_id: from_account_id,
                  recurrency: %{
                    frequency: :monthly,
-                   type: :forever,
+                   type: :forever
                  },
                  originator: "transfer",
                  transfer: %{
@@ -1319,7 +1319,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 type: :forever,
-                frequency: :monthly,
+                frequency: :monthly
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1342,7 +1342,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                type: :forever,
+                type: :forever
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1377,7 +1377,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                type: :forever,
+                type: :forever
               }
             })
             |> Transaction.Form.apply_insert()
@@ -1441,7 +1441,7 @@ defmodule Budget.TransactionsTest do
               value: 200,
               recurrency: %{
                 frequency: :monthly,
-                type: :forever,
+                type: :forever
               }
             })
             |> Transaction.Form.apply_insert()

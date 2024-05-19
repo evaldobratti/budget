@@ -196,7 +196,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   def handle_event("toggle-category", %{"category-id" => category_id} = params, socket) do
     {category_id, _} = Integer.parse(category_id)
 
-    category_ids = 
+    category_ids =
       socket.assigns.categories
       |> Category.find_in_tree(category_id)
       |> Category.get_subtree_ids()
@@ -205,7 +205,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       if Map.get(params, "value") == "on" do
         Enum.concat(category_ids, socket.assigns.category_selected_ids)
       else
-        Enum.filter(socket.assigns.category_selected_ids, & &1 not in category_ids)
+        Enum.filter(socket.assigns.category_selected_ids, &(&1 not in category_ids))
       end
       |> Enum.uniq()
 

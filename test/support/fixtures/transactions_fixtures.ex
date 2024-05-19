@@ -74,7 +74,7 @@ defmodule Budget.TransactionsFixtures do
             type: :forever,
             frequency: :monthly
           }
-          |> Map.merge(Map.get(attrs, :recurrency, %{})),
+          |> Map.merge(Map.get(attrs, :recurrency, %{}))
       }
       |> Map.merge(Map.delete(attrs, :recurrency))
       |> Transaction.Form.apply_insert()
