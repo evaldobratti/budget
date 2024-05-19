@@ -1,4 +1,5 @@
 defmodule BudgetWeb.BudgetLive.Index do
+  alias Budget.Transactions.Category
   use BudgetWeb, :live_view
 
   alias Phoenix.LiveView.JS
@@ -192,16 +193,21 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
-  def handle_event("toggle-category", %{"category-id" => category_id}, socket) do
+  def handle_event("toggle-category", %{"category-id" => category_id} = params, socket) do
     {category_id, _} = Integer.parse(category_id)
 
-    # TODO select children categories too
+    category_ids =
+      socket.assigns.categories
+      |> Category.find_in_tree(category_id)
+      |> Category.get_subtree_ids()
+
     category_selected_ids =
-      if category_id in socket.assigns.category_selected_ids do
-        List.delete(socket.assigns.category_selected_ids, category_id)
+      if Map.get(params, "value") == "on" do
+        Enum.concat(category_ids, socket.assigns.category_selected_ids)
       else
-        [category_id | socket.assigns.category_selected_ids]
+        Enum.filter(socket.assigns.category_selected_ids, &(&1 not in category_ids))
       end
+      |> Enum.uniq()
 
     {
       :noreply,

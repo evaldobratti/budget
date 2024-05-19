@@ -171,16 +171,21 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     }
 
     cond do
-      parcel_start == nil -> nil
-      parcel_end == nil -> nil
-      !Decimal.is_decimal(value) -> nil
+      parcel_start == nil ->
+        nil
+
+      parcel_end == nil ->
+        nil
+
+      !Decimal.is_decimal(value) ->
+        nil
+
       true ->
         ~H"""
           <div>
             Total cost: <%= Decimal.mult((@parcel_end - @parcel_start + 1), @value) %>
           </div>
         """
-
     end
   end
 end

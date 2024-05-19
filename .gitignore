@@ -32,6 +32,5 @@ budget-*.tar
 npm-debug.log
 /assets/node_modules/
 
-/rel/
-
 priv/static/uploads
+

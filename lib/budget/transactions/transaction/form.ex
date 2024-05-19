@@ -310,13 +310,13 @@ defmodule Budget.Transactions.Transaction.Form do
             other_account_id: transaction.originator_transfer_part.counter_part.account_id
           }
 
-
         is_struct(transaction.originator_transfer_counter_part, Transfer) ->
           %__MODULE__.TransferForm{
             other_account_id: transaction.originator_transfer_counter_part.part.account_id
           }
 
-        true -> nil
+        true ->
+          nil
       end
 
     originator = if regular_data, do: "regular", else: "transfer"

@@ -20,4 +20,21 @@ defmodule Budget.Transactions.Category do
     |> validate_required(:name)
     |> Budget.Repo.add_profile_id()
   end
+
+  def get_subtree_ids({category, []}), do: [category.id]
+
+  def get_subtree_ids({category, children}),
+    do: [category.id] ++ Enum.flat_map(children, &get_subtree_ids/1)
+
+  def find_in_tree([], _id), do: nil
+
+  def find_in_tree([{category, children} | tail], id) do
+    if category.id == id do
+      {category, children}
+    else
+      found = find_in_tree(children, id)
+
+      if found, do: found, else: find_in_tree(tail, id)
+    end
+  end
 end

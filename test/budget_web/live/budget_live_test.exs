@@ -323,6 +323,40 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       assert live |> has_element?("#category-detail-#{id}")
     end
+
+    test "select children categories when filtering by a parent category", %{
+      conn: conn
+    } do
+      categories = Transactions.list_categories()
+
+      category_saude =
+        categories
+        |> Enum.find(&(&1.name == "Saúde"))
+
+      category_farmacia =
+        categories
+        |> Enum.find(&(&1.name == "Farmácia"))
+
+      category_consultas =
+        categories
+        |> Enum.find(&(&1.name == "Consultas"))
+
+      {:ok, live, _html} = live(conn, ~p"/")
+
+      live
+      |> element("[phx-click='toggle-category'][phx-value-category-id='#{category_saude.id}']")
+      |> render_click(%{"value" => "on"})
+
+      render(live)
+
+      assert live
+             |> element("[phx-value-category-id='#{category_farmacia.id}']")
+             |> render() =~ "checked"
+
+      assert live
+             |> element("[phx-value-category-id='#{category_consultas.id}']")
+             |> render() =~ "checked"
+    end
   end
 
   describe "recurrencies" do
@@ -817,34 +851,42 @@ defmodule BudgetWeb.BudgetLiveTest do
   end
 
   test "editing a recurrency transfer shows correct accounts", %{
-    conn: conn,     
+    conn: conn,
     category: category,
     account: account
   } do
     account_a = account_fixture(%{name: "A"})
     account_b = account_fixture(%{name: "B"})
 
-    recurrency = recurrency_fixture(%{
-      date: ~D[2022-01-01],
-      account_id: account.id,
-      value: 200,
-      originator: "transfer",
-      transfer: %{
-        other_account_id: account_b.id
-      }
-    })
+    recurrency =
+      recurrency_fixture(%{
+        date: ~D[2022-01-01],
+        account_id: account.id,
+        value: 200,
+        originator: "transfer",
+        transfer: %{
+          other_account_id: account_b.id
+        }
+      })
 
-    {:ok, live, _html} = live(conn, ~p"/transactions/#{"recurrency-" <> to_string(recurrency.id) <> "-2022-02-01-0"}/edit")
+    {:ok, live, _html} =
+      live(
+        conn,
+        ~p"/transactions/#{"recurrency-" <> to_string(recurrency.id) <> "-2022-02-01-0"}/edit"
+      )
 
     assert live
-            |> element("#form_transfer_0_other_account_id > option", "B")
-            |> render() =~ "selected"
+           |> element("#form_transfer_0_other_account_id > option", "B")
+           |> render() =~ "selected"
 
-    {:ok, live, _html} = live(conn, ~p"/transactions/#{"recurrency-" <> to_string(recurrency.id) <> "-2022-02-01-1"}/edit")
+    {:ok, live, _html} =
+      live(
+        conn,
+        ~p"/transactions/#{"recurrency-" <> to_string(recurrency.id) <> "-2022-02-01-1"}/edit"
+      )
 
     assert live
-            |> element("#form_transfer_0_other_account_id > option", "Account Name")
-            |> render() =~ "selected"
+           |> element("#form_transfer_0_other_account_id > option", "Account Name")
+           |> render() =~ "selected"
   end
-
 end
