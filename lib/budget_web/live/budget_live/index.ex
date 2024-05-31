@@ -1,5 +1,5 @@
 defmodule BudgetWeb.BudgetLive.Index do
-  alias Budget.Transactions.Category
+
   use BudgetWeb, :live_view
 
   alias Phoenix.LiveView.JS
@@ -153,24 +153,6 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
-  def handle_event("toggle-account", %{"account-id" => account_id}, socket) do
-    {account_id, _} = Integer.parse(account_id)
-
-    accounts_selected_ids =
-      if account_id in socket.assigns.accounts_selected_ids do
-        List.delete(socket.assigns.accounts_selected_ids, account_id)
-      else
-        [account_id | socket.assigns.accounts_selected_ids]
-      end
-
-    {
-      :noreply,
-      socket
-      |> assign(accounts_selected_ids: accounts_selected_ids)
-      |> reload_transactions()
-    }
-  end
-
   def handle_event("toggle-previous-balance", _params, socket) do
     previous_balance = not socket.assigns.previous_balance
 
@@ -189,30 +171,6 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> assign(partial_balance: partial_balance)
-      |> reload_transactions()
-    }
-  end
-
-  def handle_event("toggle-category", %{"category-id" => category_id} = params, socket) do
-    {category_id, _} = Integer.parse(category_id)
-
-    category_ids =
-      socket.assigns.categories
-      |> Category.find_in_tree(category_id)
-      |> Category.get_subtree_ids()
-
-    category_selected_ids =
-      if Map.get(params, "value") == "on" do
-        Enum.concat(category_ids, socket.assigns.category_selected_ids)
-      else
-        Enum.filter(socket.assigns.category_selected_ids, &(&1 not in category_ids))
-      end
-      |> Enum.uniq()
-
-    {
-      :noreply,
-      socket
-      |> assign(category_selected_ids: category_selected_ids)
       |> reload_transactions()
     }
   end
@@ -322,48 +280,27 @@ defmodule BudgetWeb.BudgetLive.Index do
     []
   end
 
-  def render_categories([], _socket), do: nil
-
-  def render_categories(categories, category_selected_ids, socket) do
-    assigns = %{
-      categories: categories,
-      socket: socket,
-      category_selected_ids: category_selected_ids
-    }
-
-    ~H"""
-    <%= for {category, children} <- @categories do %>
-      <div class="flex mt-2">
-        <div>
-
-          <%= if length(category.path) > 0, do: "└ " %> 
-          <input type="checkbox" phx-click="toggle-category" phx-value-category-id={category.id} checked={category.id in @category_selected_ids} />
-          <.link patch={~p"/categories/#{category}/edit"}>
-            <%= category.name %>
-          </.link>
-        </div>
-        <div class="ml-auto">
-          <.link_button patch={~p"/categories/#{category}/children/new"} small class="px-2">+</.link_button>
-          <%= if category.transactions_count == 0 do %>
-            <.link_button patch={~p"/categories/#{category}/delete"} small color="danger" class="px-2">-</.link_button>
-          <% else %>
-            <.tooltiped id={"not-delete-#{category.id}"} tooltip="You cannot delete this category because it has transactions associated.">
-              <.icon name="hero-exclamation-circle" />
-            </.tooltiped>
-          <% end %>
-        </div>
-
-      </div>
-      <div :if={length(children) > 0} class="pl-1 ml-3">
-        <%= render_categories(children, @category_selected_ids, @socket) %>
-      </div>
-    <% end %>
-    """
-  end
-
   @impl true
   def handle_info(:add_new_transaction, socket) do
     {:noreply, socket |> push_patch(to: ~p"/transactions/new")}
+  end
+
+  def handle_info({:accounts_selected_ids, ids}, socket) do
+    {
+      :noreply, 
+      socket
+      |> assign(accounts_selected_ids: ids)
+      |> reload_transactions()
+    }
+  end
+
+  def handle_info({:category_selected_ids, ids}, socket) do
+    {
+      :noreply, 
+      socket
+      |> assign(category_selected_ids: ids)
+      |> reload_transactions()
+    }
   end
 
   def description(transaction) do

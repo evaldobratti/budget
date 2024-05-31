@@ -1,39 +1,19 @@
 <div class="flex h-full max-h-full">
   <.menu active_tab={@active_tab} user={@user}>
-    <div class="flex flex-col">
-      <div class="flex items-start mt-2">
-        Accounts
-        <.link_button small class="ml-auto text-center px-4" patch={~p"/accounts/new"}>New</.link_button>
-      </div>
-      <%= if Enum.empty?(@accounts) do %>
-        <div class="flex mt-2 flex-justify-center">
-          No accounts yet
-        </div>
-      <% end %>
-      <%= for account <- @accounts do %>
-        <div class="flex mt-2">
-          <div>
-            <input type="checkbox" phx-click="toggle-account" phx-value-account-id={account.id} checked={account.id in @accounts_selected_ids} />
-            <.link patch={~p"/accounts/#{account}/edit"}><%= account.name %></.link>
-          </div>
-        </div>
-      <% end %>
-    </div>
+      <.live_component
+        id={:accounts_list}
+        module={BudgetWeb.Transactions.AccountList}
+        accounts={@accounts}
+        accounts_selected_ids={@accounts_selected_ids}
+      />
 
-    <div class="flex flex-col mt-2 overflow-y-auto">
-      <div class="flex items-start mt-2">
-        Categories
-        <.link_button small class="ml-auto px-4 text-center" patch={~p"/categories/new"}>New</.link_button>
-      </div>
-      <%= if Enum.empty?(@categories) do %>
-        <div class="flex mt-2 flex-justify-center">
-          No categories yet
-        </div>
-      <% end %>
-      <div class="max-h-full overflow-y-auto">
-      <%= render_categories(@categories, @category_selected_ids, @socket) %>
-      </div>
-    </div>
+      <.live_component
+        id={:accounts_list}
+        module={BudgetWeb.Transactions.CategoriesList}
+        categories={@categories}
+        category_selected_ids={@category_selected_ids}
+      />
+
   </.menu>
   <div class="flex flex-grow flex-col overflow-auto">
 
