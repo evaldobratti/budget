@@ -19,26 +19,11 @@
 
     <div class="flex flex-col p-4">
       <div class="flex">
-        <div class="mx-auto">
-          <% dates_form = to_form(%{
-            "date_start" => Timex.format!(Enum.at(@dates, 0), "{YYYY}-{0M}-{0D}"),
-            "date_end" =>Timex.format!(Enum.at(@dates, 1), "{YYYY}-{0M}-{0D}")
-          }) %>
-          <.form
-            id="dates-switch"
-            for={dates_form}
-            as={:dates}
-            phx-change="update-dates"
-          >
-            <div class="flex items-center">
-              <.button class="btn btn-sm btn-primary mr-2" phx-click="month-previous" type="button"><%= "<<" %></.button>
-              <.input field={dates_form[:date_start]} type="date" margin={false} />
-              <div class="d-inline px-1">to</div>
-              <.input field={dates_form[:date_end]} type="date" margin={false}/>
-              <.button class="btn btn-sm btn-primary ml-2" phx-click="month-next" type="button"><%= ">>" %></.button>
-            </div>
-          </.form>
-        </div>
+        <.live_component
+          id={:accounts_list}
+          module={BudgetWeb.Transactions.DateRangePicker}
+          dates={@dates}
+        />
         <div class="flex items-start">
           <.link_button class="ml-auto" patch={~p"/transactions/new"}>New</.link_button>
           <%= if @live_action == :new_transaction do %>

@@ -106,53 +106,6 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def apply_return_from(socket, _, _), do: socket
 
-  defp shift_dates(socket, direction) do
-    [date_start, date_end] = socket.assigns.dates
-
-    is_first_day = Timex.equal?(date_start, date_start |> Timex.beginning_of_month())
-
-    is_last_day =
-      Timex.equal?(date_end, date_end |> Timex.end_of_month() |> Timex.beginning_of_day())
-
-    if is_first_day and is_last_day do
-      date_start =
-        date_start
-        |> Timex.shift(months: direction)
-        |> Timex.beginning_of_month()
-
-      [
-        date_start,
-        Timex.end_of_month(date_start)
-      ]
-    else
-      socket.assigns.dates
-      |> Enum.map(&Timex.shift(&1, months: direction))
-    end
-  end
-
-  @impl true
-  def handle_event("month-previous", _params, socket) do
-    dates = shift_dates(socket, -1)
-
-    {
-      :noreply,
-      socket
-      |> assign(dates: dates)
-      |> reload_transactions()
-    }
-  end
-
-  def handle_event("month-next", _params, socket) do
-    dates = shift_dates(socket, 1)
-
-    {
-      :noreply,
-      socket
-      |> assign(dates: dates)
-      |> reload_transactions()
-    }
-  end
-
   def handle_event("toggle-previous-balance", _params, socket) do
     previous_balance = not socket.assigns.previous_balance
 
@@ -171,25 +124,6 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply,
       socket
       |> assign(partial_balance: partial_balance)
-      |> reload_transactions()
-    }
-  end
-
-  def handle_event("update-dates", %{"date_start" => date_start, "date_end" => date_end}, socket) do
-    {:ok, date_start} = Timex.parse(date_start, "{YYYY}-{0M}-{0D}")
-    {:ok, date_end} = Timex.parse(date_end, "{YYYY}-{0M}-{0D}")
-
-    date_end =
-      if Timex.after?(date_start, date_end) do
-        date_start
-      else
-        date_end
-      end
-
-    {
-      :noreply,
-      socket
-      |> assign(dates: [date_start, date_end])
       |> reload_transactions()
     }
   end
@@ -299,6 +233,15 @@ defmodule BudgetWeb.BudgetLive.Index do
       :noreply, 
       socket
       |> assign(category_selected_ids: ids)
+      |> reload_transactions()
+    }
+  end
+
+  def handle_info({:dates, dates}, socket) do
+    {
+      :noreply,
+      socket
+      |> assign(dates: dates)
       |> reload_transactions()
     }
   end

@@ -6,7 +6,6 @@ defmodule BudgetWeb.Transactions.CategoriesList do
 
   def render(assigns) do
     ~H"""
-
     <div class="flex flex-col mt-2 overflow-y-auto">
       <div class="flex items-start mt-2">
         Categories
@@ -35,7 +34,6 @@ defmodule BudgetWeb.Transactions.CategoriesList do
     <%= for {category, children} <- @categories do %>
       <div class="flex mt-2">
         <div>
-
           <%= if length(category.path) > 0, do: "└ " %> 
           <input 
             type="checkbox" 

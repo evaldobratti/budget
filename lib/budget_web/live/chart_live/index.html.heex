@@ -1,23 +1,27 @@
 <div class="flex h-full">
   <.menu active_tab={@active_tab} user={@user} />
   <div class="flex flex-grow flex-col p-4 overflow-auto">
-    <div style="height: 200px; width: 200px;">
-      <.simple_form
-        id="params-form"
-        for={@form}
-        phx-change="validate"
-        phx-submit="generate"
-      >
-        <.input field={@form[:date_start]} type="date" label="Start" />
-        <.input field={@form[:date_end]} type="date" label="End" />
-      </.simple_form>
-      <div style="width: 600px">
+    <div class="flex flex-col">
+      <.live_component
+        id={:accounts_list}
+        module={BudgetWeb.Transactions.DateRangePicker}
+        dates={@dates}
+      />
+      <div>
         <h1>Expenses</h1>
-        <canvas id="expenses" phx-hook="ChartCategories" data-categories={Jason.encode!(@expenses)}></canvas>
+        <canvas 
+          id="expenses" 
+          phx-hook="ChartCategories" 
+          data-categories={Jason.encode!(@expenses)}
+        ></canvas>
       </div>
-      <div style="width: 600px">
+      <div>
         <h1>Incomes</h1>
-        <canvas id="incomes" phx-hook="ChartCategories" data-categories={Jason.encode!(@incomes)}></canvas>
+        <canvas 
+          id="incomes" 
+          phx-hook="ChartCategories" 
+          data-categories={Jason.encode!(@incomes)}
+        ></canvas>
       </div>
     </div>
   </div>

@@ -10,32 +10,35 @@ defmodule BudgetWeb.ChartLive.Index do
       :ok,
       socket
       |> assign(
-        form:
-          to_form(%{
-            "date_start" => Timex.today() |> Timex.beginning_of_year() |> Date.to_iso8601(),
-            "date_end" => Timex.today() |> Timex.end_of_year() |> Date.to_iso8601()
-          })
+        dates: [
+          Timex.today() |> Timex.beginning_of_year(), 
+          Timex.today() |> Timex.end_of_year()
+        ]
       )
       |> update_reports()
     }
   end
 
+  def update_reports(socket) do
+    [date_start, date_end] = socket.assigns.dates    
+
+    params = %{
+      date_start: date_start, 
+      date_end: date_end
+    }
+
+    socket
+    |> assign(expenses: Reports.expenses(params))
+    |> assign(incomes: Reports.incomes(params))
+  end
+
   @impl true
-  def handle_event("validate", form, socket) do
+  def handle_info({:dates, dates}, socket) do
     {
       :noreply,
       socket
-      |> assign(form: to_form(form))
+      |> assign(dates: dates)
       |> update_reports()
     }
-  end
-
-  def update_reports(socket) do
-    date_start = Form.input_value(socket.assigns.form, "date_start") |> Date.from_iso8601!()
-    date_end = Form.input_value(socket.assigns.form, "date_end") |> Date.from_iso8601!()
-
-    socket
-    |> assign(expenses: Reports.expenses(%{date_start: date_start, date_end: date_end}))
-    |> assign(incomes: Reports.incomes(%{date_start: date_start, date_end: date_end}))
   end
 end
