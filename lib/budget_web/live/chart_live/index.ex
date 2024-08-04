@@ -3,7 +3,6 @@ defmodule BudgetWeb.ChartLive.Index do
   use BudgetWeb, :live_view
 
   alias Budget.Reports
-  alias Phoenix.HTML.Form
 
   @colors [
     "rgba(255, 99, 132, 1)",
@@ -40,11 +39,15 @@ defmodule BudgetWeb.ChartLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    categories = Transactions.list_categories() |> IO.inspect()
+    categories = Transactions.list_categories()
 
     {
       :ok,
       socket
+      |> assign(categories: Transactions.list_categories_arranged())
+      |> assign(accounts: Transactions.list_accounts())
+      |> assign(accounts_selected_ids: [])
+      |> assign(category_selected_ids: [])
       |> assign(
         colors: categories
         |> Enum.with_index(fn c, ix ->
@@ -64,18 +67,39 @@ defmodule BudgetWeb.ChartLive.Index do
 
   def update_reports(socket) do
     [date_start, date_end] = socket.assigns.dates    
+    account_ids = socket.assigns.accounts_selected_ids
+    category_ids = socket.assigns.category_selected_ids
 
-    params = %{
-      date_start: date_start, 
-      date_end: date_end
-    }
+    params = [
+      account_ids: account_ids,
+      category_ids: category_ids
+    ]
 
     socket
-    |> assign(expenses: Reports.expenses(params))
-    |> assign(incomes: Reports.incomes(params))
+    |> assign(expenses: Reports.expenses(date_start, date_end, params))
+    |> assign(incomes: Reports.incomes(date_start, date_end, params))
   end
 
+
   @impl true
+  def handle_info({:accounts_selected_ids, ids}, socket) do
+    {
+      :noreply, 
+      socket
+      |> assign(accounts_selected_ids: ids)
+      |> update_reports()
+    }
+  end
+
+  def handle_info({:category_selected_ids, ids}, socket) do
+    {
+      :noreply, 
+      socket
+      |> assign(category_selected_ids: ids)
+      |> update_reports()
+    }
+  end
+
   def handle_info({:dates, dates}, socket) do
     {
       :noreply,

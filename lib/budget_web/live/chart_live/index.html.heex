@@ -1,9 +1,23 @@
 <div class="flex h-full">
-  <.menu active_tab={@active_tab} user={@user} />
+  <.menu active_tab={@active_tab} user={@user}>
+    <.live_component
+      id={:accounts_list}
+      module={BudgetWeb.Transactions.AccountList}
+      accounts={@accounts}
+      accounts_selected_ids={@accounts_selected_ids}
+    />
+
+    <.live_component
+      id={:accounts_list}
+      module={BudgetWeb.Transactions.CategoriesList}
+      categories={@categories}
+      category_selected_ids={@category_selected_ids}
+    />
+  </.menu>
   <div class="flex flex-grow flex-col p-4 overflow-auto">
     <div class="flex flex-col">
       <.live_component
-        id={:accounts_list}
+        id={:date_picker}
         module={BudgetWeb.Transactions.DateRangePicker}
         dates={@dates}
       />

@@ -2,25 +2,20 @@ defmodule Budget.Reports do
   alias Budget.Transactions
 
 
-
-
-  def expenses(%{date_start: date_start, date_end: date_end} = params) do
-    Transactions.transactions_in_period(date_start, date_end)
+  def expenses(date_start, date_end, opts \\ []) do
+    Transactions.transactions_in_period(date_start, date_end, opts)
     |> Enum.filter(&Decimal.negative?(&1.value))
     |> Enum.map(&%{&1 | value: Decimal.negate(&1.value)})
-    |> default_group_by(params)
+    |> default_group_by()
   end
 
-  def incomes(%{date_start: date_start, date_end: date_end} = params) do
-    Transactions.transactions_in_period(date_start, date_end)
+  def incomes(date_start, date_end, opts \\ []) do
+    Transactions.transactions_in_period(date_start, date_end, opts)
     |> Enum.filter(&Decimal.positive?(&1.value))
-    |> default_group_by(params)
+    |> default_group_by()
   end
 
-  defp default_group_by(transactions, params) do
-    date_start = params.date_start |> Timex.beginning_of_month()
-    date_end = params.date_end
-
+  defp default_group_by(transactions) do
     transactions
     |> Enum.filter(& &1.originator_regular)
     |> Enum.group_by(

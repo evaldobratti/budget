@@ -1,13 +1,27 @@
 defmodule BudgetWeb.Transactions.CategoriesList do
-
+  alias Budget.Transactions
   use BudgetWeb, :live_component
 
   alias Budget.Transactions.Category
+
+  def mount(socket) do
+    {:ok,
+    socket
+    |> assign(all_selected: false)
+    }
+  end
 
   def render(assigns) do
     ~H"""
     <div class="flex flex-col mt-2 overflow-y-auto">
       <div class="flex items-start mt-2">
+
+        <input 
+          type="checkbox" 
+          phx-click="toggle-all-category" 
+          phx-target={@myself}
+          checked={@all_selected} 
+        />
         Categories
         <.link_button small class="ml-auto px-4 text-center" patch={~p"/categories/new"}>New</.link_button>
       </div>
@@ -86,6 +100,24 @@ defmodule BudgetWeb.Transactions.CategoriesList do
     {
       :noreply,
       socket
+    }
+  end
+
+  def handle_event("toggle-all-category", _params, socket) do
+    if socket.assigns.all_selected do
+      send(self(), {:category_selected_ids, []})
+    else
+      all_ids = 
+        Transactions.list_categories()
+        |> Enum.map(& &1.id)
+
+      send(self(), {:category_selected_ids, all_ids})
+    end
+
+    {
+      :noreply,
+      socket
+      |> assign(all_selected: not socket.assigns.all_selected)
     }
   end
   
