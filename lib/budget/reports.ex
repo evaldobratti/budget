@@ -1,6 +1,9 @@
 defmodule Budget.Reports do
   alias Budget.Transactions
 
+
+
+
   def expenses(%{date_start: date_start, date_end: date_end} = params) do
     Transactions.transactions_in_period(date_start, date_end)
     |> Enum.filter(&Decimal.negative?(&1.value))
@@ -18,25 +21,21 @@ defmodule Budget.Reports do
     date_start = params.date_start |> Timex.beginning_of_month()
     date_end = params.date_end
 
-    months = months_until(date_start, date_end)
-
     transactions
     |> Enum.filter(& &1.originator_regular)
     |> Enum.group_by(
-      &%{id: &1.originator_regular.category.id, name: &1.originator_regular.category.name}
+      &Timex.beginning_of_month(&1.date)
     )
-    |> Enum.map(fn {key, value} ->
-      %{category: key, grouped: Enum.group_by(value, &Timex.beginning_of_month(&1.date))}
+    |> Enum.map(fn {month, transactions} ->
+      %{month: month, grouped: Enum.group_by(transactions, &"#{&1.originator_regular.category.id} - #{&1.originator_regular.category.name}") }
     end)
     |> Enum.map(fn
-      %{category: category, grouped: grouped} ->
+      %{month: month, grouped: grouped} ->
         values =
-          months
-          |> Enum.map(fn date ->
-            transactions = Map.get(grouped, date, [])
-
+          grouped
+          |> Enum.map(fn {category, transactions } ->
             {
-              date,
+              category,
               transactions
               |> Enum.map(& &1.value)
               |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
@@ -44,7 +43,7 @@ defmodule Budget.Reports do
           end)
 
         %{
-          category: category,
+          month: month,
           values: Enum.into(values, %{})
         }
     end)

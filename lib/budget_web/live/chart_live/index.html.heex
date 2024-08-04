@@ -7,21 +7,40 @@
         module={BudgetWeb.Transactions.DateRangePicker}
         dates={@dates}
       />
-      <div>
-        <h1>Expenses</h1>
-        <canvas 
-          id="expenses" 
-          phx-hook="ChartCategories" 
-          data-categories={Jason.encode!(@expenses)}
-        ></canvas>
+      <h1>Expenses</h1>
+      <div class="flex flex-wrap">
+        <%= for %{ month: month, values: values } <- @expenses do %>
+          <div class="flex flex-col items-center">
+            <h2><%= month %></h2>
+            <div style="width: 200px; height: 200px">
+              <canvas 
+                id={"expenses-#{month}"}
+                phx-hook="ChartCategories" 
+                data-colors={Jason.encode!(@colors)}
+                data-values={Jason.encode!(values)}
+              ></canvas>
+            </div>
+          </div>
+        <% end %>
       </div>
-      <div>
+
+      <div class="mt-10">
         <h1>Incomes</h1>
-        <canvas 
-          id="incomes" 
-          phx-hook="ChartCategories" 
-          data-categories={Jason.encode!(@incomes)}
-        ></canvas>
+        <div class="flex flex-wrap">
+          <%= for %{ month: month, values: values } <- @incomes do %>
+            <div>
+              <h2><%= month %></h2>
+              <div style="width: 200px; height: 200px">
+                <canvas 
+                  id={"incomes-#{month}"}
+                  phx-hook="ChartCategories" 
+                  data-colors={Jason.encode!(@colors)}
+                  data-values={Jason.encode!(values)}
+                ></canvas>
+              </div>
+            </div>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>

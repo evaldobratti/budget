@@ -23,27 +23,33 @@ const data = {
 
 
 const setupChart = (el) => {
-  const data = JSON.parse(el.dataset['categories'])
+  const colors = JSON.parse(el.dataset['colors'])
+  const values = JSON.parse(el.dataset['values'])
 
-  const months = _.uniq(data.flatMap(c => {
-    return Object.keys(c.values)
-  }))
-
-  const datasets = data.map(c => {
-    return {
-      label: c.category.name,
-      data: months.map(month => Number(c.values[month] || 0)),
-      tension: 0.3
-    }
-  })
+  const entries = Object.entries(values)
+  const labels = entries.map(e => e[0])
 
   return new Chart(
     el,
     {
-      type: 'line',
-      data: {
-        labels: months,
-        datasets
+      type: 'pie',
+      data: 
+        {
+          labels,
+          datasets: [
+            {
+              label: "R$",
+              data: entries.map(e => Number(e[1])),
+              backgroundColor: labels.map(l => colors[l])
+            }
+          ]
+        },
+      options: {
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
       }
     }
   )
