@@ -22,7 +22,7 @@
         <.live_component
           id={:date_picker}
           module={BudgetWeb.Transactions.DateRangePicker}
-          dates={@dates}
+          dates={get_dates(@url_params)}
         />
         <div class="flex items-start">
           <.link_button class="ml-auto" patch={~p"/transactions/new"}>New</.link_button>
@@ -98,7 +98,7 @@
         <div id="transactions" class="flex flex-col space-y-1.5" phx-hook="Sortable">
           <div id="previous-balance" class="flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200">
             <div class="w-[100px] px-1">
-              <%= format_date(Timex.shift(Enum.at(@dates, 0), days: -1)) %>
+              <%= format_date(Timex.shift(Enum.at(get_dates(@url_params), 0), days: -1)) %>
             </div>
             <div class="flex-1 px-1 flex items-center gap-2">
               <input 
@@ -212,7 +212,7 @@
 
           <div id="next-balance" class="flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200">
             <div class="w-[100px] px-1">
-              <%= format_date(Enum.at(@dates, 1)) %>
+              <%= format_date(Enum.at(get_dates(@url_params), 1)) %>
             </div>
             <div class="flex-1 px-1">
               Next balance

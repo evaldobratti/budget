@@ -7,32 +7,36 @@ defmodule BudgetWeb.BudgetLive.Index do
   alias Budget.Transactions
   alias Budget.Transactions.Transaction
 
+  @date_format "{YYYY}-{0M}-{0D}"
+
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     {
       :ok,
       socket
       |> assign(accounts_selected_ids: [])
       |> assign(category_selected_ids: [])
-      |> assign(
-        dates: [Timex.beginning_of_month(Timex.today()), Timex.end_of_month(Timex.today())]
-      )
       |> assign(confirm_delete: nil)
       |> assign(balances: [0, 0])
       |> assign(new_transaction_payload: %Transaction{date: Timex.today()})
       |> assign(previous_balance: true)
       |> assign(partial_balance: false)
+      |> assign(url_params: params)
       |> reload_transactions()
     }
   end
 
   @impl true
   def handle_params(params, _url, socket) do
+    socket = 
+      socket
+      |> assign(url_params: params)
+      |> apply_action(socket.assigns.live_action, params)
+      |> apply_return_from(Map.get(params, "from", ""), params)
+
     {
       :noreply,
       socket
-      |> apply_action(socket.assigns.live_action, params)
-      |> apply_return_from(Map.get(params, "from", ""), params)
     }
   end
 
@@ -100,7 +104,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def apply_return_from(socket, from, _params)
-      when from in ["account", "delete", "category"] do
+      when from in ["account", "delete", "category", "date"] do
     reload_transactions(socket)
   end
 
@@ -168,11 +172,25 @@ defmodule BudgetWeb.BudgetLive.Index do
     end
   end
 
+  defp get_dates(url_params) do
+    date_start = Map.get(url_params, "date_start")
+    date_end = Map.get(url_params, "date_end")
+
+    if date_start && date_end do
+      [
+        Timex.parse!(date_start, @date_format),
+        Timex.parse!(date_end, @date_format)
+      ]
+    else
+      [Timex.beginning_of_month(Timex.today()), Timex.end_of_month(Timex.today())]
+    end
+  end
+
   defp reload_transactions(socket) do
+    [date_start, date_end] = get_dates(socket.assigns.url_params)
+    
     account_ids = socket.assigns.accounts_selected_ids
     category_ids = socket.assigns.category_selected_ids
-
-    [date_start, date_end] = socket.assigns.dates
 
     previous_balance =
       if socket.assigns.previous_balance do
@@ -237,12 +255,20 @@ defmodule BudgetWeb.BudgetLive.Index do
     }
   end
 
-  def handle_info({:dates, dates}, socket) do
+  def handle_info({:dates, [date_start, date_end]}, socket) do
+    date_start = Timex.format!(date_start, @date_format)
+    date_end = Timex.format!(date_end, @date_format)
+
+    params = 
+      socket.assigns.url_params
+      |> Map.put("date_start", date_start)
+      |> Map.put("date_end", date_end)
+      |> Map.put("from", "date")
+
     {
       :noreply,
       socket
-      |> assign(dates: dates)
-      |> reload_transactions()
+      |> push_patch(to: ~p"/?#{params}")
     }
   end
 
