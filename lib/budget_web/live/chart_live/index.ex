@@ -4,6 +4,8 @@ defmodule BudgetWeb.ChartLive.Index do
 
   alias Budget.Reports
 
+  @date_format "{YYYY}-{0M}-{0D}"
+
   @colors [
     "rgba(255, 99, 132, 1)",
     "rgba(54, 162, 235, 1)", 
@@ -107,5 +109,12 @@ defmodule BudgetWeb.ChartLive.Index do
       |> assign(dates: dates)
       |> update_reports()
     }
+  end
+
+  def format_dates(month) do
+    Jason.encode!([
+      Timex.beginning_of_month(month) |> Timex.format!(@date_format),
+      Timex.end_of_month(month) |> Timex.format!(@date_format),
+    ])
   end
 end

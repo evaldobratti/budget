@@ -4,14 +4,14 @@
         id={:accounts_list}
         module={BudgetWeb.Transactions.AccountList}
         accounts={@accounts}
-        accounts_selected_ids={@accounts_selected_ids}
+        accounts_selected_ids={get_accounts(@url_params)}
       />
 
       <.live_component
         id={:accounts_list}
         module={BudgetWeb.Transactions.CategoriesList}
         categories={@categories}
-        category_selected_ids={@category_selected_ids}
+        category_selected_ids={get_categories(@url_params)}
       />
 
   </.menu>

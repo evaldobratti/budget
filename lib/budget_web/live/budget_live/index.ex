@@ -14,8 +14,6 @@ defmodule BudgetWeb.BudgetLive.Index do
     {
       :ok,
       socket
-      |> assign(accounts_selected_ids: [])
-      |> assign(category_selected_ids: [])
       |> assign(confirm_delete: nil)
       |> assign(balances: [0, 0])
       |> assign(new_transaction_payload: %Transaction{date: Timex.today()})
@@ -186,11 +184,34 @@ defmodule BudgetWeb.BudgetLive.Index do
     end
   end
 
+  defp get_categories(url_params) do
+    category_ids = Map.get(url_params, "category_ids", "") |> String.split(",")
+
+    if category_ids == [""] do
+      []
+    else 
+      category_ids
+      |> Enum.map(&String.to_integer/1)
+    end
+  end
+
+  defp get_accounts(url_params) do
+    account_ids = Map.get(url_params, "account_ids", "") |> String.split(",")
+
+    if account_ids == [""] do
+      []
+    else 
+      account_ids
+      |> Enum.map(&String.to_integer/1)
+    end
+
+  end
+
   defp reload_transactions(socket) do
     [date_start, date_end] = get_dates(socket.assigns.url_params)
     
-    account_ids = socket.assigns.accounts_selected_ids
-    category_ids = socket.assigns.category_selected_ids
+    account_ids = get_accounts(socket.assigns.url_params)
+    category_ids = get_categories(socket.assigns.url_params)
 
     previous_balance =
       if socket.assigns.previous_balance do
@@ -238,20 +259,40 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def handle_info({:accounts_selected_ids, ids}, socket) do
+    url_params = socket.assigns.url_params
+    params = 
+      if length(ids) == 0 do
+        url_params
+        |> Map.delete("account_ids")
+      else
+        url_params
+        |> Map.put("account_ids", Enum.join(ids, ","))
+        |> Map.put("from", "account")
+      end
+
     {
-      :noreply, 
+      :noreply,
       socket
-      |> assign(accounts_selected_ids: ids)
-      |> reload_transactions()
+      |> push_patch(to: ~p"/?#{params}")
     }
   end
 
   def handle_info({:category_selected_ids, ids}, socket) do
+    url_params = socket.assigns.url_params
+    params = 
+      if length(ids) == 0 do
+        url_params
+        |> Map.delete("category_ids")
+      else
+        url_params
+        |> Map.put("category_ids", Enum.join(ids, ","))
+        |> Map.put("from", "category")
+      end
+
     {
-      :noreply, 
+      :noreply,
       socket
-      |> assign(category_selected_ids: ids)
-      |> reload_transactions()
+      |> push_patch(to: ~p"/?#{params}")
     }
   end
 
