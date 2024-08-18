@@ -3,12 +3,13 @@ defmodule BudgetWeb.Transactions.AccountList do
   use BudgetWeb, :live_component
 
   def render(assigns) do
-    ~H"""
+    assigns = Map.put_new(assigns, :url_params, %{})
 
+    ~H"""
     <div class="flex flex-col">
       <div class="flex items-start mt-2">
         Accounts
-        <.link_button small class="ml-auto text-center px-4" patch={~p"/accounts/new"}>New</.link_button>
+        <.link_button small class="ml-auto text-center px-4" patch={~p"/accounts/new?#{@url_params}"}>New</.link_button>
       </div>
       <%= if Enum.empty?(@accounts) do %>
         <div class="flex mt-2 flex-justify-center">
@@ -25,7 +26,7 @@ defmodule BudgetWeb.Transactions.AccountList do
               phx-target={@myself}
               checked={account.id in @accounts_selected_ids} 
             />
-            <.link patch={~p"/accounts/#{account}/edit"}><%= account.name %></.link>
+            <.link patch={~p"/accounts/#{account}/edit?#{@url_params}"}><%= account.name %></.link>
           </div>
         </div>
       <% end %>

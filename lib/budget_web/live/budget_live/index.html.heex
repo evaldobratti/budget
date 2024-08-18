@@ -5,6 +5,7 @@
         module={BudgetWeb.Transactions.AccountList}
         accounts={@accounts}
         accounts_selected_ids={get_accounts(@url_params)}
+        url_params={@url_params}
       />
 
       <.live_component
@@ -12,6 +13,7 @@
         module={BudgetWeb.Transactions.CategoriesList}
         categories={@categories}
         category_selected_ids={get_categories(@url_params)}
+        url_params={@url_params}
       />
 
   </.menu>
@@ -25,15 +27,15 @@
           dates={get_dates(@url_params)}
         />
         <div class="flex items-start">
-          <.link_button class="ml-auto" patch={~p"/transactions/new"}>New</.link_button>
+          <.link_button class="ml-auto" patch={~p"/transactions/new?#{@url_params}"}>New</.link_button>
           <%= if @live_action == :new_transaction do %>
-            <.modal id="new-transaction" on_cancel={JS.patch(~p"/")} show>
+            <.modal id="new-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
               <.live_component
                 module={BudgetWeb.TransactionLive.FormComponent}
                 action={@live_action}
                 id={:new}
                 transaction={@new_transaction_payload}
-                patch={~p"/?#{[from: "transaction"]}"}
+                patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
               />
             </.modal>
           <% end %>
@@ -44,13 +46,13 @@
     <div class="flex flex-col overflow-y-auto px-4">
 
         <%= if @live_action == :edit_transaction do %>
-          <.modal id="edit-transaction" on_cancel={JS.patch(~p"/")} show>
+          <.modal id="edit-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
               <.live_component
                 module={BudgetWeb.TransactionLive.FormComponent}
                 action={@live_action}
                 id={@edit_transaction.id}
                 transaction={@edit_transaction}
-                patch={~p"/?#{[from: "transaction"]}"}
+                patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
               />
           </.modal>
         <% end %>
@@ -230,32 +232,32 @@
   </div>
 
   <%= if @live_action in [:new_account, :edit_account] do %>
-    <.modal id="modal-account" on_cancel={JS.patch(~p"/")} show title={@account.id && "Edit account" || "New Account"}>
+    <.modal id="modal-account" on_cancel={JS.patch(~p"/?#{@url_params}")} show title={@account.id && "Edit account" || "New Account"}>
       <.live_component
         module={BudgetWeb.AccountLive.FormComponent}
         id={@account.id || :new}
         action={@live_action}
         account={@account}
-        patch={~p"/?#{[from: "account"]}"}
+          patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
       />
     </.modal>
   <% end %>
 
   <%= if @live_action in [:new_category, :edit_category] do %>
-    <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
+    <.modal id="modal-category" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
         <.live_component
           module={BudgetWeb.CategoryLive.FormComponent}
           title={@category.id && "Edit category" || "New Category"}
           id={@category.id || :new}
           action={@live_action}
           category={@category}
-          patch={~p"/?#{[from: "category"]}"}
+          patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
         />
     </.modal>
   <% end %>
 
   <%= if @live_action == :new_category_child do %>
-    <.modal id="modal-category" on_cancel={JS.patch(~p"/")} show>
+    <.modal id="modal-category" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
         <.live_component
           module={BudgetWeb.CategoryLive.FormComponent}
           id={@category.id || :new}
@@ -263,7 +265,7 @@
           action={:new_category}
           category={%Transactions.Category{}}
           parent={@category}
-          patch={~p"/?#{[from: "category"]}"}
+          patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
         />
     </.modal>
   <% end %>

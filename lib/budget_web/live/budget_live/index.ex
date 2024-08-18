@@ -255,7 +255,13 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   @impl true
   def handle_info(:add_new_transaction, socket) do
-    {:noreply, socket |> push_patch(to: ~p"/transactions/new")}
+    url_params = 
+      socket.assigns.url_params
+      |> Map.delete("account_id")
+      |> Map.delete("date")
+      |> Map.delete("transaction-add-new")
+
+    {:noreply, socket |> push_patch(to: ~p"/transactions/new?#{url_params}")}
   end
 
   def handle_info({:accounts_selected_ids, ids}, socket) do

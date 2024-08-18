@@ -12,6 +12,8 @@ defmodule BudgetWeb.Transactions.CategoriesList do
   end
 
   def render(assigns) do
+    assigns = Map.put_new(assigns, :url_params, %{})
+
     ~H"""
     <div class="flex flex-col mt-2 overflow-y-auto">
       <div class="flex items-start mt-2">
@@ -23,7 +25,7 @@ defmodule BudgetWeb.Transactions.CategoriesList do
           checked={@all_selected} 
         />
         Categories
-        <.link_button small class="ml-auto px-4 text-center" patch={~p"/categories/new"}>New</.link_button>
+        <.link_button small class="ml-auto px-4 text-center" patch={~p"/categories/new?#{@url_params}"}>New</.link_button>
       </div>
       <%= if Enum.empty?(@categories) do %>
         <div class="flex mt-2 flex-justify-center">
