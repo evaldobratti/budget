@@ -67,7 +67,13 @@
     <% end %>
 
 
-    <.input field={@form[:value]} type="number" label="Value" autocomplete="off" step="0.01" />
+    <div class="flex">
+      <.input field={@form[:value_raw]} label="Value" autocomplete="off" step="0.01" class="flex-grow" />
+      <!-- TODO display errors on the value instead value_raw here -->
+      <div style="width: 300px">
+        <%= @form[:recurrency_description].value %>
+      </div>
+    </div>
 
     <div class="flex mb-3">
       <.input

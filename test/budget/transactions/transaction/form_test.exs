@@ -3,6 +3,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
 
   import Budget.TransactionsFixtures
 
+  alias Ecto.Changeset
   alias Budget.Transactions
   alias Budget.Transactions.Transaction.Form
 
@@ -309,6 +310,116 @@ defmodule Budget.Transactions.Transaction.FormTest do
                   parcel_end: nil
                 }
               }} == Form.apply_insert(changeset) |> simplify()
+    end
+
+    test "automatically creates recurrency using /", data do
+      other_account_id = account_fixture().id
+
+      changeset =
+        Form.insert_changeset(%{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: "200 / 2",
+          originator: "regular",
+          regular: %{
+            category_id: data.category_id,
+            description: "Something"
+          }
+        })
+
+      assert %{} == errors_on(changeset)
+
+      assert "A recurrency with 2 parcels with value 100 will be created" == Changeset.get_field(changeset, :recurrency_description)
+
+      assert {:ok, 
+        %{
+          value: 100.0, 
+          date: ~D[2022-01-01], 
+          account_id: data.account_id, 
+          originator: %{
+            description: "Something", 
+            category_id: data.category_id
+          }, 
+          recurrency: %{
+            type: :parcel, 
+            date_end: nil, 
+            parcel_start: 1, 
+            parcel_end: 2, 
+            frequency: :monthly, 
+            date_start: ~D[2022-01-01], 
+            transaction_payload: %{
+              "2022-01-01" => %{
+                "account_id" => data.account_id, 
+                "category_id" => data.category_id, 
+                "description" => "Something", 
+                "originator" => "Elixir.Budget.Transactions.Originator.Regular", 
+                "value" => "100"
+              }
+            }
+          }, 
+          paid: true, 
+          recurrency_transaction: %{
+            parcel: 1, 
+            parcel_end: 2, 
+            original_date: ~D[2022-01-01]
+          }
+        }
+      } == Form.apply_insert(changeset) |> simplify()
+    end
+
+    test "automatically creates recurrency using *", data do
+      other_account_id = account_fixture().id
+
+      changeset =
+        Form.insert_changeset(%{
+          date: ~D[2022-01-01],
+          account_id: data.account_id,
+          value: "200 * 2",
+          originator: "regular",
+          regular: %{
+            category_id: data.category_id,
+            description: "Something"
+          }
+        })
+
+      assert %{} == errors_on(changeset)
+
+      assert "A recurrency with 2 parcels with value 200 will be created" == Changeset.get_field(changeset, :recurrency_description)
+
+      assert {:ok, 
+        %{
+          value: 200.0, 
+          date: ~D[2022-01-01], 
+          account_id: data.account_id, 
+          originator: %{
+            description: "Something", 
+            category_id: data.category_id
+          }, 
+          recurrency: %{
+            type: :parcel, 
+            date_end: nil, 
+            parcel_start: 1, 
+            parcel_end: 2, 
+            frequency: :monthly, 
+            date_start: ~D[2022-01-01], 
+            transaction_payload: %{
+              "2022-01-01" => %{
+                "account_id" => data.account_id, 
+                "category_id" => data.category_id, 
+                "description" => "Something", 
+                "originator" => "Elixir.Budget.Transactions.Originator.Regular", 
+                "value" => "200"
+              }
+            }
+          }, 
+          paid: true, 
+          recurrency_transaction: %{
+            parcel: 1, 
+            parcel_end: 2, 
+            original_date: ~D[2022-01-01]
+          }
+        }
+      } == Form.apply_insert(changeset) |> simplify()
     end
   end
 

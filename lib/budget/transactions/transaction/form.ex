@@ -15,6 +15,8 @@ defmodule Budget.Transactions.Transaction.Form do
   embedded_schema do
     field(:date, :date)
     field(:value, :decimal)
+    field(:value_raw, :string)
+    field(:recurrency_description, :string)
     field(:account_id, :integer)
     field(:position, :decimal)
 
@@ -47,6 +49,8 @@ defmodule Budget.Transactions.Transaction.Form do
   end
 
   def insert_changeset(params) do
+    params = parse_recurrency_shortcut(params)
+
     changeset =
       %__MODULE__{}
       |> cast(params, [
@@ -58,7 +62,9 @@ defmodule Budget.Transactions.Transaction.Form do
         :is_recurrency,
         :keep_adding,
         :apply_forward,
-        :paid
+        :paid,
+        :recurrency_description,
+        :value_raw
       ])
       |> validate_required([:date, :value, :account_id, :originator, :paid])
       |> Budget.Repo.add_profile_id()
@@ -79,6 +85,53 @@ defmodule Budget.Transactions.Transaction.Form do
         )
     end
     |> cast_embed(:recurrency, with: &changeset_recurrency/2)
+  end
+
+  def parse_recurrency_shortcut(params) do
+    regex = ~r/(?<value>-?\d+(?:,\d+)?)\s*(?<operation>[\*\/])\s*(?<parcels>\d+)/ 
+
+    string_keys = 
+      Map.keys(params) 
+      |> Enum.map(&is_binary/1) 
+      |> Enum.all?(& &1 == true)
+
+    k = fn value ->
+      if string_keys do
+        value
+      else
+        String.to_existing_atom(value)
+      end
+    end
+
+    value_raw = Map.get(params, k.("value_raw"), "")
+    IO.inspect(value_raw)
+
+    case Regex.named_captures(regex, to_string(value_raw)) do
+      %{"value" => value_string, "operation" => operation, "parcels" => parcels_string} ->
+        {:ok, value } = Decimal.cast(value_string)
+        {parcels, _} = Integer.parse(parcels_string)
+
+        value = 
+          if operation == "/" do
+             Decimal.div(value, parcels) 
+          else
+            value_string
+          end
+
+        params
+        |> Map.put(k.("recurrency"), %{
+          k.("type") => "parcel",
+          k.("frequency") => "monthly",
+          k.("parcel_start") => "1",
+          k.("parcel_end") =>  parcels_string,
+        })
+        |> Map.put(k.("value"), value)
+        |> Map.put(k.("recurrency_description"), "A recurrency with #{parcels} parcels with value #{value} will be created")
+
+      nil ->
+        params
+        |> Map.put(k.("value"), value_raw)
+    end
   end
 
   def changeset_regular(regular, params) do
