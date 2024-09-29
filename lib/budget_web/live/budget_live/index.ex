@@ -133,12 +133,14 @@ defmodule BudgetWeb.BudgetLive.Index do
   def handle_event("transaction-delete", %{"delete-mode" => delete_mode}, socket) do
     transaction_id = socket.assigns.confirm_delete.transaction_id
 
+    params = Map.put(socket.assigns.url_params, "from", "delete")
+
     socket =
       case Transactions.delete_transaction(transaction_id, delete_mode) do
         {:ok, _} ->
           socket
           |> put_flash(:info, "Transaction successfully deleted!")
-          |> push_patch(to: ~p"/?#{[from: "delete"]}")
+          |> push_patch(to: ~p"/?#{params}")
 
         _ ->
           socket
