@@ -141,7 +141,7 @@
               <%= format_date(transaction.date) %>
             </div>
             <div class="flex-1 px-1 flex">
-              <.link patch={~p"/transactions/#{transaction}/edit"}>
+              <.link patch={~p"/transactions/#{transaction}/edit?#{@url_params}"}>
                 <%= description(transaction) %>
                 <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
                   <span>
@@ -191,7 +191,7 @@
             </div>
 
             <div class="w-[5%] px-1 flex gap-x-1">
-              <.link patch={~p"/transactions/#{transaction}/delete"} 
+              <.link patch={~p"/transactions/#{transaction}/delete?#{@url_params}"} 
                 data-testid={"delete-#{transaction.id}"}
                 class="flex">
                 <.tooltiped id={"tooltip-delete-#{transaction.id}"} tooltip="Delete">

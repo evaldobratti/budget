@@ -7,7 +7,7 @@ defmodule Budget.Transactions.Recurrency do
   schema "recurrencies" do
     field :date_end, :date
     field :date_start, :date
-    field(:type, Ecto.Enum, values: [:until_date, :forever, :parcel])
+    field(:type, Ecto.Enum, values: [:parcel, :until_date, :forever])
     field :frequency, Ecto.Enum, values: [:weekly, :monthly, :yearly], default: :monthly
     field :parcel_end, :integer
     field :parcel_start, :integer

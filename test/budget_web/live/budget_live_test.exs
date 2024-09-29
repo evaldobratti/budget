@@ -117,7 +117,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert "/?account_id=#{another_account.id}&date=2020-02-20&from=transaction&transaction-add-new=true" ==
                assert_patch(live, 100)
 
-      assert "/transactions/new" == assert_patch(live, 300)
+      assert "/transactions/new?from=transaction" == assert_patch(live, 300)
 
       assert ["2020-02-20"] ==
                live
@@ -547,7 +547,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     end
 
     test "apply changes forward", %{conn: conn} do
-      recurrency_fixture()
+      %{id: id} = recurrency_fixture()
 
       {:ok, live, _html} = live(conn, ~p"/")
 
@@ -555,13 +555,39 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> element("button", ">>")
       |> render_click()
 
+      assert_query(
+        assert_patch(live, 100), 
+        "/",
+        from: "date",
+        date_start: Timex.today() |> Timex.shift(months: 1) |> Timex.beginning_of_month(),
+        date_end: Timex.today() |> Timex.shift(months: 1) |> Timex.end_of_month()
+      )
+
       live
       |> element("button", ">>")
       |> render_click()
 
+      assert_query(
+        assert_patch(live, 100), 
+        "/",
+        from: "date",
+        date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
+        date_end: Timex.today() |> Timex.shift(months: 2) |> Timex.end_of_month()
+      )
+
       live
       |> element("a", "Transaction description")
       |> render_click()
+
+      recurrency_to_edit = Timex.today() |> Timex.shift(months: 2) |> Date.to_iso8601()
+
+      assert_query(
+        assert_patch(live, 100), 
+        "/transactions/recurrency-#{id}-#{recurrency_to_edit}-0/edit",
+        from: "date",
+        date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
+        date_end: Timex.today() |> Timex.shift(months: 2) |> Timex.end_of_month()
+      )
 
       live
       |> form("#transaction-form",
@@ -572,9 +598,25 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
       |> render_submit()
 
+      assert_query(
+        assert_patch(live, 100), 
+        "/",
+        from: "transaction",
+        date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
+        date_end: Timex.today() |> Timex.shift(months: 2) |> Timex.end_of_month()
+      )
+
       live
       |> element("button", ">>")
       |> render_click()
+
+      assert_query(
+        assert_patch(live, 100), 
+        "/",
+        from: "date",
+        date_start: Timex.today() |> Timex.shift(months: 3) |> Timex.beginning_of_month(),
+        date_end: Timex.today() |> Timex.shift(months: 3) |> Timex.end_of_month()
+      )
 
       assert live |> element("[id^=transaction-recurrency]") |> render =~ "420,00"
 
@@ -582,9 +624,25 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> element("button", "<<")
       |> render_click()
 
+      assert_query(
+        assert_patch(live, 100), 
+        "/",
+        from: "date",
+        date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
+        date_end: Timex.today() |> Timex.shift(months: 2) |> Timex.end_of_month()
+      )
+
       live
       |> element("button", "<<")
       |> render_click()
+
+      assert_query(
+        assert_patch(live, 100), 
+        "/",
+        from: "date",
+        date_start: Timex.today() |> Timex.shift(months: 1) |> Timex.beginning_of_month(),
+        date_end: Timex.today() |> Timex.shift(months: 1) |> Timex.end_of_month()
+      )
 
       assert live |> element("[id^=transaction-recurrency]") |> render =~ "133,00"
     end
@@ -888,5 +946,25 @@ defmodule BudgetWeb.BudgetLiveTest do
     assert live
            |> element("#form_transfer_0_other_account_id > option", "Account Name")
            |> render() =~ "selected"
+  end
+
+
+  def assert_query(url, path, search_params) do
+    uri = url |> URI.parse()
+    query = uri |> Map.get(:query) |> URI.decode_query()
+
+    assert path == uri.path
+
+    search_params 
+    |> Enum.each(fn {key, value} -> 
+      against = Map.get(query, to_string(key))
+
+      case value do
+        %Date{} -> assert against == Date.to_iso8601(value)
+        _ -> assert against == value
+      end
+    end)
+
+    
   end
 end
