@@ -104,7 +104,6 @@ defmodule Budget.Transactions.Transaction.Form do
     end
 
     value_raw = Map.get(params, k.("value_raw"), "")
-    IO.inspect(value_raw)
 
     case Regex.named_captures(regex, to_string(value_raw)) do
       %{"value" => value_string, "operation" => operation, "parcels" => parcels_string} ->
@@ -130,7 +129,7 @@ defmodule Budget.Transactions.Transaction.Form do
 
       nil ->
         params
-        |> Map.put(k.("value"), value_raw)
+        |> Map.put(k.("value"), String.replace(value_raw, ",", "."))
     end
   end
 
