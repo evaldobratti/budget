@@ -103,7 +103,7 @@ defmodule Budget.Transactions.Transaction.Form do
       end
     end
 
-    value_raw = Map.get(params, k.("value_raw"), "")
+    value_raw = Map.get(params, k.("value_raw"), Map.get(params, k.("value"), "")) |> to_string
 
     case Regex.named_captures(regex, to_string(value_raw)) do
       %{"value" => value_string, "operation" => operation, "parcels" => parcels_string} ->

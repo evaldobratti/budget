@@ -68,7 +68,7 @@ defmodule BudgetWeb.BudgetLiveTest do
             category_id: category.id
           },
           account_id: account.id,
-          value: "200"
+          value_raw: "200"
         }
       )
       |> render_submit()
@@ -105,7 +105,7 @@ defmodule BudgetWeb.BudgetLiveTest do
           },
           account_id: another_account.id,
           keep_adding: true,
-          value: "200"
+          value_raw: "200"
         }
       )
       |> render_submit()
@@ -376,7 +376,7 @@ defmodule BudgetWeb.BudgetLiveTest do
             category_id: category.id
           },
           account_id: account.id,
-          value: "200",
+          value_raw: "200",
           is_recurrency: true
         }
       )
@@ -391,7 +391,7 @@ defmodule BudgetWeb.BudgetLiveTest do
             category_id: category.id
           },
           account_id: account.id,
-          value: "200",
+          value_raw: "200",
           is_recurrency: true,
           recurrency: %{
             type: :forever,
@@ -516,12 +516,13 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> element("button", ">>")
       |> render_click()
 
+      assert String.starts_with?(assert_patch(live), "/?")
+
       live
       |> element("a", "Transaction description")
       |> render_click()
 
-      path = assert_patch(live)
-      assert path == ~p"/transactions/#{id}/edit"
+      assert String.starts_with?(assert_patch(live), "/transactions/#{id}/edit")
 
       live
       |> form("#transaction-form",
@@ -777,13 +778,17 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     assert html =~ "Transaction successfully deleted!"
 
-    refute live
-           |> element("button", ">>")
-           |> render_click() =~ "Transaction description"
+    live
+    |> element("button", ">>")
+    |> render_click() 
 
-    assert live
-           |> element("button", ">>")
-           |> render_click() =~ "Transaction description"
+    refute render(live) =~ "Transaction description"
+
+    live
+    |> element("button", ">>")
+    |> render_click()
+
+    assert render(live) =~ "Transaction description"
   end
 
   test "create new category", %{conn: conn} do
