@@ -88,7 +88,7 @@ defmodule Budget.Transactions.Transaction.Form do
   end
 
   def parse_recurrency_shortcut(params) do
-    regex = ~r/(?<value>-?\d+(?:,\d+)?)\s*(?<operation>[\*\/])\s*(?<parcels>\d+)/ 
+    regex = ~r/(?<value>-?\d+(?:[,.]\d+)?)\s*(?<operation>[\*\/])\s*(?<parcels>\d+)/ 
 
     string_keys = 
       Map.keys(params) 
@@ -107,14 +107,14 @@ defmodule Budget.Transactions.Transaction.Form do
 
     case Regex.named_captures(regex, to_string(value_raw)) do
       %{"value" => value_string, "operation" => operation, "parcels" => parcels_string} ->
-        {:ok, value } = Decimal.cast(value_string)
+        {:ok, value } = Decimal.cast(value_string |> String.replace(",", "."))
         {parcels, _} = Integer.parse(parcels_string)
 
         value = 
           if operation == "/" do
              Decimal.div(value, parcels) 
           else
-            value_string
+            value
           end
 
         params
@@ -124,7 +124,7 @@ defmodule Budget.Transactions.Transaction.Form do
           k.("parcel_start") => "1",
           k.("parcel_end") =>  parcels_string,
         })
-        |> Map.put(k.("value"), value)
+        |> Map.put(k.("value"), value |> Decimal.to_string())
         |> Map.put(k.("recurrency_description"), "A recurrency with #{parcels} parcels with value #{value} will be created")
 
       nil ->
