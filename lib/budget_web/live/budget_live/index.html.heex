@@ -20,7 +20,18 @@
   <div class="flex flex-grow flex-col overflow-auto">
 
     <div class="flex flex-col p-4">
-      <div class="flex">
+      <div class="flex items-center">
+        <div class="flex items-center gap-2">
+          <input 
+            id="toggle-transactions-selection"
+            type="checkbox" 
+            phx-click="toggle-transaction-selection" 
+            checked={@is_selecting_transactions} 
+          />
+          <label for="toggle-transactions-selection">
+            Select mode
+          </label>
+        </div>
         <.live_component
           id={:date_picker}
           module={BudgetWeb.Transactions.DateRangePicker}
@@ -44,7 +55,6 @@
     </div>
 
     <div class="flex flex-col overflow-y-auto px-4">
-
         <%= if @live_action == :edit_transaction do %>
           <.modal id="edit-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
               <.live_component
@@ -132,10 +142,18 @@
             id={"transaction-#{transaction.id}"} 
             class={[
               "group list-group-item item-draggable flex",
-              (if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency")) || not transaction.paid, do: "bg-slate-400", else: "bg-slate-100"),
-              "px-4 py-1.5 rounded-lg hover:bg-slate-200"
+              "px-4 py-1.5 rounded-lg hover:bg-slate-200",
+              "items-center",
+              background_color(transaction, @is_selecting_transactions, @selected_transactions)
             ]}
           >
+            <input 
+              :if={@is_selecting_transactions}
+              type="checkbox" 
+              phx-click="toggle-transaction-selected" 
+              phx-value-id={transaction.id}
+              checked={to_string(transaction.id) in @selected_transactions} 
+            />
 
             <div class="px-1 w-[100px]">
               <%= format_date(transaction.date) %>

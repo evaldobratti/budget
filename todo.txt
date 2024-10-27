@@ -1,4 +1,1 @@
 - when a category is deleted but is associated with a recurrency in the database, the error will be silent
-- allow expression in tha value field, like 
-   - 200 / 3, in this case 3 parcels of 66,66
-   - 200 * 3, in this case 3 parcels of 200

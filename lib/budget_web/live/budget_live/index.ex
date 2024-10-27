@@ -15,6 +15,8 @@ defmodule BudgetWeb.BudgetLive.Index do
       :ok,
       socket
       |> assign(confirm_delete: nil)
+      |> assign(is_selecting_transactions: false)
+      |> assign(selected_transactions: [])
       |> assign(balances: [0, 0])
       |> assign(new_transaction_payload: %Transaction{date: Timex.today()})
       |> assign(previous_balance: true)
@@ -107,6 +109,33 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def apply_return_from(socket, _, _), do: socket
+
+  def handle_event("toggle-transaction-selection", _params, socket) do
+    is_selecting_transactions = not socket.assigns.is_selecting_transactions
+
+    {
+      :noreply,
+      socket
+      |> assign(is_selecting_transactions: is_selecting_transactions)
+    }
+  end
+
+  def handle_event("toggle-transaction-selected", %{"id" => id}, socket) do
+    selected_transactions =
+      if to_string(id) in socket.assigns.selected_transactions do
+        List.delete(socket.assigns.selected_transactions, id)
+      else
+        [to_string(id) | socket.assigns.selected_transactions]
+      end
+
+
+    {
+      :noreply,
+      socket
+      |> assign(selected_transactions: selected_transactions)
+    }
+  end
+
 
   def handle_event("toggle-previous-balance", _params, socket) do
     previous_balance = not socket.assigns.previous_balance
@@ -349,5 +378,22 @@ defmodule BudgetWeb.BudgetLive.Index do
       end)
 
     tooltip <> category.name
+  end
+
+  def background_color(transaction, is_selecting_transactions, selected_transactions) do
+    if is_selecting_transactions do
+      if to_string(transaction.id) in selected_transactions do
+        "bg-slate-400"
+      else
+        "bg-slate-100"
+      end
+    else
+      if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency")) 
+                  || not transaction.paid do
+        "bg-slate-400"
+      else
+        "bg-slate-100"
+      end
+    end
   end
 end
