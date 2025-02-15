@@ -30,6 +30,8 @@ RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.12.0 && \
     echo ". $HOME/.asdf/asdf.sh" >> /root/.bashrc && \
     echo ". $HOME/.asdf/asdf.sh" >> /root/.zshrc
 
+RUN apt-get install -y pdftotext
+
 run asdf plugin add nodejs
 run asdf install nodejs 18.1.0
 run asdf global nodejs 18.1.0

@@ -307,6 +307,17 @@ defmodule BudgetWeb.BudgetLive.Index do
         |> Map.put("from", "account")
       end
 
+    socket =
+      if length(ids) == 1 do
+        socket
+        |> update(:new_transaction_payload, &%{&1 | account_id: Enum.at(ids, 0)})
+      else
+        socket
+        |> update(:new_transaction_payload, &Map.put(&1, :account_id, nil))
+      end
+
+    IO.inspect(socket.assigns.new_transaction_payload)
+
     {
       :noreply,
       socket
