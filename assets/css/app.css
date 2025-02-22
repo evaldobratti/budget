@@ -22,6 +22,18 @@ html, body, body > div {
   display: none;
 }
 
+.popover {
+  width: max-content;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: white;
+  padding: 7px 12px;
+  border-radius: 4px;
+  font-size: 90%;
+  display: none;
+}
+
 .arrow {
   position: absolute;
   background: #222;
@@ -29,7 +41,6 @@ html, body, body > div {
   height: 8px;
   transform: rotate(45deg);
 }
-
 
 .gsi-material-button {
   -moz-user-select: none;

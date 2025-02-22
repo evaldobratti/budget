@@ -28,7 +28,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
   end
 
   def process_text(text) do
-    [_page1, _page2, _page3 | transactions] =
+    [_page1, _page2, _page3, _page4 | transactions] =
       text
       |> String.split("\f")
 
@@ -49,6 +49,12 @@ defmodule Budget.Importations.CreditCard.NuBank do
           String.starts_with?(string, "USD") ->
             :ignore
 
+          String.starts_with?(string, "EMISSÃO") ->
+            :ignore
+
+          String.contains?(string, "dívida") ->
+            :ignore
+
           String.starts_with?(string, "Conversão") ->
             {:conversion, string}
 
@@ -64,6 +70,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
           Regex.match?(~r/(\d*\.)?\d+,\d{2}/, string) ->
             value =
               string
+              |> String.replace("R$ ", "")
               |> String.replace(".", "")
               |> String.replace(",", ".")
 

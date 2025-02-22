@@ -24,6 +24,7 @@ defmodule BudgetWeb.Router do
     pipe_through(:browser)
 
     get "/login", GoogleAuthController, :login
+    get "/change-profile", GoogleAuthController, :change_profile
     get "/auth/google/callback", GoogleAuthController, :signin
     get "/logout", GoogleAuthController, :logout
 

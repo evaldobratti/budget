@@ -738,10 +738,9 @@ defmodule BudgetWeb.CoreComponents do
   attr :tooltip, :string
   attr :rest, :global
   slot :inner_block
-
   def tooltiped(assigns) do
     ~H"""
-      <span 
+      <span
         id={@id}
         phx-hook="Tooltip"
         class="tooltip"
@@ -753,6 +752,27 @@ defmodule BudgetWeb.CoreComponents do
       <%= render_slot(@inner_block) %>
     """
   end
+
+  attr :id, :string
+  attr :rest, :global
+  attr :activation, :string, default: "click"
+  slot :handle_block
+  slot :popover_block
+  def popover(assigns) do
+    ~H"""
+      <span
+        id={@id}
+        phx-hook="Popover"
+        {@rest}
+      >
+        <%= render_slot(@handle_block) %>
+      </span>
+      <span class={["popover"]}>
+        <%= render_slot(@popover_block) %>
+      </span>
+    """
+  end
+
 
   def format_date(date) do
     Timex.format!(date, "{0D}/{0M}/{YYYY}")
@@ -782,11 +802,14 @@ defmodule BudgetWeb.CoreComponents do
         <.menu_link label="Charts" active={@active_tab == :charts} to={~p"/charts"} />
 
         <%= render_slot(@inner_block) %>
-
         <div class="flex p-4 mt-auto">
-          <div>
-            <.icon name="hero-user" /> <%= @user.name %>
-          </div>
+          <.live_component
+            id={:profile_toggle}
+            module={BudgetWeb.UserLive.ProfileToggle}
+            user={@user}
+            active_profile={@active_profile}
+          />
+
           <a href={~p"/logout"} class="ml-auto">Logout</a>
         </div>
       </div>

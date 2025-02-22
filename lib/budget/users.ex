@@ -3,6 +3,7 @@ defmodule Budget.Users do
 
   alias Budget.Transactions
   alias Budget.Users.User
+  alias Budget.Users.Profile
   alias Budget.Repo
 
   def create_user(attrs \\ %{}) do
@@ -44,8 +45,31 @@ defmodule Budget.Users do
     |> Repo.one!(skip_profile_id: true)
   end
 
-  def create_welcoming_data(user) do
-    Budget.Repo.put_profile_id(user.id)
+  def get_user(id) do
+    from(
+      u in User,
+      where: u.id == ^id
+    )
+    |> preload(:profiles)
+    |> Repo.one!(skip_profile_id: true)
+  end
+
+
+  def create_profile(changeset) do
+    changeset
+    |> Repo.insert()
+    |> case do
+      {:ok, profile} ->
+        create_welcoming_data(profile)
+
+        {:ok, profile}
+
+      error -> error
+    end
+  end
+
+  def create_welcoming_data(profile) do
+    Budget.Repo.put_profile_id(profile.id)
 
     {:ok, _} = Transactions.create_category(%{name: "Alimentação"})
     {:ok, _} = Transactions.create_category(%{name: "Mercado"})

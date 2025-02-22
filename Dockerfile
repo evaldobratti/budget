@@ -30,8 +30,6 @@ RUN git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.12.0 && \
     echo ". $HOME/.asdf/asdf.sh" >> /root/.bashrc && \
     echo ". $HOME/.asdf/asdf.sh" >> /root/.zshrc
 
-RUN apt-get install -y pdftotext
-
 run asdf plugin add nodejs
 run asdf install nodejs 18.1.0
 run asdf global nodejs 18.1.0
@@ -81,7 +79,7 @@ RUN mix release
 FROM ${RUNNER_IMAGE}
 
 RUN apt-get update -y && \
-  apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates \
+  apt-get install -y libstdc++6 openssl libncurses5 locales ca-certificates poppler-utils \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # Set the locale

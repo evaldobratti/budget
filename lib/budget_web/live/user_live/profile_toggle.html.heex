@@ -1,0 +1,47 @@
+
+<span>
+    <.popover id="profile-popover">
+        <:handle_block :let={handle_class}>
+            <div class={handle_class}>
+            <div class="flex items-center">
+              <div>
+              <.icon name="hero-user" /> 
+              </div>
+              <div>
+                <%= @user.name %> 
+                <div class="text-xs">
+                Profile: <%= @active_profile.name %>
+                </div>
+
+              </div>
+            </div>
+            </div>
+        </:handle_block>
+
+        <:popover_block>
+            <div>Active: <%= @active_profile.name %></div>
+            <div :for={profile <- other_profiles(@user, @active_profile)}>
+              <.link patch={~p"/change-profile?#{%{"profile-id" => profile.id}}"}>
+              <%= profile.name %>
+              </.link>
+            </div>
+            <button phx-target={@myself} phx-click={show_modal("add-profile-modal")}>Add profile</button>
+        </:popover_block>
+    </.popover>
+
+    <.modal id="add-profile-modal">
+          <.simple_form
+            for={@new_profile_form}
+            id="account-form"
+            phx-target={@myself}
+            phx-change="profile-validate"
+            phx-submit="profile-save"
+            >
+            <.input field={@new_profile_form[:name]} autocomplete="off" label="Name" />
+        
+            <:actions>
+            <.button phx-disable-with="Saving...">Save</.button>
+            </:actions>
+        </.simple_form>
+    </.modal>
+</span>

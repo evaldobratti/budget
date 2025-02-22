@@ -15,8 +15,8 @@ defmodule BudgetWeb.GoogleAuthController do
         dev_user = Users.get_user_by_email!("mocked@provider.com")
 
         conn
-        |> put_session(:user, dev_user)
-        |> put_session(:active_profile, Enum.at(dev_user.profiles, 0))
+        |> put_session(:user_id, dev_user.id)
+        |> put_session(:active_profile_id, Enum.at(dev_user.profiles, 0).id)
         |> redirect(to: ~p"/")
 
       true ->
@@ -47,8 +47,8 @@ defmodule BudgetWeb.GoogleAuthController do
       end
 
     conn
-    |> put_session(:user, Map.merge(google_profile, user))
-    |> put_session(:active_profile, Enum.at(user.profiles, 0))
+    |> put_session(:user_id, user.id)
+    |> put_session(:active_profile_id, Enum.at(user.profiles, 0).id)
     |> redirect(to: ~p"/")
   end
 
@@ -59,12 +59,33 @@ defmodule BudgetWeb.GoogleAuthController do
   end
 
   def check_login(conn, _opts) do
-    if get_session(conn, :user) do
+    if get_session(conn, :user_id) do
       conn
     else
       conn
       |> redirect(to: ~p"/login")
       |> halt()
     end
+  end
+
+  def change_profile(conn, %{"profile-id" => profile_id}) do
+    user = 
+      conn
+      |> get_session(:user_id)
+      |> Users.get_user()
+
+    profile = Enum.find(user.profiles, & &1.id == String.to_integer(profile_id))
+
+    case profile do
+      %Users.Profile{} -> 
+        conn
+        |> put_session(:active_profile_id, profile.id)
+        |> redirect(to: ~p"/")
+
+      _ ->
+        conn
+        |> redirect(to: ~p"/")
+    end
+
   end
 end

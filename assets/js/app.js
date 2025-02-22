@@ -23,13 +23,15 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 import Alpine from 'alpinejs'
 import Tooltip from "./tooltip"
+import Popover from "./popover"
 import Sortable from "./sortable"
 import ChartCategories from "./chart-categories.js"
 
 const hooks = {
   Tooltip,
   Sortable,
-  ChartCategories
+  ChartCategories,
+  Popover
 }
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

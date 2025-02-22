@@ -1,16 +1,23 @@
 defmodule BudgetWeb.Nav do
   use Phoenix.LiveView
 
+  alias Budget.Users
+
   def render(_assigns), do: nil
 
-  def on_mount(:default, _params, %{"user" => user, "active_profile" => profile}, socket) do
-    Budget.Repo.put_profile_id(profile.id)
+  def on_mount(:default, _params, %{"user_id" => user_id, "active_profile_id" => profile_id}, socket) do
+    Budget.Repo.put_profile_id(profile_id)
+
+    user = Users.get_user(user_id)
+
+    profile = Enum.find(user.profiles, & &1.id == profile_id)
 
     {
       :cont,
       socket
       |> attach_hook(:active_tab, :handle_params, &set_active_tab/3)
       |> assign(user: user)
+      |> assign(active_profile: profile)
     }
   end
 

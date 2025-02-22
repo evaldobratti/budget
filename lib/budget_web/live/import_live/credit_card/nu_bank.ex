@@ -3,6 +3,7 @@ defmodule BudgetWeb.ImportLive.CreditCard.NuBank do
   use BudgetWeb, :live_view
 
   def mount(_params, _session, socket) do
+    File.mkdir([:code.priv_dir(:budget), "/static", "/uploads"])
     {
       :ok,
       socket

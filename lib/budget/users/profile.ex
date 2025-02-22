@@ -12,8 +12,8 @@ defmodule Budget.Users.Profile do
   end
 
   @doc false
-  def changeset(user, attrs) do
-    user
+  def changeset(profile, attrs) do
+    profile
     |> cast(attrs, [:name, :user_id])
     |> validate_required([:name])
   end
