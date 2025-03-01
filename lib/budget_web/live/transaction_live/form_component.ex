@@ -38,19 +38,21 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       |> assign(accounts: Transactions.list_accounts())
       |> assign(categories: arrange_categories())
       |> assign(descriptions: Transactions.list_descriptions())
+      |> assign(hint_descriptions: [])
     }
   end
 
   @impl true
   def handle_event("validate", %{"form" => form_params} = params, socket) do
-    form =
+    changeset = 
       socket.assigns
       |> changeset(form_params)
       |> hint_category(Map.get(params, "_target"))
       |> Map.put(:action, :validate)
-      |> to_form
 
-    {:noreply, assign(socket, form: form)}
+    [changeset, socket] = hint_description(changeset, Map.get(params, "_target"), socket)
+
+    {:noreply, assign(socket, form: to_form(changeset))}
   end
 
   def handle_event("save", %{"form" => form_params}, socket) do
@@ -88,6 +90,42 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   end
 
   def hint_category(changeset, _), do: changeset
+
+  def hint_description(changeset, ["form", "regular", "original_description"], socket) do
+    description =
+      changeset
+      |> Changeset.get_change(:regular)
+      |> Changeset.get_field(:original_description)
+
+    selected_option = Enum.find(socket.assigns.hint_descriptions, & &1.original == description)
+
+    if selected_option do
+      regular_changeset =
+        changeset
+        |> Changeset.get_change(:regular)
+        |> Changeset.put_change(:description, selected_option.suggestion)
+
+      [
+        Changeset.put_embed(
+          changeset,
+          :regular,
+          regular_changeset
+        ),
+        socket
+      ]
+    else
+      hints = Hinter.hint_description(description)
+
+      [
+        changeset,
+        socket
+        |> assign(:hint_descriptions, hints)
+      ]
+    end
+
+  end
+
+  def hint_description(changeset, _, socket), do: [changeset, socket]
 
   def save_transaction(socket, :edit_transaction, changeset) do
     case Transaction.Form.apply_update(changeset, socket.assigns.transaction) do

@@ -3,6 +3,7 @@ defmodule Budget.Transactions.Transaction.Form do
 
   import Ecto.Changeset
 
+  alias Budget.Hinter
   alias Ecto.Changeset
 
   alias Budget.Transactions
@@ -33,6 +34,7 @@ defmodule Budget.Transactions.Transaction.Form do
     embeds_one :regular, RegularForm do
       field(:category_id, :integer)
       field(:description)
+      field(:original_description)
     end
 
     embeds_one :transfer, TransferForm do
@@ -137,7 +139,8 @@ defmodule Budget.Transactions.Transaction.Form do
     regular
     |> cast(params, [
       :category_id,
-      :description
+      :description,
+      :original_description
     ])
     |> validate_required([
       :category_id,
@@ -256,6 +259,8 @@ defmodule Budget.Transactions.Transaction.Form do
         description: get_change(regular, :description)
       }
       |> Budget.Repo.add_profile_id()
+
+    Hinter.check(get_change(regular, :description), get_change(regular, :original_description))
 
     %Transaction{}
     |> change(%{

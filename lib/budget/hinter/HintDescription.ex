@@ -11,8 +11,8 @@ defmodule Budget.Hinter.HintDescription do
   end
 
   @doc false
-  def changeset(account, attrs) do
-    account
+  def changeset(hint_description, attrs) do
+    hint_description 
     |> cast(attrs, [:original, :transformed])
     |> validate_required([:original, :transformed])
     |> Budget.Repo.add_profile_id()

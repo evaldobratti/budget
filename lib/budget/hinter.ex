@@ -5,6 +5,8 @@ defmodule Budget.Hinter do
   alias Budget.Repo
   alias Budget.Hinter.HintDescription
 
+  def hint_description(nil), do: []
+  def hint_description(""), do: []
   def hint_description(original_description) do
     cleaned = Regex.replace(~r/ \d+\/\d+$/, original_description, "")
 
@@ -66,5 +68,19 @@ defmodule Budget.Hinter do
       })
     end)
     |> Enum.map(&Repo.insert/1)
+  end
+
+  def check(transformed, original) when transformed == nil or original == nil, do: :nothing_created
+
+  def check(transformed, original) do
+    from(
+      h in HintDescription,
+      where: h.original ==  ^original and h.transformed == ^transformed
+    )
+    |> Repo.all()
+    |> case do
+      [] -> Repo.insert(HintDescription.changeset(%HintDescription{}, %{transformed: transformed, original: original}))
+      _ -> :nothing_created
+    end
   end
 end

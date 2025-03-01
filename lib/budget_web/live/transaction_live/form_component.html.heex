@@ -49,12 +49,21 @@
     </div>
 
     <%= if @form[:originator].value == "regular" do %>
-      <.inputs_for :let={regular_form} field={@form[:regular]}>
-        <.input field={regular_form[:description]} label="Description" autocomplete="off" list="descriptions" />
-        <datalist id="descriptions">
-          <option :for={d <- @descriptions} value={d} />
-        </datalist>
-      </.inputs_for>
+      <div class="flex">
+        <.inputs_for :let={regular_form} field={@form[:regular]}>
+          <div class="flex-1">
+            <.input field={regular_form[:description]} label="Description" autocomplete="off" list="descriptions" />
+            <datalist id="descriptions">
+              <option :for={d <- @descriptions} value={d} />
+            </datalist>
+          </div>
+
+          <.input field={regular_form[:original_description]} label="Original Description" autocomplete="off" list="hint_descriptions" />
+          <datalist id="hint_descriptions">
+            <option :for={h <- @hint_descriptions} value={h.original} label={h.suggestion} />
+          </datalist>
+        </.inputs_for>
+      </div>
 
       <.inputs_for :let={regular_form} field={@form[:regular]}>
         <.input
