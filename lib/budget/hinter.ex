@@ -72,6 +72,8 @@ defmodule Budget.Hinter do
 
   def check(transformed, original) when transformed == nil or original == nil, do: :nothing_created
 
+  def check(equal, equal), do: :nothing_created
+
   def check(transformed, original) do
     from(
       h in HintDescription,
