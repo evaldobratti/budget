@@ -14,8 +14,8 @@ defmodule Budget.Importations.Worker do
         %{type: :transaction} = transaction ->
           hint =
             case Hinter.hint_description(transaction.description) do
-              [hint | _] -> hint.suggestion
-              [] -> transaction.description
+              [hint | _] when hint.rank > 0.9 -> hint.suggestion
+              _ -> transaction.description
             end
 
           category = Hinter.hint_category(transaction.description, nil)

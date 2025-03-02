@@ -316,8 +316,6 @@ defmodule BudgetWeb.BudgetLive.Index do
         |> update(:new_transaction_payload, &Map.put(&1, :account_id, nil))
       end
 
-    IO.inspect(socket.assigns.new_transaction_payload)
-
     {
       :noreply,
       socket
