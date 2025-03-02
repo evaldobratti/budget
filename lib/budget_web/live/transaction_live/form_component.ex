@@ -47,10 +47,11 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     changeset = 
       socket.assigns
       |> changeset(form_params)
-      |> hint_category(Map.get(params, "_target"))
       |> Map.put(:action, :validate)
 
     [changeset, socket] = hint_description(changeset, Map.get(params, "_target"), socket)
+
+    changeset = hint_category(changeset, Map.get(params, "_target"))
 
     {:noreply, assign(socket, form: to_form(changeset))}
   end
@@ -63,15 +64,16 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     )
   end
 
-  def hint_category(changeset, ["form", "regular", "description"]) do
-    account_id = Changeset.get_field(changeset, :accunt_id)
+  def hint_category(changeset, ["form", "regular", field]) when field in ["description", "original_description"] do
+    _account_id = Changeset.get_field(changeset, :account_id) # TODO a global search seems better than account specific
 
     description =
       changeset
       |> Changeset.get_change(:regular)
       |> Changeset.get_field(:description)
 
-    case Hinter.hint_category(description, account_id) do
+
+    case Hinter.hint_category(description, nil) do
       nil ->
         changeset
 
