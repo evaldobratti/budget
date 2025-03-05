@@ -73,6 +73,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
               |> String.replace("R$ ", "")
               |> String.replace(".", "")
               |> String.replace(",", ".")
+              |> String.replace("−", "")
 
             {:value, value}
 
