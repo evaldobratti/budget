@@ -186,7 +186,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
 
         Map.put(descriptions, :value, adjusted)
       end)
-      |> Enum.map(&Map.put(&1, :uncomplete, true))
+      |> Enum.map(&Map.put(&1, :warning, "Confirm the value of this transaction!"))
 
     transactions =
       result.transactions

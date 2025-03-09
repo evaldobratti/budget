@@ -20,6 +20,8 @@ defmodule Budget.Importations.Worker do
 
           category = Hinter.hint_category(transaction.description, nil)
 
+          warning = Map.get(transaction, :warning)
+
           transaction = %{
             "type" => :transaction,
             "ix" => transaction.ix,
@@ -43,6 +45,7 @@ defmodule Budget.Importations.Worker do
           transaction
           |> Map.put("conflict", conflict)
           |> Map.put("hash", hash)
+          |> Map.put("warning", warning)
 
         other ->
           other

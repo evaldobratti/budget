@@ -29,7 +29,6 @@
                 for={form}
                 phx-change={"validate-#{changeset.params["ix"]}"}
               >
-
                 <div class="flex items-center">
                   <div class="w-3/12">
                     <.input field={form[:originator]} label="Type" type="select" options={[{"Regular", "regular"}, {"Transfer", "transfer"}]} class="mr-1" />
@@ -83,7 +82,14 @@
                       <.icon name="hero-trash" />
                     </a>
                     
-                    <.icon :if={changeset.params["conflict"]} id={"warning-#{changeset.params["ix"]}"} name="hero-exclamation-circle" />
+
+                    <.tooltiped :if={changeset.params["conflict"]}  id={"conflict-tooltip-#{changeset.params["ix"]}"} tooltip={"This transaction may be already imported!"}>
+                      <.icon id={"conflict-#{changeset.params["ix"]}"} name="hero-exclamation-circle" />
+                    </.tooltiped>
+                    <.tooltiped :if={changeset.params["warning"]} id={"warning-tooltip-#{changeset.params["ix"]}"} tooltip={changeset.params["warning"]}>
+                      <.icon id={"warning-#{changeset.params["ix"]}"} name="hero-exclamation-circle" />
+                    </.tooltiped>
+
                   </div>
                 </div>
               </.simple_form>
