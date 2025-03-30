@@ -392,16 +392,16 @@ defmodule BudgetWeb.BudgetLive.Index do
   def background_color(transaction, is_selecting_transactions, selected_transactions) do
     if is_selecting_transactions do
       if to_string(transaction.id) in selected_transactions do
-        "bg-slate-400"
+        "bg-white"
       else
-        "bg-slate-100"
+        "bg-white"
       end
     else
       if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency")) 
                   || not transaction.paid do
-        "bg-slate-400"
+        "bg-white"
       else
-        "bg-slate-100"
+        "bg-white"
       end
     end
   end

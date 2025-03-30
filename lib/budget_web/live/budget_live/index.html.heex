@@ -18,42 +18,6 @@
 
   </.menu>
   <div class="flex flex-grow flex-col overflow-auto">
-
-    <div class="flex flex-col p-4">
-      <div class="flex items-center">
-        <div class="flex items-center gap-2">
-          <input 
-            id="toggle-transactions-selection"
-            type="checkbox" 
-            phx-click="toggle-transaction-selection" 
-            checked={@is_selecting_transactions} 
-          />
-          <label for="toggle-transactions-selection">
-            Select mode
-          </label>
-        </div>
-        <.live_component
-          id={:date_picker}
-          module={BudgetWeb.Transactions.DateRangePicker}
-          dates={get_dates(@url_params)}
-        />
-        <div class="flex items-start">
-          <.link_button class="ml-auto" patch={~p"/transactions/new?#{@url_params}"}>New</.link_button>
-          <%= if @live_action == :new_transaction do %>
-            <.modal id="new-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
-              <.live_component
-                module={BudgetWeb.TransactionLive.FormComponent}
-                action={@live_action}
-                id={:new}
-                transaction={@new_transaction_payload}
-                patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
-              />
-            </.modal>
-          <% end %>
-        </div>
-      </div>
-    </div>
-
     <div class="flex flex-col overflow-y-auto px-4">
         <%= if @live_action == :edit_transaction do %>
           <.modal id="edit-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
@@ -107,142 +71,205 @@
           </.modal>
         <% end %>
 
-        <div id="transactions" class="flex flex-col space-y-1.5" phx-hook="Sortable">
-          <div id="previous-balance" class="flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200">
-            <div class="w-[100px] px-1">
-              <%= format_date(Timex.shift(Enum.at(get_dates(@url_params), 0), days: -1)) %>
-            </div>
-            <div class="flex-1 px-1 flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                phx-click="toggle-previous-balance" 
-                checked={@previous_balance} 
+        <div class="w-2/3">
+          <div class="flex flex-col p-4">
+            <div class="flex items-center">
+              <div class="flex items-center gap-2">
+                <label for="toggle-transactions-selection">
+                  Select mode
+                </label>
+              </div>
+              <.live_component
+                id={:date_picker}
+                module={BudgetWeb.Transactions.DateRangePicker}
+                dates={get_dates(@url_params)}
               />
+              <div class="flex items-start">
+                <.link_button class="ml-auto" patch={~p"/transactions/new?#{@url_params}"}>New</.link_button>
+                <%= if @live_action == :new_transaction do %>
+                  <.modal id="new-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
+                    <.live_component
+                      module={BudgetWeb.TransactionLive.FormComponent}
+                      action={@live_action}
+                      id={:new}
+                      transaction={@new_transaction_payload}
+                      patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
+                    />
+                  </.modal>
+                <% end %>
+              </div>
+            </div>
+          </div>
 
-              Previous balance
+          <div id="transactions" class="flex flex-col space-y-1 px-2 py-1 bg-white rounded-lg" phx-hook="Sortable">
+
+            <div id="previous-balance" class="flex bg-white">
+              <div class="w-[100px]">
+                <.tooltiped id={"select-mode"} tooltip={"Select mode"}>
+                  <input 
+                    id="toggle-transactions-selection"
+                    type="checkbox" 
+                    phx-click="toggle-transaction-selection" 
+                    checked={@is_selecting_transactions} 
+                  />
+                </.tooltiped>
+                Date
+              </div>
+              <div class="flex-1 flex">
+                Description
+              </div>
+              <div class="w-[200px] text-center">
+                Category
+              </div>
+              <div class="w-[200px] text-center">
+                Account
+              </div>
+              <div class="w-[10%] text-right">
+                Value
+              </div>
+              <div class="w-[5%]">
+              </div>
             </div>
-            <div class="w-[10%] px-1">
+            <hr class="-mx-2" />
+            <div id="previous-balance" class="flex bg-white">
+              <div class="w-[100px]">
+                <%= format_date(Timex.shift(Enum.at(get_dates(@url_params), 0), days: -1)) %>
+              </div>
+              <div class="flex-1 flex items-center gap-2">
+
+              </div>
+              <div class="w-[10%]">
+              </div>
+              <div class={"w-[10%] flex items-center gap-2 justify-end"}>
+                <.tooltiped id={"tooltip-previous-balance"} tooltip={"Consider previous balance"}>
+                  <input 
+                    type="checkbox" 
+                    phx-click="toggle-previous-balance" 
+                    checked={@previous_balance} 
+                  />
+                </.tooltiped>
+                <.currency value={Enum.at(@balances, 0)} />
+              </div>
+              <div class="w-[5%] pl-2">
+                <.tooltiped id={"tooltip-partial-balance"} tooltip={"Show partial balance"}>
+                  <input 
+                    type="checkbox" 
+                    phx-click="toggle-partial-balance" 
+                    checked={@partial_balance} 
+                  />
+                </.tooltiped>
+              </div>
             </div>
-            <div class={"w-[10%] px-1 flex items-center gap-2 justify-end"}>
-              <.tooltiped id={"tooltip-partial-balance"} tooltip={"Show partial balance"}>
+            <hr class="-mx-2" />
+            <%= for {transaction, ix} <- Enum.with_index(@transactions) do %>
+              <div 
+                id={"transaction-#{transaction.id}"} 
+                class={[
+                  "group list-group-item item-draggable flex",
+                  "",
+                  "items-center",
+                  background_color(transaction, @is_selecting_transactions, @selected_transactions)
+                ]}
+              >
                 <input 
+                  :if={@is_selecting_transactions}
                   type="checkbox" 
-                  phx-click="toggle-partial-balance" 
-                  checked={@partial_balance} 
+                  phx-click="toggle-transaction-selected" 
+                  phx-value-id={transaction.id}
+                  checked={to_string(transaction.id) in @selected_transactions} 
                 />
-              </.tooltiped>
-              <.currency value={Enum.at(@balances, 0)} />
-            </div>
-            <div class="w-[5%] px-1">
-            </div>
-          </div>
 
-          <div 
-            :for={{transaction, ix} <- Enum.with_index(@transactions)} 
-            id={"transaction-#{transaction.id}"} 
-            class={[
-              "group list-group-item item-draggable flex",
-              "px-4 py-1.5 rounded-lg hover:bg-slate-200",
-              "items-center",
-              background_color(transaction, @is_selecting_transactions, @selected_transactions)
-            ]}
-          >
-            <input 
-              :if={@is_selecting_transactions}
-              type="checkbox" 
-              phx-click="toggle-transaction-selected" 
-              phx-value-id={transaction.id}
-              checked={to_string(transaction.id) in @selected_transactions} 
-            />
+                <div class="w-[100px]">
+                  <%= format_date(transaction.date) %>
+                </div>
+                <div class="flex-1 flex">
+                  <.link patch={~p"/transactions/#{transaction}/edit?#{@url_params}"}>
+                    <%= description(transaction) %>
+                    <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
+                      <span>
+                        <%= "(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})" %>
+                      </span>
+                    <% end %>
+                  </.link>
+                  <div class="ml-auto">
+                    <%= if transaction.recurrency_transaction do %>
+                      <.tooltiped id={"tooltip-recurrency-#{transaction.id}"} tooltip={"Recurrency"}>
+                        <.icon name="hero-arrow-path" />
+                      </.tooltiped>
+                    <% end %>
+                  </div>
+                </div>
+                <div class="w-[200px] text-center">
+                  <% originator = Transactions.originator(transaction) %>
 
-            <div class="px-1 w-[100px]">
-              <%= format_date(transaction.date) %>
-            </div>
-            <div class="flex-1 px-1 flex">
-              <.link patch={~p"/transactions/#{transaction}/edit?#{@url_params}"}>
-                <%= description(transaction) %>
-                <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
-                  <span>
-                    <%= "(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})" %>
-                  </span>
-                <% end %>
-              </.link>
-              <div class="ml-auto">
-                <%= if transaction.recurrency_transaction do %>
-                  <.tooltiped id={"tooltip-recurrency-#{transaction.id}"} tooltip={"Recurrency"}>
-                    <.icon name="hero-arrow-path" />
-                  </.tooltiped>
-                <% end %>
-              </div>
-            </div>
-            <div class="w-[200px] px-1 text-center">
-              <% originator = Transactions.originator(transaction) %>
-
-              <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
-                <%= if length(transaction.originator_regular.category.path) == 0 do %>
-                  <%= transaction.originator_regular.category.name %>
-                <% else %>
-                  <.tooltiped id={"category-detail-#{transaction.id}"} tooltip={category_tooltip(@categories, transaction.originator_regular.category)}>
-                    <span>
+                  <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
+                    <%= if length(transaction.originator_regular.category.path) == 0 do %>
                       <%= transaction.originator_regular.category.name %>
-                    </span>
-                  </.tooltiped>
-                <% end %>
+                    <% else %>
+                      <.tooltiped id={"category-detail-#{transaction.id}"} tooltip={category_tooltip(@categories, transaction.originator_regular.category)}>
+                        <span>
+                          <%= transaction.originator_regular.category.name %>
+                        </span>
+                      </.tooltiped>
+                    <% end %>
 
-              <% end %>
+                  <% end %>
 
-              <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
-                <.tooltiped id={"transfer-icon-#{transaction.id}"} tooltip="Transfer">
-                  <.icon name="hero-arrows-up-down" />
-                </.tooltiped>
-              <% end %>
-            </div>
-            <div class="w-[200px] px-1 text-center">
-              <%= transaction.account.name %>
-            </div>
-            <div class={"w-[10%] text-right px-1"}>
-              <.currency value={transaction.value} />
-            </div>
+                  <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
+                    <.tooltiped id={"transfer-icon-#{transaction.id}"} tooltip="Transfer">
+                      <.icon name="hero-arrows-up-down" />
+                    </.tooltiped>
+                  <% end %>
+                </div>
+                <div class="w-[200px] text-center">
+                  <%= transaction.account.name %>
+                </div>
+                <div class={"w-[10%] text-right"}>
+                  <.currency value={transaction.value} />
+                </div>
 
-            <div :if={@partial_balance} class={"w-[10%] text-right px-1"}>
-              <.currency value={Enum.at(@balances, ix + 1)} />
-            </div>
+                <div :if={@partial_balance} class={"w-[10%] text-right"}>
+                  <.currency value={Enum.at(@balances, ix + 1)} />
+                </div>
 
-            <div class="w-[5%] px-1 flex gap-x-1">
-              <.link patch={~p"/transactions/#{transaction}/delete?#{@url_params}"} 
-                data-testid={"delete-#{transaction.id}"}
-                class="flex">
-                <.tooltiped id={"tooltip-delete-#{transaction.id}"} tooltip="Delete">
-                  <.icon name="hero-trash" />
-                </.tooltiped>
-              </.link>
-              <div class="flex">
-                <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer" />
+                <div class="w-[5%] flex gap-x-1">
+                  <.link patch={~p"/transactions/#{transaction}/delete?#{@url_params}"} 
+                    data-testid={"delete-#{transaction.id}"}
+                    class="flex">
+                    <.tooltiped id={"tooltip-delete-#{transaction.id}"} tooltip="Delete">
+                      <.icon name="hero-trash" />
+                    </.tooltiped>
+                  </.link>
+                  <div class="flex">
+                    <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer" />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+              <hr class="-mx-2" />
+            <% end %>
 
-          <div 
-            :if={Enum.empty?(@transactions)} 
-            id={"empty-transactions"} 
-            class=" text-center bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
-          >
-            No transactions in this period.
-          </div>
 
-          <div id="next-balance" class="flex bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200">
-            <div class="w-[100px] px-1">
-              <%= format_date(Enum.at(get_dates(@url_params), 1)) %>
+            <div 
+              :if={Enum.empty?(@transactions)} 
+              id={"empty-transactions"} 
+              class=" text-center bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
+            >
+              No transactions in this period.
             </div>
-            <div class="flex-1 px-1">
-              Next balance
-            </div>
-            <div class="w-[10%] px-1">
-            </div>
-            <div class={"w-[10%] text-right px-1"}>
-              <.currency value={Enum.at(@balances, -1)} />
-            </div>
-            <div class="w-[5%] px-1">
+
+            <div id="next-balance" class="flex bg-white">
+              <div class="w-[100px]">
+                <%= format_date(Enum.at(get_dates(@url_params), 1)) %>
+              </div>
+              <div class="flex-1">
+              </div>
+              <div class="w-[10%]">
+              </div>
+              <div class={"w-[10%] text-right"}>
+                <.currency value={Enum.at(@balances, -1)} />
+              </div>
+              <div class="w-[5%]">
+              </div>
             </div>
           </div>
         </div>
