@@ -28,7 +28,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    socket = 
+    socket =
       socket
       |> assign(url_params: params)
       |> apply_action(socket.assigns.live_action, params)
@@ -220,7 +220,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
     if category_ids == [""] do
       []
-    else 
+    else
       category_ids
       |> Enum.map(&String.to_integer/1)
     end
@@ -231,7 +231,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
     if account_ids == [""] do
       []
-    else 
+    else
       account_ids
       |> Enum.map(&String.to_integer/1)
     end
@@ -240,7 +240,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   defp reload_transactions(socket) do
     [date_start, date_end] = get_dates(socket.assigns.url_params)
-    
+
     account_ids = get_accounts(socket.assigns.url_params)
     category_ids = get_categories(socket.assigns.url_params)
 
@@ -286,7 +286,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   @impl true
   def handle_info(:add_new_transaction, socket) do
-    url_params = 
+    url_params =
       socket.assigns.url_params
       |> Map.delete("account_id")
       |> Map.delete("date")
@@ -297,7 +297,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def handle_info({:accounts_selected_ids, ids}, socket) do
     url_params = socket.assigns.url_params
-    params = 
+    params =
       if length(ids) == 0 do
         url_params
         |> Map.delete("account_ids")
@@ -325,7 +325,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def handle_info({:category_selected_ids, ids}, socket) do
     url_params = socket.assigns.url_params
-    params = 
+    params =
       if length(ids) == 0 do
         url_params
         |> Map.delete("category_ids")
@@ -346,7 +346,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     date_start = Timex.format!(date_start, @date_format)
     date_end = Timex.format!(date_end, @date_format)
 
-    params = 
+    params =
       socket.assigns.url_params
       |> Map.put("date_start", date_start)
       |> Map.put("date_end", date_end)
@@ -392,14 +392,14 @@ defmodule BudgetWeb.BudgetLive.Index do
   def background_color(transaction, is_selecting_transactions, selected_transactions) do
     if is_selecting_transactions do
       if to_string(transaction.id) in selected_transactions do
-        "bg-white"
+        "bg-slate-200"
       else
         "bg-white"
       end
     else
-      if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency")) 
+      if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency"))
                   || not transaction.paid do
-        "bg-white"
+        "bg-slate-200"
       else
         "bg-white"
       end

@@ -22,7 +22,6 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       params
       |> Map.put_new("date", transaction.date || Timex.today())
       |> Map.put_new("originator", "regular")
-      |> Map.put_new("keep_adding", true)
       |> Map.put_new("account_id", transaction.account_id)
 
     Transaction.Form.insert_changeset(params)
@@ -30,11 +29,12 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
 
   @impl true
   def update(assigns, socket) do
+    assigns = Map.put_new(assigns, :on_cancel, nil)
     {
       :ok,
       socket
       |> assign(assigns)
-      |> assign(form: to_form(changeset(assigns)))
+      |> assign(form: to_form(changeset(assigns), id: to_string(assigns.id)))
       |> assign(accounts: Transactions.list_accounts())
       |> assign(categories: arrange_categories())
       |> assign(descriptions: Transactions.list_descriptions())
@@ -44,7 +44,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"form" => form_params} = params, socket) do
-    changeset = 
+    changeset =
       socket.assigns
       |> changeset(form_params)
       |> Map.put(:action, :validate)
@@ -53,7 +53,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
 
     changeset = hint_category(changeset, Map.get(params, "_target"))
 
-    {:noreply, assign(socket, form: to_form(changeset))}
+    {:noreply, assign(socket, form: to_form(changeset, id: to_string(socket.assigns.id)))}
   end
 
   def handle_event("save", %{"form" => form_params}, socket) do
@@ -140,7 +140,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, id: to_string(socket.assigns.id)))}
     end
   end
 
@@ -175,7 +175,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, id: to_string(socket.assigns.id)))}
     end
   end
 

@@ -52,6 +52,9 @@ defmodule Budget.Importations.CreditCard.NuBank do
           String.starts_with?(string, "EMISSÃO") ->
             :ignore
 
+          String.starts_with?(string, "••••") ->
+            :ignore
+
           String.contains?(string, "dívida") ->
             :ignore
 
@@ -82,6 +85,7 @@ defmodule Budget.Importations.CreditCard.NuBank do
         end
       end)
       |> Enum.filter(&(&1 != :ignore))
+      |> IO.inspect(limit: :infinity)
       |> Enum.reduce(
         %{
           building: %{},

@@ -24,8 +24,6 @@ defmodule Budget.Transactions.Transaction.Form do
     field(:originator, :string)
     field(:is_recurrency, :boolean)
 
-    field(:keep_adding, :boolean)
-
     field(:paid, :boolean, default: true)
     field(:apply_forward, :boolean)
 
@@ -62,7 +60,6 @@ defmodule Budget.Transactions.Transaction.Form do
         :position,
         :originator,
         :is_recurrency,
-        :keep_adding,
         :apply_forward,
         :paid,
         :recurrency_description,
@@ -90,11 +87,11 @@ defmodule Budget.Transactions.Transaction.Form do
   end
 
   def parse_recurrency_shortcut(params) do
-    regex = ~r/(?<value>-?\d+(?:[,.]\d+)?)\s*(?<operation>[\*\/])\s*(?<parcels>\d+)/ 
+    regex = ~r/(?<value>-?\d+(?:[,.]\d+)?)\s*(?<operation>[\*\/])\s*(?<parcels>\d+)/
 
-    string_keys = 
-      Map.keys(params) 
-      |> Enum.map(&is_binary/1) 
+    string_keys =
+      Map.keys(params)
+      |> Enum.map(&is_binary/1)
       |> Enum.all?(& &1 == true)
 
     k = fn value ->
@@ -112,9 +109,9 @@ defmodule Budget.Transactions.Transaction.Form do
         {:ok, value } = Decimal.cast(value_string |> String.replace(",", "."))
         {parcels, _} = Integer.parse(parcels_string)
 
-        value = 
+        value =
           if operation == "/" do
-             Decimal.div(value, parcels) 
+             Decimal.div(value, parcels)
           else
             value
           end
@@ -344,7 +341,6 @@ defmodule Budget.Transactions.Transaction.Form do
       paid: transaction.paid,
       account_id: transaction.account_id,
       value: transaction.value,
-      keep_adding: false,
       apply_forward: false,
       position: transaction.position
     }

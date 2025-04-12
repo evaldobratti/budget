@@ -11,10 +11,10 @@ const setupSortable = (viewHook) => {
     draggable: ".item-draggable",
     handle: ".sortable-handle",
     animation: 150,
-    onEnd: ({oldIndex, newIndex}) => {
+    onEnd: ({oldDraggableIndex, newDraggableIndex}) => {
       viewHook.pushEvent("reorder", {
-        oldIndex: oldIndex - 1, 
-        newIndex: newIndex - 1
+        oldIndex: oldDraggableIndex, 
+        newIndex: newDraggableIndex
       })
     }
   })

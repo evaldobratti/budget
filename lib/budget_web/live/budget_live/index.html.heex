@@ -18,18 +18,7 @@
 
   </.menu>
   <div class="flex flex-grow flex-col overflow-auto">
-    <div class="flex flex-col overflow-y-auto px-4">
-        <%= if @live_action == :edit_transaction do %>
-          <.modal id="edit-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
-              <.live_component
-                module={BudgetWeb.TransactionLive.FormComponent}
-                action={@live_action}
-                id={@edit_transaction.id}
-                transaction={@edit_transaction}
-                patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
-              />
-          </.modal>
-        <% end %>
+    <div class="flex overflow-y-auto">
 
         <%= if @live_action == :delete_transaction do %>
           <.modal id="delete-transaction" on_cancel={JS.patch(~p"/")} show>
@@ -75,35 +64,17 @@
           <div class="flex flex-col p-4">
             <div class="flex items-center">
               <div class="flex items-center gap-2">
-                <label for="toggle-transactions-selection">
-                  Select mode
-                </label>
               </div>
               <.live_component
                 id={:date_picker}
                 module={BudgetWeb.Transactions.DateRangePicker}
                 dates={get_dates(@url_params)}
               />
-              <div class="flex items-start">
-                <.link_button class="ml-auto" patch={~p"/transactions/new?#{@url_params}"}>New</.link_button>
-                <%= if @live_action == :new_transaction do %>
-                  <.modal id="new-transaction" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
-                    <.live_component
-                      module={BudgetWeb.TransactionLive.FormComponent}
-                      action={@live_action}
-                      id={:new}
-                      transaction={@new_transaction_payload}
-                      patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
-                    />
-                  </.modal>
-                <% end %>
-              </div>
             </div>
           </div>
 
-          <div id="transactions" class="flex flex-col space-y-1 px-2 py-1 bg-white rounded-lg" phx-hook="Sortable">
-
-            <div id="previous-balance" class="flex bg-white">
+          <div id="transactions" class="flex flex-col" phx-hook="Sortable">
+            <div class="flex bg-white  hover:bg-slate-200 px-2 py-1 rounded-t-lg">
               <div class="w-[100px]">
                 <.tooltiped id={"select-mode"} tooltip={"Select mode"}>
                   <input 
@@ -130,8 +101,8 @@
               <div class="w-[5%]">
               </div>
             </div>
-            <hr class="-mx-2" />
-            <div id="previous-balance" class="flex bg-white">
+            <hr />
+            <div id="previous-balance" class="flex bg-white hover:bg-slate-200 px-2 py-1">
               <div class="w-[100px]">
                 <%= format_date(Timex.shift(Enum.at(get_dates(@url_params), 0), days: -1)) %>
               </div>
@@ -160,13 +131,13 @@
                 </.tooltiped>
               </div>
             </div>
-            <hr class="-mx-2" />
+            <hr />
             <%= for {transaction, ix} <- Enum.with_index(@transactions) do %>
               <div 
                 id={"transaction-#{transaction.id}"} 
                 class={[
                   "group list-group-item item-draggable flex",
-                  "",
+                  "hover:bg-slate-200 px-2 py-1",
                   "items-center",
                   background_color(transaction, @is_selecting_transactions, @selected_transactions)
                 ]}
@@ -245,7 +216,7 @@
                   </div>
                 </div>
               </div>
-              <hr class="-mx-2" />
+              <hr />
             <% end %>
 
 
@@ -257,7 +228,7 @@
               No transactions in this period.
             </div>
 
-            <div id="next-balance" class="flex bg-white">
+            <div id="next-balance" class="flex bg-white hover:bg-slate-200 px-2 py-1 rounded-b-lg">
               <div class="w-[100px]">
                 <%= format_date(Enum.at(get_dates(@url_params), 1)) %>
               </div>
@@ -272,6 +243,28 @@
               </div>
             </div>
           </div>
+        </div>
+        <div class="w-1/3 p-4">
+          <%= if @live_action != :edit_transaction do %>
+            <.live_component
+              module={BudgetWeb.TransactionLive.FormComponent}
+              action={:new_transaction}
+              id={:new}
+              transaction={@new_transaction_payload}
+              patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
+            />
+          <% end %>
+
+          <%= if @live_action == :edit_transaction do %>
+            <.live_component
+              module={BudgetWeb.TransactionLive.FormComponent}
+              action={@live_action}
+              id={@edit_transaction.id}
+              transaction={@edit_transaction}
+              patch={~p"/?#{Map.put(@url_params, "from", "transaction")}"}
+              on_cancel={JS.patch(~p"/?#{@url_params}")}
+            />
+          <% end %>
         </div>
     </div>
   </div>

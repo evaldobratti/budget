@@ -149,3 +149,16 @@ html, body, body > div {
 input[disabled] {
   background-color: #d1d5db;
 }
+
+.transition-container {
+  position: relative;
+}
+
+.transition-opacity {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.transition-opacity.opacity-100 {
+  opacity: 1;
+}

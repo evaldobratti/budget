@@ -1,7 +1,7 @@
-<div>
+<div class="rounded-lg p-4 bg-white" phx-mounted={JS.transition({"ease-out duration-300", "opacity-0", "opacity-100"}, time: 300)}>
   <.simple_form
     for={@form}
-    id="transaction-form"
+    id={to_string(@id) <> "-form-transaction"}
     phx-target={@myself}
     phx-change="validate"
     phx-submit="save"
@@ -95,7 +95,6 @@
         label="Recurrency"
       />
       <.input field={@form[:paid]} type="checkbox" label="Paid" />
-      <.input :if={!transaction_loaded} field={@form[:keep_adding]} type="checkbox" label="Keep adding" />
     </div>
 
     <%= if @form[:is_recurrency].value && transaction_loaded do %>
@@ -154,6 +153,7 @@
     </.inputs_for>
 
     <:actions>
+      <.button type="button" :if={@on_cancel} phx-click={@on_cancel}>Cancel</.button>
       <.button phx-disable-with="Saving...">Save</.button>
     </:actions>
   </.simple_form>
