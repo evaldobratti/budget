@@ -47,9 +47,7 @@ defmodule BudgetWeb.Router do
       live "/transactions/:id/edit", BudgetLive.Index, :edit_transaction
       live "/transactions/:id/delete", BudgetLive.Index, :delete_transaction
 
-      live "/imports", ImportLive.Index, :index
-      live "/imports/credit_card/nu_bank", ImportLive.CreditCard.NuBank, :index
-      live "/imports/:id", ImportLive.Result, :index
+      live "/imports", ImportLive.Result, :index
 
       live "/charts", ChartLive.Index, :index
     end

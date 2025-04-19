@@ -15,21 +15,11 @@ defmodule Budget.Importations do
 
   def get_import_file!(id), do: Repo.get!(ImportFile, id)
 
-  def insert(import_file, changesets) do
+  def insert(changesets) do
     Ecto.Multi.new()
     |> Ecto.Multi.run(:inserts, fn _repo, _changes ->
       {:ok, Enum.map(changesets, &Budget.Transactions.Transaction.Form.apply_insert(&1))}
     end)
-    |> Ecto.Multi.update(
-      :import_file,
-      ImportFile.changeset(
-        import_file,
-        %{
-          state: "imported",
-          hashes: changesets |> Enum.map(& &1.params["hash"])
-        }
-      )
-    )
     |> Budget.Repo.transaction()
   end
 
