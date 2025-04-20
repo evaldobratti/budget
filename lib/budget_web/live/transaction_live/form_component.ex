@@ -157,7 +157,6 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
               uri.query
               |> URI.decode_query()
               |> Enum.into(%{})
-              |> Map.put("transaction-add-new", true)
               |> Map.put("account_id", account_id)
               |> Map.put("date", date |> Date.to_iso8601())
               |> URI.encode_query()
@@ -170,6 +169,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
         {
           :noreply,
           socket
+          |> assign(form: to_form(changeset(%{action: :new_transaction, transaction: socket.assigns.transaction})))
           |> put_flash(:info, "Transaction created successfully!")
           |> push_patch(to: patch)
         }
