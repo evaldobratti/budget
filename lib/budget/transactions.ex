@@ -439,6 +439,15 @@ defmodule Budget.Transactions do
     |> Repo.transaction()
   end
 
+  def delete_all(ids) do
+    Enum.reduce(ids, Ecto.Multi.new(), fn id, multi ->
+      Ecto.Multi.run(multi, "delete-" <> to_string(id), fn _, _ ->
+        delete_transaction(id, "transaction")
+      end)
+    end)
+    |> Repo.transaction()
+  end
+
   def create_category(attrs, parent \\ nil) do
     %Category{}
     |> Category.changeset(attrs)

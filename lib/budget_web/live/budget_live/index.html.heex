@@ -61,9 +61,18 @@
         <% end %>
 
         <div class="w-2/3">
-          <div class="flex flex-col p-4">
+          <div class="flex flex-col py-4">
             <div class="flex items-center">
               <div class="flex items-center gap-2">
+                <.button 
+                  :if={@is_selecting_transactions} 
+                  disabled={length(@selected_transactions) == 0}
+                  class="btn btn-danger btn-sm btn-block" 
+                  phx-click="transaction-delete-all"
+                >
+                  Delete all
+                </.button>
+                
               </div>
               <.live_component
                 id={:date_picker}

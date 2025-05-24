@@ -201,6 +201,17 @@ defmodule BudgetWeb.BudgetLive.Index do
     end
   end
 
+  def handle_event("transaction-delete-all", _, socket) do
+    {:ok, _} = Transactions.delete_all(socket.assigns.selected_transactions)
+
+    {
+      :noreply, 
+      socket
+      |> assign(:selected_transactions, [])
+      |> reload_transactions()
+    }
+  end
+
   defp get_dates(url_params) do
     date_start = Map.get(url_params, "date_start")
     date_end = Map.get(url_params, "date_end")
