@@ -30,6 +30,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
   @impl true
   def update(assigns, socket) do
     assigns = Map.put_new(assigns, :on_cancel, nil)
+
     {
       :ok,
       socket
@@ -64,14 +65,15 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     )
   end
 
-  def hint_category(changeset, ["form", "regular", field]) when field in ["description", "original_description"] do
-    _account_id = Changeset.get_field(changeset, :account_id) # TODO a global search seems better than account specific
+  def hint_category(changeset, ["form", "regular", field])
+      when field in ["description", "original_description"] do
+    # TODO a global search seems better than account specific
+    _account_id = Changeset.get_field(changeset, :account_id)
 
     description =
       changeset
       |> Changeset.get_change(:regular)
       |> Changeset.get_field(:description)
-
 
     case Hinter.hint_category(description, nil) do
       nil ->
@@ -99,7 +101,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
       |> Changeset.get_change(:regular)
       |> Changeset.get_field(:original_description)
 
-    selected_option = Enum.find(socket.assigns.hint_descriptions, & &1.original == description)
+    selected_option = Enum.find(socket.assigns.hint_descriptions, &(&1.original == description))
 
     if selected_option do
       regular_changeset =
@@ -124,7 +126,6 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
         |> assign(:hint_descriptions, hints)
       ]
     end
-
   end
 
   def hint_description(changeset, _, socket), do: [changeset, socket]
@@ -146,30 +147,27 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
 
   def save_transaction(socket, :new_transaction, changeset) do
     case Transaction.Form.apply_insert(changeset) do
-      {:ok, _transaction} ->
-        patch =
-          if Changeset.get_change(changeset, :keep_adding) do
-            uri = URI.parse(socket.assigns.patch)
-            date = Changeset.get_change(changeset, :date)
-            account_id = Changeset.get_change(changeset, :account_id)
+      {:ok, transaction} ->
+        uri = URI.parse(socket.assigns.patch)
 
-            query =
-              uri.query
-              |> URI.decode_query()
-              |> Enum.into(%{})
-              |> Map.put("account_id", account_id)
-              |> Map.put("date", date |> Date.to_iso8601())
-              |> URI.encode_query()
+        query =
+          uri.query
+          |> URI.decode_query()
+          |> Enum.into(%{})
+          |> Map.put("transaction_id", transaction.id)
+          |> URI.encode_query()
 
-            %{uri | query: query} |> URI.to_string()
-          else
-            socket.assigns.patch
-          end
+        patch = %{uri | query: query} |> URI.to_string()
 
         {
           :noreply,
           socket
-          |> assign(form: to_form(changeset(%{action: :new_transaction, transaction: socket.assigns.transaction})))
+          |> assign(
+            form:
+              to_form(
+                changeset(%{action: :new_transaction, transaction: socket.assigns.transaction})
+              )
+          )
           |> put_flash(:info, "Transaction created successfully!")
           |> push_patch(to: patch)
         }

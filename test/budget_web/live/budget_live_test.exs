@@ -56,11 +56,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, ~p"/")
 
       live
-      |> element("a[href='#{~p"/transactions/new"}']")
-      |> render_click()
-
-      live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           regular: %{
@@ -87,16 +83,12 @@ defmodule BudgetWeb.BudgetLiveTest do
       account: account,
       category: category
     } do
-      {:ok, live, _html} = live(conn, ~p"/")
-
       another_account = account_fixture()
 
-      live
-      |> element("a[href='#{~p"/transactions/new"}']")
-      |> render_click()
+      {:ok, live, _html} = live(conn, ~p"/")
 
       live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           date: "2020-02-20",
           regular: %{
@@ -104,7 +96,6 @@ defmodule BudgetWeb.BudgetLiveTest do
             category_id: category.id
           },
           account_id: another_account.id,
-          keep_adding: true,
           value_raw: "200"
         }
       )
@@ -112,16 +103,11 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       refute live |> element("#transaction-form") |> has_element?
 
-      assert "/transactions/new" == assert_patch(live, 100)
-
-      assert "/?account_id=#{another_account.id}&date=2020-02-20&from=transaction&transaction-add-new=true" ==
-               assert_patch(live, 100)
-
-      assert "/transactions/new?from=transaction" == assert_patch(live, 300)
+      assert String.starts_with?(assert_patch(live, 100), "/?from=transaction&transaction_id=")
 
       assert ["2020-02-20"] ==
                live
-               |> element("#transaction-form")
+               |> element("[id$='form-transaction']")
                |> render()
                |> Floki.parse_fragment!()
                |> Floki.find("[name='form[date]']")
@@ -129,7 +115,7 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       assert [to_string(another_account.id)] ==
                live
-               |> element("#transaction-form")
+               |> element("[id$='form-transaction']")
                |> render()
                |> Floki.parse_fragment!()
                |> Floki.find("[selected='selected']")
@@ -146,7 +132,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           regular: %{description: "a new description"},
           value: "400"
@@ -364,11 +350,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       {:ok, live, _html} = live(conn, ~p"/")
 
       live
-      |> element("a[href='#{~p"/transactions/new"}']")
-      |> render_click()
-
-      live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           regular: %{
@@ -383,7 +365,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_change()
 
       live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           date: Timex.today() |> Timex.format!("{YYYY}-{0M}-{0D}"),
           regular: %{
@@ -437,7 +419,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           regular: %{
             description: "a new description"
@@ -474,7 +456,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           date: ~D[2020-06-13],
           regular: %{
@@ -525,7 +507,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       assert String.starts_with?(assert_patch(live), "/transactions/#{id}/edit")
 
       live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           date: ~D[2020-06-13],
           regular: %{
@@ -557,7 +539,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       assert_query(
-        assert_patch(live, 100), 
+        assert_patch(live, 100),
         "/",
         from: "date",
         date_start: Timex.today() |> Timex.shift(months: 1) |> Timex.beginning_of_month(),
@@ -569,7 +551,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       assert_query(
-        assert_patch(live, 100), 
+        assert_patch(live, 100),
         "/",
         from: "date",
         date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
@@ -583,7 +565,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       recurrency_to_edit = Timex.today() |> Timex.shift(months: 2) |> Date.to_iso8601()
 
       assert_query(
-        assert_patch(live, 100), 
+        assert_patch(live, 100),
         "/transactions/recurrency-#{id}-#{recurrency_to_edit}-0/edit",
         from: "date",
         date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
@@ -591,7 +573,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
 
       live
-      |> form("#transaction-form",
+      |> form("[id$='form-transaction']",
         form: %{
           value: "420",
           apply_forward: true
@@ -600,7 +582,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_submit()
 
       assert_query(
-        assert_patch(live, 100), 
+        assert_patch(live, 100),
         "/",
         from: "transaction",
         date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
@@ -612,7 +594,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       assert_query(
-        assert_patch(live, 100), 
+        assert_patch(live, 100),
         "/",
         from: "date",
         date_start: Timex.today() |> Timex.shift(months: 3) |> Timex.beginning_of_month(),
@@ -626,7 +608,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       assert_query(
-        assert_patch(live, 100), 
+        assert_patch(live, 100),
         "/",
         from: "date",
         date_start: Timex.today() |> Timex.shift(months: 2) |> Timex.beginning_of_month(),
@@ -638,7 +620,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
       assert_query(
-        assert_patch(live, 100), 
+        assert_patch(live, 100),
         "/",
         from: "date",
         date_start: Timex.today() |> Timex.shift(months: 1) |> Timex.beginning_of_month(),
@@ -686,7 +668,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
     assert html =~ "Transaction successfully deleted!"
-    refute html =~ "Transaction description"
+    refute live |> element("#transactions") |> render() =~ "Transaction description"
   end
 
   test "delete recurrent transient transaction", %{conn: conn} do
@@ -715,14 +697,14 @@ defmodule BudgetWeb.BudgetLiveTest do
       |> render_click()
 
     assert html =~ "Transaction successfully deleted!"
-    refute html =~ "Transaction description"
+    refute live |> element("#transactions") |> render() =~ "Transaction description"
 
     html =
       live
       |> element("button", ">>")
       |> render_click()
 
-    refute html =~ "Transaction description"
+    refute live |> element("#transactions") |> render() =~ "Transaction description"
   end
 
   test "delete recurrent transient with future persisted", %{conn: conn} do
@@ -747,7 +729,7 @@ defmodule BudgetWeb.BudgetLiveTest do
     |> render_click()
 
     live
-    |> form("#transaction-form")
+    |> form("[id$='form-transaction']")
     |> render_submit()
 
     html = render(live)
@@ -780,15 +762,15 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     live
     |> element("button", ">>")
-    |> render_click() 
+    |> render_click()
 
-    refute render(live) =~ "Transaction description"
+    refute live |> element("#transactions") |> render() =~ "Transaction description"
 
     live
     |> element("button", ">>")
     |> render_click()
 
-    assert render(live) =~ "Transaction description"
+    assert live |> element("#transactions") |> render() =~ "Transaction description"
   end
 
   test "create new category", %{conn: conn} do
@@ -939,7 +921,7 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
 
     assert live
-           |> element("#form_transfer_0_other_account_id > option", "B")
+           |> element("[id$='transfer_0_other_account_id'] > option", "B")
            |> render() =~ "selected"
 
     {:ok, live, _html} =
@@ -949,10 +931,9 @@ defmodule BudgetWeb.BudgetLiveTest do
       )
 
     assert live
-           |> element("#form_transfer_0_other_account_id > option", "Account Name")
+           |> element("[id$='transfer_0_other_account_id'] > option", "Account Name")
            |> render() =~ "selected"
   end
-
 
   def assert_query(url, path, search_params) do
     uri = url |> URI.parse()
@@ -960,8 +941,8 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     assert path == uri.path
 
-    search_params 
-    |> Enum.each(fn {key, value} -> 
+    search_params
+    |> Enum.each(fn {key, value} ->
       against = Map.get(query, to_string(key))
 
       case value do
@@ -969,7 +950,5 @@ defmodule BudgetWeb.BudgetLiveTest do
         _ -> assert against == value
       end
     end)
-
-    
   end
 end

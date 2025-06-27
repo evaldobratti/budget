@@ -1,5 +1,4 @@
 defmodule BudgetWeb.BudgetLive.Index do
-
   use BudgetWeb, :live_view
 
   alias Phoenix.LiveView.JS
@@ -91,16 +90,18 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def apply_return_from(socket, "transaction", params) do
-    if Map.get(params, "transaction-add-new") do
-      Process.send_after(self(), :add_new_transaction, 200)
+    case Map.fetch(params, "transaction_id") do
+      {:ok, id} ->
+        transaction = Transactions.get_transaction!(id)
 
-      socket
-      |> update(:new_transaction_payload, &%{&1 | date: Map.get(params, "date")})
-      |> update(:new_transaction_payload, &%{&1 | account_id: Map.get(params, "account_id")})
-    else
-      socket
+        socket
+        |> update(:new_transaction_payload, &%{&1 | date: transaction.date})
+        |> update(:new_transaction_payload, &%{&1 | account_id: transaction.account_id})
+        |> reload_transactions()
+
+      _ ->
+        socket
     end
-    |> reload_transactions()
   end
 
   def apply_return_from(socket, from, _params)
@@ -128,14 +129,12 @@ defmodule BudgetWeb.BudgetLive.Index do
         [to_string(id) | socket.assigns.selected_transactions]
       end
 
-
     {
       :noreply,
       socket
       |> assign(selected_transactions: selected_transactions)
     }
   end
-
 
   def handle_event("toggle-previous-balance", _params, socket) do
     previous_balance = not socket.assigns.previous_balance
@@ -205,7 +204,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     {:ok, _} = Transactions.delete_all(socket.assigns.selected_transactions)
 
     {
-      :noreply, 
+      :noreply,
       socket
       |> assign(:selected_transactions, [])
       |> reload_transactions()
@@ -246,7 +245,6 @@ defmodule BudgetWeb.BudgetLive.Index do
       account_ids
       |> Enum.map(&String.to_integer/1)
     end
-
   end
 
   defp reload_transactions(socket) do
@@ -308,6 +306,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def handle_info({:accounts_selected_ids, ids}, socket) do
     url_params = socket.assigns.url_params
+
     params =
       if length(ids) == 0 do
         url_params
@@ -336,6 +335,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def handle_info({:category_selected_ids, ids}, socket) do
     url_params = socket.assigns.url_params
+
     params =
       if length(ids) == 0 do
         url_params
@@ -408,8 +408,8 @@ defmodule BudgetWeb.BudgetLive.Index do
         "bg-white"
       end
     else
-      if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency"))
-                  || not transaction.paid do
+      if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency")) ||
+           not transaction.paid do
         "bg-slate-200"
       else
         "bg-white"

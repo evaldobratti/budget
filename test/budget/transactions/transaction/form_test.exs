@@ -329,42 +329,42 @@ defmodule Budget.Transactions.Transaction.FormTest do
 
       assert %{} == errors_on(changeset)
 
-      assert "A recurrency with 2 parcels with value 100 will be created" == Changeset.get_field(changeset, :recurrency_description)
+      assert "A recurrency with 2 parcels with value 100 will be created" ==
+               Changeset.get_field(changeset, :recurrency_description)
 
-      assert {:ok, 
-        %{
-          value: 100.0, 
-          date: ~D[2022-01-01], 
-          account_id: data.account_id, 
-          originator: %{
-            description: "Something", 
-            category_id: data.category_id
-          }, 
-          recurrency: %{
-            type: :parcel, 
-            date_end: nil, 
-            parcel_start: 1, 
-            parcel_end: 2, 
-            frequency: :monthly, 
-            date_start: ~D[2022-01-01], 
-            transaction_payload: %{
-              "2022-01-01" => %{
-                "account_id" => data.account_id, 
-                "category_id" => data.category_id, 
-                "description" => "Something", 
-                "originator" => "Elixir.Budget.Transactions.Originator.Regular", 
-                "value" => "100"
-              }
-            }
-          }, 
-          paid: true, 
-          recurrency_transaction: %{
-            parcel: 1, 
-            parcel_end: 2, 
-            original_date: ~D[2022-01-01]
-          }
-        }
-      } == Form.apply_insert(changeset) |> simplify()
+      assert {:ok,
+              %{
+                value: 100.0,
+                date: ~D[2022-01-01],
+                account_id: data.account_id,
+                originator: %{
+                  description: "Something",
+                  category_id: data.category_id
+                },
+                recurrency: %{
+                  type: :parcel,
+                  date_end: nil,
+                  parcel_start: 1,
+                  parcel_end: 2,
+                  frequency: :monthly,
+                  date_start: ~D[2022-01-01],
+                  transaction_payload: %{
+                    "2022-01-01" => %{
+                      "account_id" => data.account_id,
+                      "category_id" => data.category_id,
+                      "description" => "Something",
+                      "originator" => "Elixir.Budget.Transactions.Originator.Regular",
+                      "value" => "100"
+                    }
+                  }
+                },
+                paid: true,
+                recurrency_transaction: %{
+                  parcel: 1,
+                  parcel_end: 2,
+                  original_date: ~D[2022-01-01]
+                }
+              }} == Form.apply_insert(changeset) |> simplify()
     end
 
     test "automatically creates recurrency using *", data do
@@ -384,42 +384,42 @@ defmodule Budget.Transactions.Transaction.FormTest do
 
       assert %{} == errors_on(changeset)
 
-      assert "A recurrency with 2 parcels with value 200 will be created" == Changeset.get_field(changeset, :recurrency_description)
+      assert "A recurrency with 2 parcels with value 200 will be created" ==
+               Changeset.get_field(changeset, :recurrency_description)
 
-      assert {:ok, 
-        %{
-          value: 200.0, 
-          date: ~D[2022-01-01], 
-          account_id: data.account_id, 
-          originator: %{
-            description: "Something", 
-            category_id: data.category_id
-          }, 
-          recurrency: %{
-            type: :parcel, 
-            date_end: nil, 
-            parcel_start: 1, 
-            parcel_end: 2, 
-            frequency: :monthly, 
-            date_start: ~D[2022-01-01], 
-            transaction_payload: %{
-              "2022-01-01" => %{
-                "account_id" => data.account_id, 
-                "category_id" => data.category_id, 
-                "description" => "Something", 
-                "originator" => "Elixir.Budget.Transactions.Originator.Regular", 
-                "value" => "200"
-              }
-            }
-          }, 
-          paid: true, 
-          recurrency_transaction: %{
-            parcel: 1, 
-            parcel_end: 2, 
-            original_date: ~D[2022-01-01]
-          }
-        }
-      } == Form.apply_insert(changeset) |> simplify()
+      assert {:ok,
+              %{
+                value: 200.0,
+                date: ~D[2022-01-01],
+                account_id: data.account_id,
+                originator: %{
+                  description: "Something",
+                  category_id: data.category_id
+                },
+                recurrency: %{
+                  type: :parcel,
+                  date_end: nil,
+                  parcel_start: 1,
+                  parcel_end: 2,
+                  frequency: :monthly,
+                  date_start: ~D[2022-01-01],
+                  transaction_payload: %{
+                    "2022-01-01" => %{
+                      "account_id" => data.account_id,
+                      "category_id" => data.category_id,
+                      "description" => "Something",
+                      "originator" => "Elixir.Budget.Transactions.Originator.Regular",
+                      "value" => "200"
+                    }
+                  }
+                },
+                paid: true,
+                recurrency_transaction: %{
+                  parcel: 1,
+                  parcel_end: 2,
+                  original_date: ~D[2022-01-01]
+                }
+              }} == Form.apply_insert(changeset) |> simplify()
     end
   end
 
@@ -447,7 +447,6 @@ defmodule Budget.Transactions.Transaction.FormTest do
                id: transaction.id,
                paid: true,
                is_recurrency: false,
-               keep_adding: false,
                originator: "regular",
                recurrency: nil,
                apply_forward: false,
@@ -506,7 +505,6 @@ defmodule Budget.Transactions.Transaction.FormTest do
                id: transaction.id,
                paid: true,
                is_recurrency: false,
-               keep_adding: false,
                originator: "transfer",
                recurrency: nil,
                apply_forward: false,

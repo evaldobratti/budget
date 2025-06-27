@@ -1,4 +1,4 @@
-<div class="rounded-lg p-4 bg-white" phx-mounted={JS.transition({"ease-out duration-300", "opacity-0", "opacity-100"}, time: 300)}>
+<div id={to_string(@id) <> "-form-transaction-wrapper"} class="rounded-lg p-4 bg-white" phx-mounted={JS.transition({"ease-out duration-300", "opacity-0", "opacity-100"}, time: 300)}>
   <.simple_form
     for={@form}
     id={to_string(@id) <> "-form-transaction"}

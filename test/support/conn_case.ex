@@ -42,8 +42,8 @@ defmodule BudgetWeb.ConnCase do
     conn =
       Phoenix.ConnTest.build_conn()
       |> Plug.Test.init_test_session(%{})
-      |> Plug.Conn.put_session("user", user)
-      |> Plug.Conn.put_session("active_profile", Enum.at(user.profiles, 0))
+      |> Plug.Conn.put_session("user_id", user.id)
+      |> Plug.Conn.put_session("active_profile_id", Enum.at(user.profiles, 0).id)
 
     {:ok, conn: conn}
   end
