@@ -111,6 +111,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   def apply_return_from(socket, _, _), do: socket
 
+  @impl true
   def handle_event("toggle-transaction-selection", _params, socket) do
     is_selecting_transactions = not socket.assigns.is_selecting_transactions
 

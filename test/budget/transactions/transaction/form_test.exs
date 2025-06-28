@@ -313,7 +313,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
     end
 
     test "automatically creates recurrency using /", data do
-      other_account_id = account_fixture().id
+      account_fixture()
 
       changeset =
         Form.insert_changeset(%{
@@ -368,7 +368,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
     end
 
     test "automatically creates recurrency using *", data do
-      other_account_id = account_fixture().id
+      account_fixture()
 
       changeset =
         Form.insert_changeset(%{

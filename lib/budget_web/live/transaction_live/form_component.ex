@@ -196,7 +196,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
     ] ++ Enum.flat_map(categories, &flatten_categories/1)
   end
 
-  def render_parcels(form, recurrency_form) do
+  def render_parcels(form, _recurrency_form) do
     recurrency_changeset = form[:recurrency].value
     parcel_start = Changeset.get_field(recurrency_changeset, :parcel_start)
     parcel_end = Changeset.get_field(recurrency_changeset, :parcel_end)

@@ -9,10 +9,10 @@ defmodule BudgetWeb.ImportLive.Index do
     }
   end
 
+  @impl true
   def handle_event("parse", %{"json" => json}, socket) do
     IO.inspect(json)
 
     {:noreply, socket}
   end
-
 end

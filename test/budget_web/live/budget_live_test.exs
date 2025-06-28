@@ -80,7 +80,6 @@ defmodule BudgetWeb.BudgetLiveTest do
 
     test "keeps adding transactions and keeps date and account from previous transaction", %{
       conn: conn,
-      account: account,
       category: category
     } do
       another_account = account_fixture()
@@ -699,10 +698,9 @@ defmodule BudgetWeb.BudgetLiveTest do
     assert html =~ "Transaction successfully deleted!"
     refute live |> element("#transactions") |> render() =~ "Transaction description"
 
-    html =
-      live
-      |> element("button", ">>")
-      |> render_click()
+    live
+    |> element("button", ">>")
+    |> render_click()
 
     refute live |> element("#transactions") |> render() =~ "Transaction description"
   end
@@ -897,10 +895,9 @@ defmodule BudgetWeb.BudgetLiveTest do
 
   test "editing a recurrency transfer shows correct accounts", %{
     conn: conn,
-    category: category,
     account: account
   } do
-    account_a = account_fixture(%{name: "A"})
+    account_fixture(%{name: "A"})
     account_b = account_fixture(%{name: "B"})
 
     recurrency =

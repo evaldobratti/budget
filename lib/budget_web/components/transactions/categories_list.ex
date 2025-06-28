@@ -6,9 +6,8 @@ defmodule BudgetWeb.Transactions.CategoriesList do
 
   def mount(socket) do
     {:ok,
-    socket
-    |> assign(all_selected: false)
-    }
+     socket
+     |> assign(all_selected: false)}
   end
 
   def render(assigns) do
@@ -65,7 +64,7 @@ defmodule BudgetWeb.Transactions.CategoriesList do
         <div class="ml-auto">
           <.link_button patch={~p"/categories/#{category}/children/new"} small class="px-2">+</.link_button>
           <%= if category.transactions_count == 0 do %>
-            <.link_button patch={~p"/categories/#{category}/delete"} small color="danger" class="px-2">-</.link_button>
+            <%!-- <.link_button patch={~p"/categories/#{category}/delete"} small color="danger" class="px-2">-</.link_button> --%>
           <% else %>
             <.tooltiped id={"not-delete-#{category.id}"} tooltip="You cannot delete this category because it has transactions associated.">
               <.icon name="hero-exclamation-circle" />
@@ -109,7 +108,7 @@ defmodule BudgetWeb.Transactions.CategoriesList do
     if socket.assigns.all_selected do
       send(self(), {:category_selected_ids, []})
     else
-      all_ids = 
+      all_ids =
         Transactions.list_categories()
         |> Enum.map(& &1.id)
 
@@ -122,5 +121,4 @@ defmodule BudgetWeb.Transactions.CategoriesList do
       |> assign(all_selected: not socket.assigns.all_selected)
     }
   end
-  
 end

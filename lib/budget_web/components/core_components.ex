@@ -17,7 +17,7 @@ defmodule BudgetWeb.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import BudgetWeb.Gettext
+  use Gettext, backend: BudgetWeb.Gettext
 
   use Phoenix.VerifiedRoutes,
     endpoint: BudgetWeb.Endpoint,
@@ -738,6 +738,7 @@ defmodule BudgetWeb.CoreComponents do
   attr :tooltip, :string
   attr :rest, :global
   slot :inner_block
+
   def tooltiped(assigns) do
     ~H"""
       <span
@@ -758,6 +759,7 @@ defmodule BudgetWeb.CoreComponents do
   attr :activation, :string, default: "click"
   slot :handle_block
   slot :popover_block
+
   def popover(assigns) do
     ~H"""
       <span
@@ -773,7 +775,6 @@ defmodule BudgetWeb.CoreComponents do
     """
   end
 
-
   def format_date(date) do
     Timex.format!(date, "{0D}/{0M}/{YYYY}")
   end
@@ -787,6 +788,7 @@ defmodule BudgetWeb.CoreComponents do
   end
 
   attr :active_tab, :string
+  attr :active_profile, :any
   attr :user, :any
   slot :inner_block, required: false
 

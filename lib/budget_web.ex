@@ -43,7 +43,7 @@ defmodule BudgetWeb do
         layouts: [html: BudgetWeb.Layouts]
 
       import Plug.Conn
-      import BudgetWeb.Gettext
+      use Gettext, backend: BudgetWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -85,7 +85,7 @@ defmodule BudgetWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import BudgetWeb.CoreComponents
-      import BudgetWeb.Gettext
+      use Gettext, backend: BudgetWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

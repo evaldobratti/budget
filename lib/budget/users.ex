@@ -3,7 +3,6 @@ defmodule Budget.Users do
 
   alias Budget.Transactions
   alias Budget.Users.User
-  alias Budget.Users.Profile
   alias Budget.Repo
 
   def create_user(attrs \\ %{}) do
@@ -54,7 +53,6 @@ defmodule Budget.Users do
     |> Repo.one!(skip_profile_id: true)
   end
 
-
   def create_profile(changeset) do
     changeset
     |> Repo.insert()
@@ -64,7 +62,8 @@ defmodule Budget.Users do
 
         {:ok, profile}
 
-      error -> error
+      error ->
+        error
     end
   end
 
