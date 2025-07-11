@@ -13,7 +13,7 @@ defmodule Budget.Transactions.Account do
   @doc false
   def changeset(account, attrs) do
     account
-    |> cast(attrs, [:name, :initial_balance])
+    |> cast(attrs, [:name, :initial_balance, :inserted_at])
     |> validate_required([:name, :initial_balance])
     |> Budget.Repo.add_profile_id()
   end

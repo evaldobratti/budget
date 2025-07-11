@@ -5,12 +5,17 @@ defmodule BudgetWeb.Nav do
 
   def render(_assigns), do: nil
 
-  def on_mount(:default, _params, %{"user_id" => user_id, "active_profile_id" => profile_id}, socket) do
+  def on_mount(
+        :default,
+        _params,
+        %{"user_id" => user_id, "active_profile_id" => profile_id},
+        socket
+      ) do
     Budget.Repo.put_profile_id(profile_id)
 
     user = Users.get_user(user_id)
 
-    profile = Enum.find(user.profiles, & &1.id == profile_id)
+    profile = Enum.find(user.profiles, &(&1.id == profile_id))
 
     {
       :cont,

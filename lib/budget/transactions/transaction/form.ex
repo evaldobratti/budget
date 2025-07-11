@@ -92,7 +92,7 @@ defmodule Budget.Transactions.Transaction.Form do
     string_keys =
       Map.keys(params)
       |> Enum.map(&is_binary/1)
-      |> Enum.all?(& &1 == true)
+      |> Enum.all?(&(&1 == true))
 
     k = fn value ->
       if string_keys do
@@ -106,12 +106,12 @@ defmodule Budget.Transactions.Transaction.Form do
 
     case Regex.named_captures(regex, to_string(value_raw)) do
       %{"value" => value_string, "operation" => operation, "parcels" => parcels_string} ->
-        {:ok, value } = Decimal.cast(value_string |> String.replace(",", "."))
+        {:ok, value} = Decimal.cast(value_string |> String.replace(",", "."))
         {parcels, _} = Integer.parse(parcels_string)
 
         value =
           if operation == "/" do
-             Decimal.div(value, parcels)
+            Decimal.div(value, parcels)
           else
             value
           end
@@ -121,10 +121,13 @@ defmodule Budget.Transactions.Transaction.Form do
           k.("type") => "parcel",
           k.("frequency") => "monthly",
           k.("parcel_start") => "1",
-          k.("parcel_end") =>  parcels_string,
+          k.("parcel_end") => parcels_string
         })
         |> Map.put(k.("value"), value |> Decimal.to_string())
-        |> Map.put(k.("recurrency_description"), "A recurrency with #{parcels} parcels with value #{value} will be created")
+        |> Map.put(
+          k.("recurrency_description"),
+          "A recurrency with #{parcels} parcels with value #{value} will be created"
+        )
 
       nil ->
         params
@@ -257,13 +260,17 @@ defmodule Budget.Transactions.Transaction.Form do
       }
       |> Budget.Repo.add_profile_id()
 
+    date = get_change(changeset, :date)
+    account_id = get_change(changeset, :account_id)
+
     Hinter.check(get_change(regular, :description), get_change(regular, :original_description))
+    Transactions.invalidate_partial_balance_after([account_id], date)
 
     %Transaction{}
     |> change(%{
-      date: get_change(changeset, :date),
+      date: date,
       value: get_change(changeset, :value),
-      account_id: get_change(changeset, :account_id),
+      account_id: account_id,
       paid: get_change(changeset, :paid, true),
       position:
         get_change(changeset, :position) ||
@@ -277,6 +284,11 @@ defmodule Budget.Transactions.Transaction.Form do
   def apply_insert(%Ecto.Changeset{valid?: true, changes: %{originator: "transfer"}} = changeset) do
     transfer = get_change(changeset, :transfer)
 
+    account_ids = [get_change(changeset, :account_id), get_change(transfer, :other_account_id)]
+
+    date = get_change(changeset, :date)
+    Transactions.invalidate_partial_balance_after(account_ids, date)
+
     originator =
       %Transfer{}
       |> change()
@@ -284,7 +296,7 @@ defmodule Budget.Transactions.Transaction.Form do
       |> put_assoc(
         :counter_part,
         %Transaction{
-          date: get_change(changeset, :date),
+          date: date,
           value: get_change(changeset, :value) |> Decimal.negate(),
           account_id: get_change(transfer, :other_account_id),
           paid: get_change(changeset, :paid, true),
@@ -298,7 +310,7 @@ defmodule Budget.Transactions.Transaction.Form do
 
     %Transaction{}
     |> change(%{
-      date: get_change(changeset, :date),
+      date: date,
       value: get_change(changeset, :value),
       account_id: get_change(changeset, :account_id),
       paid: get_change(changeset, :paid, true),
@@ -477,12 +489,28 @@ defmodule Budget.Transactions.Transaction.Form do
         %Ecto.Changeset{valid?: true, data: %{originator: "regular"}} = changeset,
         transaction
       ) do
+    date_previous = transaction.date
+    date_current = get_field(changeset, :date)
+
+    account_id_previous = transaction.account_id
+    account_id_current = get_field(changeset, :account_id)
+
+    Transactions.invalidate_partial_balance_after(
+      [account_id_previous, account_id_current],
+      date_previous
+    )
+
+    Transactions.invalidate_partial_balance_after(
+      [account_id_previous, account_id_current],
+      date_current
+    )
+
     regular = get_field(changeset, :regular)
 
     transaction
     |> change(%{
-      date: get_field(changeset, :date),
-      account_id: get_field(changeset, :account_id),
+      date: date_current,
+      account_id: account_id_current,
       value: get_field(changeset, :value),
       position: get_field(changeset, :position),
       paid: get_field(changeset, :paid, true)
@@ -505,10 +533,12 @@ defmodule Budget.Transactions.Transaction.Form do
       ) do
     transfer = get_field(changeset, :transfer)
 
+    date_current = get_field(changeset, :date)
+
     changeset =
       transaction
       |> change(%{
-        date: get_field(changeset, :date),
+        date: date_current,
         account_id: get_field(changeset, :account_id),
         value: get_field(changeset, :value),
         position: get_field(changeset, :position),
@@ -527,6 +557,20 @@ defmodule Budget.Transactions.Transaction.Form do
       transaction
       |> Map.get(transaction_transfer_field)
       |> Map.get(transfer_field)
+
+    date_previous = transaction.date
+
+    related_account_ids =
+      [
+        transaction.account_id,
+        get_field(changeset, :account_id),
+        current_counter_part.account_id,
+        get_field(changeset, :other_account_id)
+      ]
+      |> Enum.uniq()
+
+    Transactions.invalidate_partial_balance_after(related_account_ids, date_previous)
+    Transactions.invalidate_partial_balance_after(related_account_ids, date_current)
 
     changeset
     |> put_assoc(

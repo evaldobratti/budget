@@ -1,4 +1,6 @@
 defmodule Budget.Transactions do
+  alias Ecto.Repo.Transaction
+  alias Budget.Transactions.PartialBalance
   alias Budget.Transactions.Originator
   alias Budget.Repo
 
@@ -111,7 +113,7 @@ defmodule Budget.Transactions do
     Repo.get(transaction_query(), id)
   end
 
-  def balance_at(date, opts \\ []) do
+  def raw_balance_at(from_date, to_date, opts \\ []) do
     account_ids = Keyword.get(opts, :account_ids, [])
     category_ids = Keyword.get(opts, :category_ids, [])
 
@@ -123,17 +125,8 @@ defmodule Budget.Transactions do
         left_join: r in assoc(t, :originator_regular),
         left_join: c in assoc(r, :category),
         as: :category,
-        where: t.date <= ^date,
+        where: t.date > ^from_date and t.date <= ^to_date,
         select: coalesce(sum(t.value), 0)
-      )
-      |> where_opts(opts)
-      |> Repo.one()
-
-    initials =
-      from(
-        a in Account,
-        as: :account,
-        select: coalesce(sum(a.initial_balance), 0)
       )
       |> where_opts(opts)
       |> Repo.one()
@@ -141,8 +134,9 @@ defmodule Budget.Transactions do
     # TODO make this function use transactions_in_period()
     recurrencies =
       find_recurrencies()
-      |> Enum.map(&recurrency_transactions(&1, date))
+      |> Enum.map(&recurrency_transactions(&1, to_date))
       |> List.flatten()
+      |> Enum.filter(&Date.after?(&1.date, from_date))
       |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
       |> Enum.filter(fn transaction ->
         if category_ids == [] do
@@ -159,8 +153,69 @@ defmodule Budget.Transactions do
       |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
 
     transactions
-    |> Decimal.add(initials)
     |> Decimal.add(recurrencies)
+  end
+
+  def balance_at(date, opts \\ []) do
+    all_accounts_ids =
+      from(
+        a in Account,
+        as: :account,
+        select: [a.id, a.initial_balance]
+      )
+      |> where_opts(opts)
+      |> Repo.all()
+
+    partial_balances =
+      from(
+        p in PartialBalance,
+        join: a in assoc(p, :account),
+        as: :account,
+        select: %{date: max(p.date), account_id: p.account_id},
+        where: p.date <= ^date,
+        group_by: p.account_id
+      )
+      |> where_opts(opts)
+      |> Repo.all()
+      |> Enum.map(fn %{date: partial_balance_date, account_id: account_id} ->
+        balance =
+          from(
+            p in PartialBalance,
+            where: p.date == ^partial_balance_date and p.account_id == ^account_id,
+            select: p.balance
+          )
+          |> Repo.one()
+
+        %{date: partial_balance_date, account_id: account_id, balance: balance}
+      end)
+
+    all_accounts_ids
+    |> Enum.map(fn [account_id, initial_balance] ->
+      partial = Enum.find(partial_balances, &(&1.account_id == account_id))
+
+      if partial do
+        partial
+      else
+        %{
+          date: ~D[1900-01-01],
+          account_id: account_id,
+          balance: initial_balance
+        }
+      end
+    end)
+    |> Enum.map(fn %{date: partial_balance_date, account_id: account_id, balance: balance} ->
+      transactions_balance =
+        raw_balance_at(
+          partial_balance_date,
+          date,
+          opts
+          |> Keyword.put(:account_ids, [account_id])
+        )
+
+      balance
+      |> Decimal.add(transactions_balance)
+    end)
+    |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
   end
 
   def change_recurrency(%Recurrency{} = recurrency, attrs \\ %{}) do
@@ -638,5 +693,124 @@ defmodule Budget.Transactions do
       select: r.description
     )
     |> Repo.all()
+  end
+
+  def list_partial_balances do
+    Repo.all(from(p in PartialBalance))
+  end
+
+  def update_partial_balances do
+    accounts = list_accounts()
+
+    Enum.each(accounts, fn account ->
+      inserted_at =
+        account.inserted_at
+
+      account_id = account.id
+
+      min_transaction =
+        from(t in Transaction, select: min(t.date), where: t.account_id == ^account_id)
+        |> Repo.one()
+        |> then(&(&1 || inserted_at))
+
+      update_partial_balances_account(
+        account,
+        Enum.min([NaiveDateTime.to_date(inserted_at), min_transaction])
+        |> Timex.shift(months: 1)
+        |> Timex.end_of_month()
+      )
+    end)
+  end
+
+  def invalidate_partial_balance_after(account_ids, date) do
+    from(
+      p in PartialBalance,
+      where: p.account_id in ^account_ids and p.date >= ^date
+    )
+    |> Repo.delete_all()
+  end
+
+  def update_partial_balances_account(account, date) do
+    if Date.after?(date, Date.utc_today()) do
+      nil
+    else
+      account_id = account.id
+
+      exist =
+        from(p in PartialBalance, where: p.account_id == ^account_id and p.date == ^date)
+        |> Repo.all()
+
+      if length(exist) == 0 do
+        balance = balance_at(date, account_ids: [account.id])
+
+        %PartialBalance{}
+        |> PartialBalance.changeset(%{
+          date: date,
+          account_id: account.id,
+          balance: balance
+        })
+        |> Repo.insert()
+      end
+
+      update_partial_balances_account(
+        account,
+        date
+        |> Timex.beginning_of_month()
+        |> Timex.shift(months: 1)
+        |> Timex.end_of_month()
+      )
+    end
+  end
+
+  def previous_balance_at(date, opts \\ []) do
+    account_ids = Keyword.get(opts, :account_ids, [])
+    category_ids = Keyword.get(opts, :category_ids, [])
+
+    transactions =
+      from(
+        t in Transaction,
+        join: a in assoc(t, :account),
+        as: :account,
+        left_join: r in assoc(t, :originator_regular),
+        left_join: c in assoc(r, :category),
+        as: :category,
+        where: t.date <= ^date,
+        select: coalesce(sum(t.value), 0)
+      )
+      |> where_opts(opts)
+      |> Repo.one()
+
+    initials =
+      from(
+        a in Account,
+        as: :account,
+        select: coalesce(sum(a.initial_balance), 0)
+      )
+      |> where_opts(opts)
+      |> Repo.one()
+
+    # TODO make this function use transactions_in_period()
+    recurrencies =
+      find_recurrencies()
+      |> Enum.map(&recurrency_transactions(&1, date))
+      |> List.flatten()
+      |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
+      |> Enum.filter(fn transaction ->
+        if category_ids == [] do
+          true
+        else
+          if transaction.originator_regular do
+            transaction.originator_regular.category_id in category_ids
+          else
+            true
+          end
+        end
+      end)
+      |> Enum.map(& &1.value)
+      |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
+
+    transactions
+    |> Decimal.add(initials)
+    |> Decimal.add(recurrencies)
   end
 end

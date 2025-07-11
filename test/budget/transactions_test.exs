@@ -1,4 +1,6 @@
 defmodule Budget.TransactionsTest do
+  alias Budget.Transactions.PartialBalance
+  alias Timex.DateTime
   use Budget.DataCase, async: true
 
   alias Budget.Transactions.Originator.Transfer
@@ -661,6 +663,71 @@ defmodule Budget.TransactionsTest do
       balance = Transactions.balance_at(~D[2020-06-01], [])
 
       assert balance == Decimal.new(1040)
+    end
+
+    test "balance with partial balance", %{account1: account} do
+      %PartialBalance{
+        account_id: account.id,
+        date: ~D[2020-06-01],
+        balance: Decimal.new(150)
+      }
+      |> PartialBalance.changeset(%{})
+      |> Repo.insert()
+
+      %PartialBalance{
+        account_id: account.id,
+        date: ~D[2020-07-01],
+        balance: Decimal.new(200)
+      }
+      |> PartialBalance.changeset(%{})
+      |> Repo.insert()
+
+      assert Decimal.new(150) ==
+               Transactions.balance_at(~D[2020-06-15], account_ids: [account.id])
+
+      assert Decimal.new(200) ==
+               Transactions.balance_at(~D[2020-07-15], account_ids: [account.id])
+    end
+
+    test "balance with partial balance and transactions", %{account1: account} do
+      %PartialBalance{
+        account_id: account.id,
+        date: ~D[2020-05-31],
+        balance: Decimal.new(150)
+      }
+      |> PartialBalance.changeset(%{})
+      |> Repo.insert()
+
+      transaction_fixture(%{date: ~D[2020-06-01], account_id: account.id, value: Decimal.new(10)})
+
+      %PartialBalance{
+        account_id: account.id,
+        date: ~D[2020-07-01],
+        balance: Decimal.new(200)
+      }
+      |> PartialBalance.changeset(%{})
+      |> Repo.insert()
+
+      assert Decimal.new(-10) ==
+               Transactions.balance_at(~D[2020-05-30], account_ids: [account.id])
+
+      assert Decimal.new(160) ==
+               Transactions.balance_at(~D[2020-06-01], account_ids: [account.id])
+
+      assert Decimal.new(160) ==
+               Transactions.balance_at(~D[2020-06-09], account_ids: [account.id])
+
+      assert Decimal.new(160) ==
+               Transactions.balance_at(~D[2020-06-15], account_ids: [account.id])
+
+      assert Decimal.new(200) ==
+               Transactions.balance_at(~D[2020-07-15], account_ids: [account.id])
+
+      assert Decimal.new(40) == Transactions.balance_at(~D[2020-05-30], [])
+      assert Decimal.new(210) == Transactions.balance_at(~D[2020-06-01], [])
+      assert Decimal.new(210) == Transactions.balance_at(~D[2020-06-09], [])
+      assert Decimal.new(210) == Transactions.balance_at(~D[2020-06-15], [])
+      assert Decimal.new(250) == Transactions.balance_at(~D[2020-07-15], [])
     end
   end
 
@@ -1758,6 +1825,97 @@ defmodule Budget.TransactionsTest do
       transactions = Transactions.transactions_in_period(Timex.today(), Timex.today())
 
       assert [id2, id3, id1, id4, id5] == transactions |> Enum.map(& &1.id)
+    end
+  end
+
+  describe "update_partial_balances/0" do
+    test "create partial balance for account without transactions" do
+      account =
+        account_fixture(
+          inserted_at: Timex.now() |> Timex.shift(months: -5) |> Timex.beginning_of_month()
+        )
+
+      balances_start =
+        account.inserted_at
+        |> NaiveDateTime.to_date()
+        |> Timex.shift(months: 1)
+        |> Timex.end_of_month()
+
+      assert [] == Transactions.list_partial_balances()
+
+      Transactions.update_partial_balances()
+
+      assert [
+               %{
+                 date: balances_start,
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 1),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 2),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 3),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               }
+             ] ==
+               Transactions.list_partial_balances()
+               |> Enum.map(&Map.take(&1, [:date, :balance, :account_id]))
+    end
+
+    test "create partial balance for account with transactions" do
+      account =
+        account_fixture(
+          inserted_at: Timex.now() |> Timex.shift(months: -5) |> Timex.beginning_of_month()
+        )
+
+      transaction_fixture(%{
+        date: Timex.now() |> Timex.shift(months: -3) |> IO.inspect(),
+        account_id: account.id
+      })
+
+      balances_start =
+        account.inserted_at
+        |> NaiveDateTime.to_date()
+        |> Timex.shift(months: 1)
+        |> Timex.end_of_month()
+
+      assert [] == Transactions.list_partial_balances()
+
+      Transactions.update_partial_balances()
+
+      assert [
+               %{
+                 date: balances_start,
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 1),
+                 balance: Decimal.new("253.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 2),
+                 balance: Decimal.new("253.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 3),
+                 balance: Decimal.new("253.5"),
+                 account_id: account.id
+               }
+             ] ==
+               Transactions.list_partial_balances()
+               |> Enum.map(&Map.take(&1, [:date, :balance, :account_id]))
     end
   end
 end

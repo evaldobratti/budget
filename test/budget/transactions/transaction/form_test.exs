@@ -421,6 +421,61 @@ defmodule Budget.Transactions.Transaction.FormTest do
                 }
               }} == Form.apply_insert(changeset) |> simplify()
     end
+
+    test "invalidate partial balances when creating old regular transaction", data do
+      account =
+        account_fixture(
+          inserted_at: Timex.now() |> Timex.shift(months: -5) |> Timex.beginning_of_month()
+        )
+
+      Transactions.update_partial_balances()
+
+      assert 5 == length(Transactions.list_partial_balances())
+
+      Form.insert_changeset(%{
+        date: Timex.now() |> Timex.shift(months: -3) |> Timex.beginning_of_month(),
+        account_id: account.id,
+        value: "200 * 2",
+        originator: "regular",
+        regular: %{
+          category_id: data.category_id,
+          description: "Something"
+        }
+      })
+      |> Form.apply_insert()
+
+      assert 1 == length(Transactions.list_partial_balances())
+    end
+
+    test "invalidate partial balances for both accounts when creating old transfer transaction",
+         data do
+      account_1 =
+        account_fixture(
+          inserted_at: Timex.now() |> Timex.shift(months: -5) |> Timex.beginning_of_month()
+        )
+
+      account_2 =
+        account_fixture(
+          inserted_at: Timex.now() |> Timex.shift(months: -8) |> Timex.beginning_of_month()
+        )
+
+      Transactions.update_partial_balances()
+
+      assert 13 == length(Transactions.list_partial_balances())
+
+      Form.insert_changeset(%{
+        date: Timex.now() |> Timex.shift(months: -2) |> Timex.beginning_of_month(),
+        account_id: account_1.id,
+        value: 200,
+        originator: "transfer",
+        transfer: %{
+          other_account_id: account_2.id
+        }
+      })
+      |> Form.apply_insert()
+
+      assert 7 == length(Transactions.list_partial_balances())
+    end
   end
 
   describe "update_changeset/2" do
