@@ -716,7 +716,6 @@ defmodule Budget.Transactions do
       update_partial_balances_account(
         account,
         Enum.min([NaiveDateTime.to_date(inserted_at), min_transaction])
-        |> Timex.shift(months: 1)
         |> Timex.end_of_month()
       )
     end)

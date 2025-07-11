@@ -444,11 +444,10 @@ defmodule Budget.Transactions.Transaction.FormTest do
       })
       |> Form.apply_insert()
 
-      assert 1 == length(Transactions.list_partial_balances())
+      assert 2 == length(Transactions.list_partial_balances())
     end
 
-    test "invalidate partial balances for both accounts when creating old transfer transaction",
-         data do
+    test "invalidate partial balances for both accounts when creating old transfer transaction" do
       account_1 =
         account_fixture(
           inserted_at: Timex.now() |> Timex.shift(months: -5) |> Timex.beginning_of_month()
@@ -474,7 +473,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
       })
       |> Form.apply_insert()
 
-      assert 7 == length(Transactions.list_partial_balances())
+      assert 9 == length(Transactions.list_partial_balances())
     end
   end
 

@@ -1,6 +1,5 @@
 defmodule Budget.TransactionsTest do
   alias Budget.Transactions.PartialBalance
-  alias Timex.DateTime
   use Budget.DataCase, async: true
 
   alias Budget.Transactions.Originator.Transfer
@@ -1838,7 +1837,6 @@ defmodule Budget.TransactionsTest do
       balances_start =
         account.inserted_at
         |> NaiveDateTime.to_date()
-        |> Timex.shift(months: 1)
         |> Timex.end_of_month()
 
       assert [] == Transactions.list_partial_balances()
@@ -1852,17 +1850,22 @@ defmodule Budget.TransactionsTest do
                  account_id: account.id
                },
                %{
-                 date: Timex.shift(balances_start, months: 1),
+                 date: Timex.shift(balances_start, months: 1) |> Timex.end_of_month(),
                  balance: Decimal.new("120.5"),
                  account_id: account.id
                },
                %{
-                 date: Timex.shift(balances_start, months: 2),
+                 date: Timex.shift(balances_start, months: 2) |> Timex.end_of_month(),
                  balance: Decimal.new("120.5"),
                  account_id: account.id
                },
                %{
-                 date: Timex.shift(balances_start, months: 3),
+                 date: Timex.shift(balances_start, months: 3) |> Timex.end_of_month(),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 4) |> Timex.end_of_month(),
                  balance: Decimal.new("120.5"),
                  account_id: account.id
                }
@@ -1878,14 +1881,13 @@ defmodule Budget.TransactionsTest do
         )
 
       transaction_fixture(%{
-        date: Timex.now() |> Timex.shift(months: -3) |> IO.inspect(),
+        date: Timex.now() |> Timex.shift(months: -3),
         account_id: account.id
       })
 
       balances_start =
         account.inserted_at
         |> NaiveDateTime.to_date()
-        |> Timex.shift(months: 1)
         |> Timex.end_of_month()
 
       assert [] == Transactions.list_partial_balances()
@@ -1899,17 +1901,22 @@ defmodule Budget.TransactionsTest do
                  account_id: account.id
                },
                %{
-                 date: Timex.shift(balances_start, months: 1),
+                 date: Timex.shift(balances_start, months: 1) |> Timex.end_of_month(),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(balances_start, months: 2) |> Timex.end_of_month(),
                  balance: Decimal.new("253.5"),
                  account_id: account.id
                },
                %{
-                 date: Timex.shift(balances_start, months: 2),
+                 date: Timex.shift(balances_start, months: 3) |> Timex.end_of_month(),
                  balance: Decimal.new("253.5"),
                  account_id: account.id
                },
                %{
-                 date: Timex.shift(balances_start, months: 3),
+                 date: Timex.shift(balances_start, months: 4) |> Timex.end_of_month(),
                  balance: Decimal.new("253.5"),
                  account_id: account.id
                }

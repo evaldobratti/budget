@@ -5,7 +5,7 @@ defmodule Mix.Tasks.PartialBalanceCheck do
   @requirements ["app.start"]
 
   @impl true
-  def run(args) do
+  def run(_args) do
     Budget.Repo.put_profile_id(1)
 
     Transactions.update_partial_balances()
