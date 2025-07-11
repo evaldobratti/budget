@@ -172,7 +172,7 @@ defmodule Budget.Transactions do
         join: a in assoc(p, :account),
         as: :account,
         select: %{date: max(p.date), account_id: p.account_id},
-        where: p.date <= ^date,
+        where: p.date < ^date,
         group_by: p.account_id
       )
       |> where_opts(opts)

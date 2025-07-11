@@ -1,5 +1,7 @@
 defmodule Mix.Tasks.PartialBalanceCheck do
+  alias Budget.Transactions.PartialBalance
   alias Budget.Transactions
+  import Ecto.Query
   use Mix.Task
 
   @requirements ["app.start"]
@@ -8,10 +10,12 @@ defmodule Mix.Tasks.PartialBalanceCheck do
   def run(_args) do
     Budget.Repo.put_profile_id(1)
 
+    from(PartialBalance) |> Budget.Repo.delete_all()
+
     Transactions.update_partial_balances()
 
     max_date(~D[2024-09-01])
-    |> Enum.filter(fn {_, {comparison, _}} -> !comparison end)
+    |> Enum.filter(fn {_, {comparison, _, _}} -> !comparison end)
     |> case do
       [] -> IO.inspect("all good!")
       other -> IO.inspect(["ouch", other], limit: :infinity)
