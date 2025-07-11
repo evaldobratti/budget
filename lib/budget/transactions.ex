@@ -167,54 +167,57 @@ defmodule Budget.Transactions do
       |> Repo.all()
 
     partial_balances =
-      from(
-        p in PartialBalance,
-        join: a in assoc(p, :account),
-        as: :account,
-        select: %{date: max(p.date), account_id: p.account_id},
-        where: p.date < ^date,
-        group_by: p.account_id
-      )
-      |> where_opts(opts)
-      |> Repo.all()
-      |> Enum.map(fn %{date: partial_balance_date, account_id: account_id} ->
-        balance =
-          from(
-            p in PartialBalance,
-            where: p.date == ^partial_balance_date and p.account_id == ^account_id,
-            select: p.balance
-          )
-          |> Repo.one()
-
-        %{date: partial_balance_date, account_id: account_id, balance: balance}
-      end)
-
-    all_accounts_ids
-    |> Enum.map(fn [account_id, initial_balance] ->
-      partial = Enum.find(partial_balances, &(&1.account_id == account_id))
-
-      if partial do
-        partial
-      else
-        %{
-          date: ~D[1900-01-01],
-          account_id: account_id,
-          balance: initial_balance
-        }
-      end
-    end)
-    |> Enum.map(fn %{date: partial_balance_date, account_id: account_id, balance: balance} ->
-      transactions_balance =
-        raw_balance_at(
-          partial_balance_date,
-          date,
-          opts
-          |> Keyword.put(:account_ids, [account_id])
+      if Keyword.get(opts, :category_ids, []) == [] do
+        from(
+          p in PartialBalance,
+          join: a in assoc(p, :account),
+          as: :account,
+          select: %{date: max(p.date), account_id: p.account_id},
+          where: p.date < ^date,
+          group_by: p.account_id
         )
+        |> where_opts(opts)
+        |> Repo.all()
+        |> Enum.map(fn %{date: partial_balance_date, account_id: account_id} ->
+          balance =
+            from(
+              p in PartialBalance,
+              where: p.date == ^partial_balance_date and p.account_id == ^account_id,
+              select: p.balance
+            )
+            |> Repo.one()
 
-      balance
-      |> Decimal.add(transactions_balance)
-    end)
+          %{date: partial_balance_date, account_id: account_id, balance: balance}
+        end)
+      else
+        []
+      end
+
+    initial_balances =
+      all_accounts_ids
+      |> Enum.map(fn [account_id, initial_balance] ->
+        partial = Enum.find(partial_balances, &(&1.account_id == account_id))
+
+        if partial do
+          partial
+        else
+          %{
+            date: ~D[1900-01-01],
+            account_id: account_id,
+            balance: initial_balance
+          }
+        end
+      end)
+      |> Enum.map(& &1.balance)
+
+    transactions_balance =
+      raw_balance_at(
+        ~D[2025-06-30],
+        date,
+        opts
+      )
+
+    [transactions_balance | initial_balances]
     |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
   end
 

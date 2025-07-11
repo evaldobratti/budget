@@ -1,11 +1,17 @@
 defmodule Budget.Repo.Migrations.DevSeed do
+  alias Budget.Users.Profile
   alias Budget.Users
   alias Budget.Transactions
+
+  import Ecto.Query
 
   use Ecto.Migration
 
   def up do
-    if Application.get_env(:budget, :environment, %{}) |> Map.get(:name) == :dev do
+    is_dev = Application.get_env(:budget, :environment, %{}) |> Map.get(:name) == :dev
+    no_users = from(u in Users) |> Budget.Repo.all() |> length() == 0
+
+    if is_dev && no_users do
       {:ok, %{profiles: [profile]}} =
         Users.create_user(%{
           email: "mocked@provider.com",

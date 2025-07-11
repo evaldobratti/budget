@@ -256,10 +256,25 @@ defmodule BudgetWeb.BudgetLive.Index do
 
     previous_balance =
       if socket.assigns.previous_balance do
-        Transactions.balance_at(Timex.shift(date_start, days: -1),
-          account_ids: account_ids,
-          category_ids: category_ids
-        )
+        {nano, value} =
+          :timer.tc(fn ->
+            Transactions.balance_at(Timex.shift(date_start, days: -1),
+              account_ids: account_ids,
+              category_ids: category_ids
+            )
+          end)
+
+        {nano2, _} =
+          :timer.tc(fn ->
+            Transactions.previous_balance_at(Timex.shift(date_start, days: -1),
+              account_ids: account_ids,
+              category_ids: category_ids
+            )
+          end)
+
+        IO.inspect({nano, nano2})
+
+        value
       else
         Decimal.new(0)
       end
