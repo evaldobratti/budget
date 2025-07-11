@@ -1924,5 +1924,101 @@ defmodule Budget.TransactionsTest do
                Transactions.list_partial_balances()
                |> Enum.map(&Map.take(&1, [:date, :balance, :account_id]))
     end
+
+    test "partial balance right at partial date" do
+      account =
+        account_fixture(
+          inserted_at: Timex.now() |> Timex.shift(months: -3) |> Timex.beginning_of_month()
+        )
+
+      Transactions.update_partial_balances()
+
+      assert [
+               %{
+                 date: Timex.shift(Date.utc_today(), months: -3) |> Timex.end_of_month(),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(Date.utc_today(), months: -2) |> Timex.end_of_month(),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(Date.utc_today(), months: -1) |> Timex.end_of_month(),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               }
+             ] ==
+               Transactions.list_partial_balances()
+               |> Enum.map(&Map.take(&1, [:date, :balance, :account_id]))
+
+      transaction_fixture(%{
+        date: Timex.now() |> Timex.shift(months: -2) |> Timex.end_of_month(),
+        account_id: account.id
+      })
+
+      assert Decimal.new("120.5") ==
+               Transactions.balance_at(
+                 Date.utc_today()
+                 |> Timex.shift(months: -2)
+                 |> Timex.end_of_month()
+                 |> Timex.shift(days: -1)
+               )
+
+      assert Decimal.new("253.5") ==
+               Transactions.balance_at(
+                 Date.utc_today()
+                 |> Timex.shift(months: -2)
+                 |> Timex.end_of_month()
+               )
+
+      assert [
+               %{
+                 date: Timex.shift(Date.utc_today(), months: -3) |> Timex.end_of_month(),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               }
+             ] ==
+               Transactions.list_partial_balances()
+               |> Enum.map(&Map.take(&1, [:date, :balance, :account_id]))
+
+      Transactions.update_partial_balances()
+
+      assert Decimal.new("120.5") ==
+               Transactions.balance_at(
+                 Date.utc_today()
+                 |> Timex.shift(months: -2)
+                 |> Timex.end_of_month()
+                 |> Timex.shift(days: -1)
+               )
+
+      assert Decimal.new("253.5") ==
+               Transactions.balance_at(
+                 Date.utc_today()
+                 |> Timex.shift(months: -2)
+                 |> Timex.end_of_month()
+               )
+
+      assert [
+               %{
+                 date: Timex.shift(Date.utc_today(), months: -3) |> Timex.end_of_month(),
+                 balance: Decimal.new("120.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(Date.utc_today(), months: -2) |> Timex.end_of_month(),
+                 balance: Decimal.new("253.5"),
+                 account_id: account.id
+               },
+               %{
+                 date: Timex.shift(Date.utc_today(), months: -1) |> Timex.end_of_month(),
+                 balance: Decimal.new("253.5"),
+                 account_id: account.id
+               }
+             ] ==
+               Transactions.list_partial_balances()
+               |> Enum.map(&Map.take(&1, [:date, :balance, :account_id]))
+    end
   end
 end
