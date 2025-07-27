@@ -5,14 +5,17 @@ defmodule BudgetWeb.ManagementLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    average = build_average()
+    %{id: profile_id} = socket.assigns.active_profile
 
     {
       :ok,
       socket
-      |> assign(averages: average)
       |> assign(categories: Transactions.list_categories_arranged())
-      |> assign(months: average |> Map.keys() |> Enum.uniq())
+      |> assign_async(:averages, fn ->
+        Budget.Repo.put_profile_id(profile_id)
+
+        {:ok, %{averages: build_average()}}
+      end)
     }
   end
 
@@ -25,7 +28,7 @@ defmodule BudgetWeb.ManagementLive.Index do
         {parent, children} -> [parent.id | Enum.map(children, &elem(&1, 0).id)]
       end)
 
-    six_months_ago = Timex.now() |> Timex.beginning_of_month() |> Timex.shift(months: -4)
+    six_months_ago = Timex.now() |> Timex.beginning_of_month() |> Timex.shift(months: -6)
 
     collect_averages(categories_ids, six_months_ago)
   end
@@ -54,5 +57,9 @@ defmodule BudgetWeb.ManagementLive.Index do
       |> Map.put(start_month, averages)
       |> Map.merge(collect_averages(categories_ids, Timex.shift(date, months: 1)))
     end
+  end
+
+  def available_months(averages) do
+    averages |> Map.keys() |> Enum.uniq()
   end
 end
