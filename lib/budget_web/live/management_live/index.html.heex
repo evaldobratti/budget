@@ -1,0 +1,52 @@
+<div class="flex h-full">
+  <.menu active_tab={@active_tab} user={@user} active_profile={@active_profile}>
+  </.menu>
+
+  <table>
+    <thead>
+      <td>Category</td>
+      <%= for d <- @months do %>
+        <td>
+          {format_month(d)}
+        </td>
+      <% end %>
+      <td>
+        
+      </td>
+    </thead>
+
+    <tbody>
+      <%= for {c, _} <- @categories do %>
+      <tr >
+        <td>
+         {c.name}
+        </td>
+        <%= for d <- @months do %>
+          <td>
+            <.currency value={@averages |> Map.get(d) |> Map.get(c.id)} />
+          </td>
+        <% end %>
+        <td>
+      
+          Total: <.currency value={@averages |> Map.values() |> Enum.map(& Map.get(&1, c.id))|> Enum.reduce(Decimal.new(0), &Decimal.add/2) } /><br />
+          Avg: <.currency value={@averages |> Map.values() |> Enum.map(& Map.get(&1, c.id))|> Enum.reduce(Decimal.new(0), &Decimal.add/2) |> Decimal.div(length(@months)) } />
+        </td>
+      </tr>
+      <% end %>
+      <tr>
+        <td />
+        <%= for d <- @months do %>
+          <td>
+            Total: <.currency value={@averages |> Map.get(d) |> Map.values() |> Enum.reduce(Decimal.new(0), &Decimal.add/2)} /><br />
+          
+            Avg: <.currency value={@averages |> Map.get(d) |> Map.values() |> Enum.reduce(Decimal.new(0), &Decimal.add/2) |> Decimal.div(Enum.count(Map.get(@averages, d)))} />
+          
+
+          </td>
+        <% end %>
+        <td />
+      </tr>
+    </tbody>
+  </table>
+</div>
+

@@ -50,6 +50,7 @@ defmodule BudgetWeb.Router do
       live "/imports", ImportLive.Result, :index
 
       live "/charts", ChartLive.Index, :index
+      live "/management", ManagementLive.Index, :index
     end
   end
 

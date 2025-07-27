@@ -775,6 +775,10 @@ defmodule BudgetWeb.CoreComponents do
     """
   end
 
+  def format_month(date) do
+    Timex.format!(date, "{0M}/{YYYY}")
+  end
+
   def format_date(date) do
     Timex.format!(date, "{0D}/{0M}/{YYYY}")
   end
@@ -802,6 +806,7 @@ defmodule BudgetWeb.CoreComponents do
         <.menu_link label="Transactions" active={@active_tab == :transactions} to={~p"/"} />
         <.menu_link label="Import" active={@active_tab == :import} to={~p"/imports"} />
         <.menu_link label="Charts" active={@active_tab == :charts} to={~p"/charts"} />
+        <.menu_link label="Management" active={@active_tab == :management} to={~p"/management"} />
 
         <%= render_slot(@inner_block) %>
         <div class="flex p-4 mt-auto">
