@@ -125,7 +125,7 @@
                   <input 
                     type="checkbox" 
                     phx-click="toggle-previous-balance" 
-                    checked={@previous_balance} 
+                    checked={get_consider_previous_balance(@url_params)} 
                   />
                 </.tooltiped>
                 <.currency value={Enum.at(@balances, 0)} />

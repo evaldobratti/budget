@@ -2,7 +2,6 @@
   <.menu active_tab={@active_tab} user={@user} active_profile={@active_profile}>
   </.menu>
 
-{@averages.ok?}
   <.async_result :let={averages} assign={@averages}>
     <:loading>Loading organization...</:loading>
     <:failed :let={failure}>{inspect(failure)}</:failed>
@@ -22,14 +21,16 @@
       </thead>
 
       <tbody>
-        <%= for {c, _} <- @categories do %>
+        <%= for {c, children} <- @categories do %>
         <tr >
           <td>
            {c.name}
           </td>
           <%= for d <- months do %>
             <td>
-              <.currency value={averages |> Map.get(d) |> Map.get(c.id)} />
+              <.link target="_blank" href={~p"/?#{%{"previous-balance": false, category_ids: [c.id | Enum.map(children, & elem(&1, 0).id)] |> Enum.join(","), date_start: Timex.beginning_of_month(d) |> Timex.format!("{YYYY}-{0M}-{0D}"), date_end: Timex.end_of_month(d)  |> Timex.format!("{YYYY}-{0M}-{0D}") }}"}>
+                <.currency value={averages |> Map.get(d) |> Map.get(c.id)} />
+              </.link>
             </td>
           <% end %>
           <td>

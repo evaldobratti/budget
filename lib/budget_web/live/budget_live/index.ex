@@ -1,4 +1,5 @@
 defmodule BudgetWeb.BudgetLive.Index do
+  alias Postgrex.Extensions.Bool
   use BudgetWeb, :live_view
 
   alias Phoenix.LiveView.JS
@@ -105,7 +106,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def apply_return_from(socket, from, _params)
-      when from in ["account", "delete", "category", "date"] do
+      when from in ["account", "delete", "category", "date", "previous-balance"] do
     reload_transactions(socket)
   end
 
@@ -138,13 +139,18 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   def handle_event("toggle-previous-balance", _params, socket) do
-    previous_balance = not socket.assigns.previous_balance
+    params =
+      socket.assigns.url_params
+      |> Map.put(
+        "previous-balance",
+        not get_consider_previous_balance(socket.assigns.url_params)
+      )
+      |> Map.put("from", "previous-balance")
 
     {
       :noreply,
       socket
-      |> assign(previous_balance: previous_balance)
-      |> reload_transactions()
+      |> push_patch(to: ~p"/?#{params}")
     }
   end
 
@@ -237,6 +243,10 @@ defmodule BudgetWeb.BudgetLive.Index do
     end
   end
 
+  defp get_consider_previous_balance(url_params) do
+    Map.get(url_params, "previous-balance", "true") == "true"
+  end
+
   defp get_accounts(url_params) do
     account_ids = Map.get(url_params, "account_ids", "") |> String.split(",")
 
@@ -255,7 +265,7 @@ defmodule BudgetWeb.BudgetLive.Index do
     category_ids = get_categories(socket.assigns.url_params)
 
     previous_balance =
-      if socket.assigns.previous_balance do
+      if get_consider_previous_balance(socket.assigns.url_params) do
         Transactions.balance_at(Timex.shift(date_start, days: -1),
           account_ids: account_ids,
           category_ids: category_ids
