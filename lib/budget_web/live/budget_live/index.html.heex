@@ -1,259 +1,279 @@
-<div class="flex h-full max-h-full">
-  <.menu active_tab={@active_tab} user={@user} active_profile={@active_profile}>
-      <.live_component
-        id={:accounts_list}
-        module={BudgetWeb.Transactions.AccountList}
-        accounts={@accounts}
-        accounts_selected_ids={get_accounts(@url_params)}
-        url_params={@url_params}
-      />
-
-      <.live_component
-        id={:accounts_list}
-        module={BudgetWeb.Transactions.CategoriesList}
-        categories={@categories}
-        category_selected_ids={get_categories(@url_params)}
-        url_params={@url_params}
-      />
-
-  </.menu>
-  <div class="flex flex-grow flex-col overflow-auto">
-    <div class="flex overflow-y-auto">
-
+<Layouts.app
+  flash={@flash}
+  active_tab={@active_tab}
+  user={@user}
+  active_profile={@active_profile}
+  url_params={@url_params}
+>
+  <div class="flex h-full max-h-full">
+    <div class="flex flex-grow flex-col overflow-auto">
+      <div class="flex overflow-y-auto gap-2">
         <%= if @live_action == :delete_transaction do %>
-          <.modal id="delete-transaction" on_cancel={JS.patch(~p"/")} show>
-              <%= case @confirm_delete.delete_state do %>
-                <% :recurrency -> %>
-                  This transaction is associated to a recurrency. What do you want to do about it?
-
-                  <div>
-                    <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
-                      Delete just this transaction
-                    </.button>
-                    <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
-                      Delete this transaction and future transactions
-                    </.button>
-                  </div>
-
-                <% :recurrency_with_future -> %>
-                  This transaction is associated to a recurrency. Future transactions from this recurrency have already been updated, so what do you want to do about it?
-                    <div>
-                      <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
-                        Delete just this transaction
-                      </.button>
-                      <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-keep-future">
-                        Delete this transaction with future ones but keep changed ones
-                      </.button>
-                      <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="recurrency-all">
-                        Delete this transaction and all future ones
-                      </.button>
-                    </div>
-
-                <% :regular -> %>
-                  Do you confirm deleting this transaction?
-                  <div>
-                    <.button class="btn btn-danger btn-sm btn-block mt-2" phx-click="transaction-delete" phx-value-delete-mode="transaction">
-                      Yes
-                    </.button>
-                  </div>
-              <% end %>
-          </.modal>
+          <div id="delete-transaction" on_cancel={JS.patch(~p"/")} show>
+            <%= case @confirm_delete.delete_state do %>
+              <% :recurrency -> %>
+                This transaction is associated to a recurrency. What do you want to do about it?
+                <div>
+                  <.button
+                    class="btn btn-danger btn-sm btn-block mt-2"
+                    phx-click="transaction-delete"
+                    phx-value-delete-mode="transaction"
+                  >
+                    Delete just this transaction
+                  </.button>
+                  <.button
+                    class="btn btn-danger btn-sm btn-block mt-2"
+                    phx-click="transaction-delete"
+                    phx-value-delete-mode="recurrency-all"
+                  >
+                    Delete this transaction and future transactions
+                  </.button>
+                </div>
+              <% :recurrency_with_future -> %>
+                This transaction is associated to a recurrency. Future transactions from this recurrency have already been updated, so what do you want to do about it?
+                <div>
+                  <.button
+                    class="btn btn-danger btn-sm btn-block mt-2"
+                    phx-click="transaction-delete"
+                    phx-value-delete-mode="transaction"
+                  >
+                    Delete just this transaction
+                  </.button>
+                  <.button
+                    class="btn btn-danger btn-sm btn-block mt-2"
+                    phx-click="transaction-delete"
+                    phx-value-delete-mode="recurrency-keep-future"
+                  >
+                    Delete this transaction with future ones but keep changed ones
+                  </.button>
+                  <.button
+                    class="btn btn-danger btn-sm btn-block mt-2"
+                    phx-click="transaction-delete"
+                    phx-value-delete-mode="recurrency-all"
+                  >
+                    Delete this transaction and all future ones
+                  </.button>
+                </div>
+              <% :regular -> %>
+                Do you confirm deleting this transaction?
+                <div>
+                  <.button
+                    class="btn btn-danger btn-sm btn-block mt-2"
+                    phx-click="transaction-delete"
+                    phx-value-delete-mode="transaction"
+                  >
+                    Yes
+                  </.button>
+                </div>
+            <% end %>
+          </div>
         <% end %>
 
         <div class="w-2/3">
-          <div class="flex flex-col py-4">
-            <div class="flex items-center">
-              <div class="flex items-center gap-2">
-                <.button 
-                  :if={@is_selecting_transactions} 
-                  disabled={length(@selected_transactions) == 0}
-                  class="btn btn-danger btn-sm btn-block" 
-                  phx-click="transaction-delete-all"
-                >
-                  Delete all
-                </.button>
-                
-              </div>
-              <.live_component
-                id={:date_picker}
-                module={BudgetWeb.Transactions.DateRangePicker}
-                dates={get_dates(@url_params)}
-              />
-            </div>
-          </div>
-
-          <div id="transactions" class="flex flex-col" phx-hook="Sortable">
-            <div class="flex bg-white  hover:bg-slate-200 px-2 py-1 rounded-t-lg">
-              <div class="w-[100px]">
-                <.tooltiped id={"select-mode"} tooltip={"Select mode"}>
-                  <input 
-                    id="toggle-transactions-selection"
-                    type="checkbox" 
-                    phx-click="toggle-transaction-selection" 
-                    checked={@is_selecting_transactions} 
-                  />
-                </.tooltiped>
-                Date
-              </div>
-              <div class="flex-1 flex">
-                Description
-              </div>
-              <div class="w-[200px] text-center">
-                Category
-              </div>
-              <div class="w-[200px] text-center">
-                Account
-              </div>
-              <div class="w-[10%] text-right">
-                Value
-              </div>
-              <div class="w-[5%]">
-              </div>
-            </div>
-            <hr />
-            <div id="previous-balance" class="flex bg-white hover:bg-slate-200 px-2 py-1">
-              <div class="w-[100px]">
-                <%= format_date(Timex.shift(Enum.at(get_dates(@url_params), 0), days: -1)) %>
-              </div>
-              <div class="flex-1 flex items-center gap-2">
-
-              </div>
-              <div class="w-[10%]">
-              </div>
-              <div class={"w-[10%] flex items-center gap-2 justify-end"}>
-                <.tooltiped id={"tooltip-previous-balance"} tooltip={"Consider previous balance"}>
-                  <input 
-                    type="checkbox" 
-                    phx-click="toggle-previous-balance" 
-                    checked={get_consider_previous_balance(@url_params)} 
-                  />
-                </.tooltiped>
-                <.currency value={Enum.at(@balances, 0)} />
-              </div>
-              <div class="w-[5%] pl-2">
-                <.tooltiped id={"tooltip-partial-balance"} tooltip={"Show partial balance"}>
-                  <input 
-                    type="checkbox" 
-                    phx-click="toggle-partial-balance" 
-                    checked={@partial_balance} 
-                  />
-                </.tooltiped>
-              </div>
-            </div>
-            <hr />
-            <%= for {transaction, ix} <- Enum.with_index(@transactions) do %>
-              <div 
-                id={"transaction-#{transaction.id}"} 
-                class={[
-                  "group list-group-item item-draggable flex",
-                  "hover:bg-slate-200 px-2 py-1",
-                  "items-center",
-                  background_color(transaction, @is_selecting_transactions, @selected_transactions)
-                ]}
-              >
-                <input 
-                  :if={@is_selecting_transactions}
-                  type="checkbox" 
-                  phx-click="toggle-transaction-selected" 
-                  phx-value-id={transaction.id}
-                  checked={to_string(transaction.id) in @selected_transactions} 
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-col box m-px rounded-lg p-2">
+              <div class="flex items-center">
+                <div class="flex items-center gap-2">
+                  <button
+                    :if={@is_selecting_transactions}
+                    disabled={length(@selected_transactions) == 0}
+                    class="btn btn-danger btn-sm btn-block"
+                    phx-click="transaction-delete-all"
+                  >
+                    Delete all
+                  </button>
+                </div>
+                <.live_component
+                  id={:date_picker}
+                  module={BudgetWeb.Transactions.DateRangePicker}
+                  dates={get_dates(@url_params)}
                 />
-
-                <div class="w-[100px]">
-                  <%= format_date(transaction.date) %>
-                </div>
-                <div class="flex-1 flex">
-                  <.link patch={~p"/transactions/#{transaction}/edit?#{@url_params}"}>
-                    <%= description(transaction) %>
-                    <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
-                      <span>
-                        <%= "(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})" %>
-                      </span>
-                    <% end %>
-                  </.link>
-                  <div class="ml-auto">
-                    <%= if transaction.recurrency_transaction do %>
-                      <.tooltiped id={"tooltip-recurrency-#{transaction.id}"} tooltip={"Recurrency"}>
-                        <.icon name="hero-arrow-path" />
-                      </.tooltiped>
-                    <% end %>
-                  </div>
-                </div>
-                <div class="w-[200px] text-center">
-                  <% originator = Transactions.originator(transaction) %>
-
-                  <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
-                    <%= if length(transaction.originator_regular.category.path) == 0 do %>
-                      <%= transaction.originator_regular.category.name %>
-                    <% else %>
-                      <.tooltiped id={"category-detail-#{transaction.id}"} tooltip={category_tooltip(@categories, transaction.originator_regular.category)}>
-                        <span>
-                          <%= transaction.originator_regular.category.name %>
-                        </span>
-                      </.tooltiped>
-                    <% end %>
-
-                  <% end %>
-
-                  <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
-                    <.tooltiped id={"transfer-icon-#{transaction.id}"} tooltip="Transfer">
-                      <.icon name="hero-arrows-up-down" />
-                    </.tooltiped>
-                  <% end %>
-                </div>
-                <div class="w-[200px] text-center">
-                  <%= transaction.account.name %>
-                </div>
-                <div class={"w-[10%] text-right"}>
-                  <.currency value={transaction.value} />
-                </div>
-
-                <div :if={@partial_balance} class={"w-[10%] text-right"}>
-                  <.currency value={Enum.at(@balances, ix + 1)} />
-                </div>
-
-                <div class="w-[5%] flex gap-x-1">
-                  <.link patch={~p"/transactions/#{transaction}/delete?#{@url_params}"} 
-                    data-testid={"delete-#{transaction.id}"}
-                    class="flex">
-                    <.tooltiped id={"tooltip-delete-#{transaction.id}"} tooltip="Delete">
-                      <.icon name="hero-trash" />
-                    </.tooltiped>
-                  </.link>
-                  <div class="flex">
-                    <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer" />
-                  </div>
-                </div>
-              </div>
-              <hr />
-            <% end %>
-
-
-            <div 
-              :if={Enum.empty?(@transactions)} 
-              id={"empty-transactions"} 
-              class=" text-center bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
-            >
-              No transactions in this period.
-            </div>
-
-            <div id="next-balance" class="flex bg-white hover:bg-slate-200 px-2 py-1 rounded-b-lg">
-              <div class="w-[100px]">
-                <%= format_date(Enum.at(get_dates(@url_params), 1)) %>
-              </div>
-              <div class="flex-1">
-              </div>
-              <div class="w-[10%]">
-              </div>
-              <div class={"w-[10%] text-right"}>
-                <.currency value={Enum.at(@balances, -1)} />
-              </div>
-              <div class="w-[5%]">
               </div>
             </div>
+
+            <table id="transactions" class="table table-sm bg-white box m-px" >
+              <thead>
+                <tr>
+                  <th class="flex items-center gap-2">
+                    <div class="tooltip flex items-center" data-tip="Select mode">
+                      <input
+                        id="toggle-transactions-selection"
+                        type="checkbox"
+                        phx-click="toggle-transaction-selection"
+                        checked={@is_selecting_transactions}
+                      />
+                    </div>
+                    Date
+                  </th>
+                  <th>
+                    Description
+                  </th>
+                  <th class="text-center">
+                    Category
+                  </th>
+                  <th class="text-center">
+                    Account
+                  </th>
+                  <th class="text-center">
+                    Value
+                  </th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="sortable-transactions" phx-hook="Sortable">
+                <tr id="previous-balance">
+                  <td>
+                    {format_date(Timex.shift(Enum.at(get_dates(@url_params), 0), days: -1))}
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td class="text-right">
+                    <div class="tooltip" data-tip="Consider previous balance">
+                      <input
+                        type="checkbox"
+                        phx-click="toggle-previous-balance"
+                        checked={get_consider_previous_balance(@url_params)}
+                      />
+                    </div>
+                    <.currency value={Enum.at(@balances, 0)} />
+                  </td>
+                  <td>
+                    <div class="tooltip" data-tip="Show partial balance">
+                      <input
+                        type="checkbox"
+                        phx-click="toggle-partial-balance"
+                        checked={@partial_balance}
+                      />
+                    </div>
+                  </td>
+                </tr>
+                <%= for {transaction, ix} <- Enum.with_index(@transactions) do %>
+                  <tr
+                    id={"transaction-#{transaction.id}"}
+                    class={[
+                      "group list-group-item item-draggable",
+                      "hover:bg-base-200",
+                      "items-center",
+                      background_color(
+                        transaction,
+                        @is_selecting_transactions,
+                        @selected_transactions
+                      )
+                    ]}
+                  >
+                    <td>
+                      <input
+                        :if={@is_selecting_transactions}
+                        type="checkbox"
+                        phx-click="toggle-transaction-selected"
+                        phx-value-id={transaction.id}
+                        checked={to_string(transaction.id) in @selected_transactions}
+                      />
+                      {format_date(transaction.date)}
+                    </td>
+                    <td class="flex">
+                      <.link patch={~p"/transactions/#{transaction}/edit?#{@url_params}"}>
+                        {description(transaction)}
+                        <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
+                          <span>
+                            {"(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})"}
+                          </span>
+                        <% end %>
+                      </.link>
+                      <div class="ml-auto">
+                        <%= if transaction.recurrency_transaction do %>
+                          <div class="tooltip" data-tip="Recurrency">
+                            <.icon name="hero-arrow-path" />
+                          </div>
+                        <% end %>
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <% originator = Transactions.originator(transaction) %>
+
+                      <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
+                        <%= if length(transaction.originator_regular.category.path) == 0 do %>
+                          {transaction.originator_regular.category.name}
+                        <% else %>
+                          <div
+                            class="tooltip"
+                            data-tip={
+                              category_tooltip(
+                                @categories,
+                                transaction.originator_regular.category
+                              )
+                            }
+                          >
+                            <span>
+                              {transaction.originator_regular.category.name}
+                            </span>
+                          </div>
+                        <% end %>
+                      <% end %>
+
+                      <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
+                        <div class="tooltip" data-tip="Transfer">
+                          <.icon name="hero-arrows-up-down" />
+                        </div>
+                      <% end %>
+                    </td>
+                    <td class="text-center">
+                      {transaction.account.name}
+                    </td>
+                    <td class="text-right">
+                      <.currency value={transaction.value} />
+                    </td>
+
+                    <td :if={@partial_balance} class="text-right">
+                      <.currency value={Enum.at(@balances, ix + 1)} />
+                    </td>
+
+                    <td class="flex items-center">
+                      <.link
+                        patch={~p"/transactions/#{transaction}/delete?#{@url_params}"}
+                        data-testid={"delete-#{transaction.id}"}
+                        class="flex"
+                      >
+                        <div class="tooltip" data-tip="Delete">
+                          <.icon name="hero-trash" />
+                        </div>
+                      </.link>
+                      <div class="flex">
+                        <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer size-4" />
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+
+                <tr
+                  :if={Enum.empty?(@transactions)}
+                  id="empty-transactions"
+                  class=" text-center bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
+                >
+                  <td>
+                    No transactions in this period.
+                  </td>
+                </tr>
+
+                <tr id="next-balance">
+                  <td>
+                    {format_date(Enum.at(get_dates(@url_params), 1))}
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td class="text-right">
+                    <.currency value={Enum.at(@balances, -1)} />
+                  </td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-        <div class="w-1/3 p-4 sticky top-0">
+
+        <div class="w-1/3 sticky top-0">
           <%= if @live_action != :edit_transaction do %>
             <.live_component
               module={BudgetWeb.TransactionLive.FormComponent}
@@ -275,46 +295,48 @@
             />
           <% end %>
         </div>
+      </div>
+
+      <%= if @live_action in [:new_account, :edit_account] do %>
+        <.modal
+          on_cancel={JS.patch(~p"/?#{@url_params}")}
+          title={(@account.id && "Edit Account") || "New Account"}
+        >
+          <.live_component
+            module={BudgetWeb.AccountLive.FormComponent}
+            id={@account.id || :new}
+            action={@live_action}
+            account={@account}
+            patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
+          />
+        </.modal>
+      <% end %>
+
+      <%= if @live_action in [:new_category, :edit_category] do %>
+        <.modal on_cancel={JS.patch(~p"/?#{@url_params}")} title={(@category.id && "Edit Category") || "New Category"}>
+          <.live_component
+            module={BudgetWeb.CategoryLive.FormComponent}
+            title={(@category.id && "Edit category") || "New Category"}
+            id={@category.id || :new}
+            action={@live_action}
+            category={@category}
+            patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
+          />
+        </.modal>
+      <% end %>
+
+      <%= if @live_action == :new_category_child do %>
+        <.modal on_cancel={JS.patch(~p"/?#{@url_params}")} title={(@category.id && "Edit category") || "New Category"}>
+          <.live_component
+            module={BudgetWeb.CategoryLive.FormComponent}
+            id={@category.id || :new}
+            action={:new_category}
+            category={%Transactions.Category{}}
+            parent={@category}
+            patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
+          />
+        </.modal>
+      <% end %>
     </div>
   </div>
-
-  <%= if @live_action in [:new_account, :edit_account] do %>
-    <.modal id="modal-account" on_cancel={JS.patch(~p"/?#{@url_params}")} show title={@account.id && "Edit account" || "New Account"}>
-      <.live_component
-        module={BudgetWeb.AccountLive.FormComponent}
-        id={@account.id || :new}
-        action={@live_action}
-        account={@account}
-          patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
-      />
-    </.modal>
-  <% end %>
-
-  <%= if @live_action in [:new_category, :edit_category] do %>
-    <.modal id="modal-category" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
-        <.live_component
-          module={BudgetWeb.CategoryLive.FormComponent}
-          title={@category.id && "Edit category" || "New Category"}
-          id={@category.id || :new}
-          action={@live_action}
-          category={@category}
-          patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
-        />
-    </.modal>
-  <% end %>
-
-  <%= if @live_action == :new_category_child do %>
-    <.modal id="modal-category" on_cancel={JS.patch(~p"/?#{@url_params}")} show>
-        <.live_component
-          module={BudgetWeb.CategoryLive.FormComponent}
-          id={@category.id || :new}
-          title={@category.id && "Edit category" || "New Category"}
-          action={:new_category}
-          category={%Transactions.Category{}}
-          parent={@category}
-          patch={~p"/?#{Map.merge(@url_params, %{from: "category"})}"}
-        />
-    </.modal>
-  <% end %>
-</div>
-
+</Layouts.app>

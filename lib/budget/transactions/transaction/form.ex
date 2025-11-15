@@ -116,6 +116,11 @@ defmodule Budget.Transactions.Transaction.Form do
             value
           end
 
+        total = 
+          parcels
+          |> Decimal.mult(value)
+          |> Number.Currency.number_to_currency()
+
         params
         |> Map.put(k.("recurrency"), %{
           k.("type") => "parcel",
@@ -124,7 +129,9 @@ defmodule Budget.Transactions.Transaction.Form do
           k.("parcel_end") =>  parcels_string,
         })
         |> Map.put(k.("value"), value |> Decimal.to_string())
-        |> Map.put(k.("recurrency_description"), "A recurrency with #{parcels} parcels with value #{value} will be created")
+        |> Map.put(k.("recurrency_description"), 
+          "A recurrency with #{parcels} parcels with value #{value} will be created, totalizing #{total}"
+        )
 
       nil ->
         params
@@ -423,6 +430,9 @@ defmodule Budget.Transactions.Transaction.Form do
     end)
     |> Ecto.Multi.run(:result, fn _repo, %{inserted: inserted} ->
       apply_update(changeset, inserted)
+    end)
+    |> Ecto.Multi.run(:recurrency_active, fn _repo, %{result: result} ->
+      Transactions.check_recurrency_active(result.recurrency_transaction.recurrency_id)
     end)
     |> Budget.Repo.transaction()
     |> case do

@@ -6,6 +6,7 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   alias Budget.Transactions
   alias Budget.Transactions.Transaction
+  alias BudgetWeb.Helpers.UrlParams
 
   @date_format "{YYYY}-{0M}-{0D}"
 
@@ -27,7 +28,7 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
+  def handle_params(params, _uri, socket) do
     socket =
       socket
       |> assign(url_params: params)
@@ -232,37 +233,15 @@ defmodule BudgetWeb.BudgetLive.Index do
     end
   end
 
-  defp get_categories(url_params) do
-    category_ids = Map.get(url_params, "category_ids", "") |> String.split(",")
-
-    if category_ids == [""] do
-      []
-    else
-      category_ids
-      |> Enum.map(&String.to_integer/1)
-    end
-  end
-
   defp get_consider_previous_balance(url_params) do
     Map.get(url_params, "previous-balance", "true") == "true"
-  end
-
-  defp get_accounts(url_params) do
-    account_ids = Map.get(url_params, "account_ids", "") |> String.split(",")
-
-    if account_ids == [""] do
-      []
-    else
-      account_ids
-      |> Enum.map(&String.to_integer/1)
-    end
   end
 
   defp reload_transactions(socket) do
     [date_start, date_end] = get_dates(socket.assigns.url_params)
 
-    account_ids = get_accounts(socket.assigns.url_params)
-    category_ids = get_categories(socket.assigns.url_params)
+    account_ids = UrlParams.get_accounts(socket.assigns.url_params)
+    category_ids = UrlParams.get_categories(socket.assigns.url_params)
 
     previous_balance =
       if get_consider_previous_balance(socket.assigns.url_params) do
@@ -415,15 +394,11 @@ defmodule BudgetWeb.BudgetLive.Index do
     if is_selecting_transactions do
       if to_string(transaction.id) in selected_transactions do
         "bg-slate-200"
-      else
-        "bg-white"
       end
     else
       if (is_binary(transaction.id) && String.starts_with?(transaction.id, "recurrency")) ||
            not transaction.paid do
         "bg-slate-200"
-      else
-        "bg-white"
       end
     end
   end

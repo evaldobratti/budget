@@ -19,7 +19,6 @@ defmodule BudgetWeb.UserLive.ProfileToggle do
       |> assign(active_profile: assigns.active_profile)
       |> assign(new_profile_form: to_form(Profile.changeset(%Profile{user_id: assigns.user.id}, %{})) )
 
-
     {:ok, socket}
   end
 

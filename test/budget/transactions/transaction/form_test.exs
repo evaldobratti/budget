@@ -329,7 +329,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
 
       assert %{} == errors_on(changeset)
 
-      assert "A recurrency with 2 parcels with value 100 will be created" ==
+      assert "A recurrency with 2 parcels with value 100 will be created, totalizing 200,00" ==
                Changeset.get_field(changeset, :recurrency_description)
 
       assert {:ok,
@@ -384,7 +384,7 @@ defmodule Budget.Transactions.Transaction.FormTest do
 
       assert %{} == errors_on(changeset)
 
-      assert "A recurrency with 2 parcels with value 200 will be created" ==
+      assert "A recurrency with 2 parcels with value 200 will be created, totalizing 400,00" ==
                Changeset.get_field(changeset, :recurrency_description)
 
       assert {:ok,
@@ -756,6 +756,32 @@ defmodule Budget.Transactions.Transaction.FormTest do
                  parcel_end: nil
                }
              } == transaction |> simplify()
+    end
+
+    test "should finalize recurrency when adding last parcel", data do
+      recurrency = recurrency_fixture(%{
+        date: ~D[2019-01-01],
+        regular: %{
+          description: "Some description",
+          category_id: category_fixture().id
+        },
+        value: 200,
+        recurrency: %{
+          type: :parcel,
+          parcel_start: 1,
+          parcel_end: 3
+        }
+      })
+
+      transactions = Transactions.transactions_in_period(~D[2019-01-01], ~D[2019-03-01])
+
+      persist(Enum.at(transactions, 1))
+
+      assert true == Transactions.get_recurrency!(recurrency.id).active 
+
+      persist(Enum.at(transactions, 2))
+
+      assert false == Transactions.get_recurrency!(recurrency.id).active 
     end
 
     test "update valid recurrency regular transaction applying forward", data do

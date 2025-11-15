@@ -1,8 +1,5 @@
 <div>
-  <.header>
-    <%= @title %>
-  </.header>
-  <.simple_form
+  <.form
     for={@form}
     id="category-form"
     phx-target={@myself}
@@ -16,8 +13,8 @@
   
     <.input field={@form[:name]} autocomplete="off" label="Name" />
 
-    <:actions>
+    <footer>
       <.button phx-disable-with="Saving...">Save</.button>
-    </:actions>
-  </.simple_form>
+    </footer>
+  </.form>
 </div>

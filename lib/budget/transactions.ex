@@ -112,22 +112,10 @@ defmodule Budget.Transactions do
   end
 
   def balance_at(date, opts \\ []) do
-    account_ids = Keyword.get(opts, :account_ids, [])
-    category_ids = Keyword.get(opts, :category_ids, [])
-
-    transactions =
-      from(
-        t in Transaction,
-        join: a in assoc(t, :account),
-        as: :account,
-        left_join: r in assoc(t, :originator_regular),
-        left_join: c in assoc(r, :category),
-        as: :category,
-        where: t.date <= ^date,
-        select: coalesce(sum(t.value), 0)
-      )
-      |> where_opts(opts)
-      |> Repo.one()
+    transactions = 
+      transactions_in_period(~D[2000-01-01], date, opts)
+      |> Enum.map(& &1.value)
+      |> Enum.reduce(Decimal.new(0), & Decimal.add(&1, &2))
 
     initials =
       from(
@@ -138,29 +126,7 @@ defmodule Budget.Transactions do
       |> where_opts(opts)
       |> Repo.one()
 
-    # TODO make this function use transactions_in_period()
-    recurrencies =
-      find_recurrencies()
-      |> Enum.map(&recurrency_transactions(&1, date))
-      |> List.flatten()
-      |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
-      |> Enum.filter(fn transaction ->
-        if category_ids == [] do
-          true
-        else
-          if transaction.originator_regular do
-            transaction.originator_regular.category_id in category_ids
-          else
-            true
-          end
-        end
-      end)
-      |> Enum.map(& &1.value)
-      |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
-
-    transactions
-    |> Decimal.add(initials)
-    |> Decimal.add(recurrencies)
+    Decimal.add(initials, transactions)
   end
 
   def change_recurrency(%Recurrency{} = recurrency, attrs \\ %{}) do
@@ -180,13 +146,14 @@ defmodule Budget.Transactions do
   end
 
   def recurrency_transactions(recurrency, until_date) do
-    Recurrency.transactions(recurrency, until_date)
+    Recurrency.transient_transactions(recurrency, until_date)
   end
 
   def find_recurrencies() do
     from(
       r in Recurrency,
-      preload: [recurrency_transactions: :transaction]
+      preload: [recurrency_transactions: :transaction],
+      where: r.active == true
     )
     |> Repo.all()
   end
@@ -253,7 +220,7 @@ defmodule Budget.Transactions do
 
     recurrencies
     |> Enum.reduce([], fn r, acc ->
-      [Recurrency.transactions(r, date_end) | acc]
+      [Recurrency.transient_transactions(r, date_end) | acc]
     end)
     |> List.flatten()
     |> Enum.filter(&(&1.account_id in account_ids || account_ids == []))
@@ -402,16 +369,21 @@ defmodule Budget.Transactions do
 
   defp delete_with_recurrency(%Transaction{} = subject, transaction_ids, end_recurrency) do
     recurrency_change = fn repo, _ ->
-      if end_recurrency && subject.recurrency_transaction &&
-           subject.recurrency_transaction.recurrency do
-        subject.recurrency_transaction.recurrency
-        |> Ecto.Changeset.change(%{
-          date_end: Timex.shift(subject.recurrency_transaction.original_date, days: -1)
-        })
-        |> repo.update()
-      else
-        {:ok, :nothing_changed}
-      end
+        with recurrency_transaction = %RecurrencyTransaction{} <- subject.recurrency_transaction,
+          recurrency = %Recurrency{} <- recurrency_transaction.recurrency do
+
+          if end_recurrency do
+            subject.recurrency_transaction.recurrency
+            |> Ecto.Changeset.change(%{
+              date_end: Timex.shift(subject.recurrency_transaction.original_date, days: -1)
+            })
+            |> repo.update()
+          else
+            {:ok, recurrency}
+          end
+        else 
+          _ ->{:ok, :nothing_changed}
+        end
     end
 
     module = originator_module(subject)
@@ -436,6 +408,10 @@ defmodule Budget.Transactions do
       from(t in module, where: t.id in ^originators)
     end)
     |> Ecto.Multi.run(:recurrency, recurrency_change)
+    |> Ecto.Multi.run(:recurrency_active, fn 
+      _repo, %{recurrency: :nothing_changed} -> {:ok, :nothing_changed}
+      _repo, %{recurrency: recurrency} -> check_recurrency_active(recurrency.id)
+    end)
     |> Repo.transaction()
   end
 
@@ -638,5 +614,32 @@ defmodule Budget.Transactions do
       select: r.description
     )
     |> Repo.all()
+  end
+
+  def check_recurrency_active(id) do
+    recurrency = get_recurrency!(id)
+
+    if recurrency.active do
+      active = 
+        case recurrency.type do
+          :parcel ->
+            parcels_count = recurrency.parcel_end - recurrency.parcel_start + 1
+
+            length(recurrency.recurrency_transactions) != parcels_count
+
+          _ ->
+            if recurrency.date_end do
+              transient = recurrency_transactions(recurrency, recurrency.date_end)
+
+              length(transient) > 0
+            else
+              true
+            end
+        end
+
+      update_recurrency(recurrency, %{active: active})
+    else
+      {:ok, recurrency}
+    end
   end
 end

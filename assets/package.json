@@ -4,6 +4,9 @@
     "alpinejs": "^3.13.0",
     "chart.js": "^4.4.0",
     "lodash": "^4.17.21",
-    "sortablejs": "^1.15.0"
+    "sortablejs": "^1.15.0",
+    "phoenix": "../deps/phoenix",
+    "phoenix_html": "../deps/phoenix_html",
+    "phoenix_live_view": "../deps/phoenix_live_view"
   }
 }

@@ -8,21 +8,14 @@ defmodule Budget.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Start the Telemetry supervisor
       BudgetWeb.Telemetry,
-      # Start the Ecto repository
       Budget.Repo,
-      # Start the PubSub system
+      {DNSCluster, query: Application.get_env(:budget, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Budget.PubSub},
-      # Start Finch
-      {Finch, name: Budget.Finch},
-      # Start the Endpoint (http/https)
-      BudgetWeb.Endpoint,
       # Start a worker by calling: Budget.Worker.start_link(arg)
-      # {Budget.Worker, arg}
-
-      {Registry, keys: :unique, name: Buget.Importer.Registry},
-      {DynamicSupervisor, name: Budget.Importer}
+      # {Budget.Worker, arg},
+      # Start to serve requests, typically the last entry
+      BudgetWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

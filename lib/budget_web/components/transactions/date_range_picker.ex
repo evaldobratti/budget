@@ -15,12 +15,12 @@ defmodule BudgetWeb.Transactions.DateRangePicker do
           phx-change="update-dates"
           phx-target={@myself}
         >
-          <div class="flex items-center">
-            <.button class="btn btn-sm btn-primary mr-2" phx-click="month-previous" type="button" phx-target={@myself}><%= "<<" %></.button>
+          <div class="flex items-center gap-2 items-center">
+            <button class="btn btn-primary" phx-click="month-previous" type="button" phx-target={@myself}><%= "<<" %></button>
             <.input field={dates_form[:date_start]} type="date" margin={false} />
             <div class="d-inline px-1">to</div>
             <.input field={dates_form[:date_end]} type="date" margin={false}/>
-            <.button class="btn btn-sm btn-primary ml-2" phx-click="month-next" type="button" phx-target={@myself}><%= ">>" %></.button>
+            <button class="btn btn-primary" phx-click="month-next" type="button" phx-target={@myself}><%= ">>" %></button>
           </div>
         </.form>
       </div>

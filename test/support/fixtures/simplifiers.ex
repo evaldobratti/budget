@@ -69,4 +69,8 @@ defmodule Budget.Simplifiers do
   def simplify({:ok, %Transaction{} = transaction}) do
     {:ok, simplify(transaction)}
   end
+
+  def persist(%{id: "recurrency-" <> _ } = transaction) do
+    {:ok, _} = Transaction.Form.apply_update(transaction, %{})
+  end
 end

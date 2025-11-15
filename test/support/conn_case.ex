@@ -14,6 +14,7 @@ defmodule BudgetWeb.ConnCase do
   by setting `use BudgetWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
+
   alias Budget.Users
 
   use ExUnit.CaseTemplate
@@ -30,7 +31,6 @@ defmodule BudgetWeb.ConnCase do
       import Phoenix.ConnTest
       import BudgetWeb.ConnCase
       import Budget.Simplifiers
-      import Budget.TimeHelper
     end
   end
 

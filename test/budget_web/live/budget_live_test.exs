@@ -117,7 +117,7 @@ defmodule BudgetWeb.BudgetLiveTest do
                |> element("[id$='form-transaction']")
                |> render()
                |> Floki.parse_fragment!()
-               |> Floki.find("[selected='selected']")
+               |> Floki.find("[selected]")
                |> Floki.attribute("value")
     end
 
@@ -306,7 +306,10 @@ defmodule BudgetWeb.BudgetLiveTest do
 
       {:ok, live, _html} = live(conn, ~p"/")
 
-      assert live |> has_element?("#category-detail-#{id}")
+      assert live
+             |> element("[data-testid=category-#{category.id}]")
+             |> render() =~
+               "You cannot delete this category because it has transactions associated."
     end
 
     test "select children categories when filtering by a parent category", %{

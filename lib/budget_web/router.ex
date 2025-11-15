@@ -4,16 +4,16 @@ defmodule BudgetWeb.Router do
   import BudgetWeb.GoogleAuthController, only: [check_login: 2]
 
   pipeline :browser do
-    plug(:accepts, ["html"])
-    plug(:fetch_session)
-    plug(:fetch_live_flash)
-    plug(:put_root_layout, {BudgetWeb.Layouts, :root})
-    plug(:protect_from_forgery)
-    plug(:put_secure_browser_headers)
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {BudgetWeb.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
   end
 
   pipeline :api do
-    plug(:accepts, ["json"])
+    plug :accepts, ["json"]
   end
 
   pipeline :secure do
@@ -21,7 +21,12 @@ defmodule BudgetWeb.Router do
   end
 
   scope "/", BudgetWeb do
-    pipe_through(:browser)
+    pipe_through :browser
+
+    live "/samples", SampleLive.Index, :index
+    live "/samples/new", SampleLive.Form, :new
+    live "/samples/:id", SampleLive.Show, :show
+    live "/samples/:id/edit", SampleLive.Form, :edit
 
     get "/login", GoogleAuthController, :login
     get "/change-profile", GoogleAuthController, :change_profile
@@ -47,8 +52,6 @@ defmodule BudgetWeb.Router do
       live "/transactions/:id/edit", BudgetLive.Index, :edit_transaction
       live "/transactions/:id/delete", BudgetLive.Index, :delete_transaction
 
-      live "/imports", ImportLive.Result, :index
-
       live "/charts", ChartLive.Index, :index
       live "/management", ManagementLive.Index, :index
     end
@@ -69,10 +72,10 @@ defmodule BudgetWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through(:browser)
+      pipe_through :browser
 
-      live_dashboard("/dashboard", metrics: BudgetWeb.Telemetry)
-      forward("/mailbox", Plug.Swoosh.MailboxPreview)
+      live_dashboard "/dashboard", metrics: BudgetWeb.Telemetry
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 end

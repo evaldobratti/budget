@@ -1760,4 +1760,96 @@ defmodule Budget.TransactionsTest do
       assert [id2, id3, id1, id4, id5] == transactions |> Enum.map(& &1.id)
     end
   end
+
+  describe "check_recurrency_active/1" do
+    test "keeps active while there transient transactions - parcel" do
+      recurrency = recurrency_fixture(%{
+        date: ~D[2019-01-01],
+        regular: %{
+          description: "Some description",
+          category_id: category_fixture().id
+        },
+        value: 200,
+        recurrency: %{
+          type: :parcel,
+          parcel_start: 1,
+          parcel_end: 3
+        }
+      })
+
+      transactions = Transactions.transactions_in_period(~D[2019-01-01], ~D[2019-03-01])
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id) 
+
+      persist(Enum.at(transactions, 1))
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id) 
+
+      persist(Enum.at(transactions, 2))
+
+      assert {:ok, %{active: false}} = Transactions.check_recurrency_active(recurrency.id) 
+    end
+
+    test "keeps active while there transient transactions - forever" do
+      recurrency = recurrency_fixture(%{
+        date: ~D[2019-01-01],
+        regular: %{
+          description: "Some description",
+          category_id: category_fixture().id
+        },
+        value: 200,
+        recurrency: %{
+          type: :forever,
+        }
+      })
+
+      transactions = Transactions.transactions_in_period(~D[2019-01-01], ~D[2019-06-01])
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id) 
+
+      transactions |> Enum.at(1) |> persist()
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id) 
+
+      Transactions.delete_transaction(Enum.at(transactions, 3).id, "recurrency-all")
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id) 
+
+      transactions |> Enum.at(2) |> persist()
+
+      assert {:ok, %{active: false}} = Transactions.check_recurrency_active(recurrency.id) 
+    end
+
+    test "keeps active while there transient transactions - until date" do
+      recurrency = recurrency_fixture(%{
+        date: ~D[2019-01-01],
+        regular: %{
+          description: "Some description",
+          category_id: category_fixture().id
+        },
+        value: 200,
+        recurrency: %{
+          type: :until_date,
+          date_end: ~D[2019-04-15]
+        }
+      })
+
+      transactions = Transactions.transactions_in_period(~D[2019-01-01], ~D[2019-06-01])
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id) 
+
+      transactions |> Enum.at(1) |> persist()
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id)
+
+      transactions |> Enum.at(2) |> persist()
+
+      assert {:ok, %{active: true}} = Transactions.check_recurrency_active(recurrency.id) 
+
+      transactions |> Enum.at(3) |> persist()
+
+      assert {:ok, %{active: false}} = Transactions.check_recurrency_active(recurrency.id)
+    end
+
+  end
 end

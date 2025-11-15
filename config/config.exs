@@ -8,17 +8,19 @@
 import Config
 
 config :budget,
-  ecto_repos: [Budget.Repo]
+  ecto_repos: [Budget.Repo],
+  generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
 config :budget, BudgetWeb.Endpoint,
   url: [host: "localhost"],
+  adapter: Bandit.PhoenixAdapter,
   render_errors: [
     formats: [html: BudgetWeb.ErrorHTML, json: BudgetWeb.ErrorJSON],
     layout: false
   ],
   pubsub_server: Budget.PubSub,
-  live_view: [signing_salt: "PL8Yt8A7"]
+  live_view: [signing_salt: "hzl97Uh0"]
 
 # Configures the mailer
 #
@@ -31,28 +33,27 @@ config :budget, Budget.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
-  version: "0.17.11",
-  default: [
+  version: "0.25.4",
+  budget: [
     args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+      ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.2.7",
-  default: [
+  version: "4.1.7",
+  budget: [
     args: ~w(
-      --config=tailwind.config.js
-      --input=css/app.css
-      --output=../priv/static/assets/app.css
+      --input=assets/css/app.css
+      --output=priv/static/assets/css/app.css
     ),
-    cd: Path.expand("../assets", __DIR__)
+    cd: Path.expand("..", __DIR__)
   ]
 
 # Configures Elixir's Logger
-config :logger, :console,
+config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
@@ -72,3 +73,4 @@ config :number,
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+

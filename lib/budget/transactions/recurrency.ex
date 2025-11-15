@@ -13,6 +13,7 @@ defmodule Budget.Transactions.Recurrency do
     field :parcel_start, :integer
     field :transaction_payload, :map
     field :profile_id, :integer
+    field :active, :boolean, default: true
 
     has_many :recurrency_transactions, RecurrencyTransaction
 
@@ -30,7 +31,8 @@ defmodule Budget.Transactions.Recurrency do
         :date_start,
         :date_end,
         :parcel_start,
-        :parcel_end
+        :parcel_end,
+        :active
       ])
       |> validate_required([
         :frequency,
@@ -48,7 +50,7 @@ defmodule Budget.Transactions.Recurrency do
     end
   end
 
-  def transactions(%__MODULE__{} = recurrency, until_date) do
+  def transient_transactions(%__MODULE__{} = recurrency, until_date) do
     first_end =
       case recurrency.type do
         :forever -> [recurrency.date_end, until_date]

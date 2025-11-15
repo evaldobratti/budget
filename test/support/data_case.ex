@@ -26,7 +26,6 @@ defmodule Budget.DataCase do
       import Ecto.Query
       import Budget.DataCase
       import Budget.Simplifiers
-      import Budget.TimeHelper
     end
   end
 

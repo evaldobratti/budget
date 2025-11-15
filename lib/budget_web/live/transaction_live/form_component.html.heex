@@ -1,5 +1,5 @@
-<div id={to_string(@id) <> "-form-transaction-wrapper"} class="rounded-lg p-4 bg-white" phx-mounted={JS.transition({"ease-out duration-300", "opacity-0", "opacity-100"}, time: 300)}>
-  <.simple_form
+<div id={to_string(@id) <> "-form-transaction-wrapper"} class="rounded-lg p-2 box m-px" phx-mounted={JS.transition({"ease-out duration-300", "opacity-0", "opacity-100"}, time: 300)}>
+  <.form
     for={@form}
     id={to_string(@id) <> "-form-transaction"}
     phx-target={@myself}
@@ -9,14 +9,13 @@
     <% transaction_loaded = @form.data.id != nil %>
 
     <%= if !transaction_loaded do %>
-      <div class="flex">
-        <.input field={@form[:originator]} type="radio" value="regular" label="Regular" />
-
-        <.input field={@form[:originator]} type="radio" value="transfer" label="Transfer" />
+      <div class="flex justify-around space-between">
+        <.input field={@form[:originator]} type="radio" radio_value="regular" label="Regular" />
+        <.input field={@form[:originator]} type="radio" radio_value="transfer" label="Transfer" />
       </div>
     <% end %>
 
-    <div class="flex">
+    <div class="flex gap-2">
       <.input field={@form[:date]} label="Date" type="date" autocomplete="off" />
 
       <%= if @form[:originator].value == "regular" do %>
@@ -49,19 +48,21 @@
     </div>
 
     <%= if @form[:originator].value == "regular" do %>
-      <div class="flex">
+      <div class="flex flex-col">
         <.inputs_for :let={regular_form} field={@form[:regular]}>
-          <div class="flex-1">
+          <div>
             <.input field={regular_form[:description]} label="Description" autocomplete="off" list="descriptions" />
             <datalist id="descriptions">
               <option :for={d <- @descriptions} value={d} />
             </datalist>
           </div>
 
-          <.input field={regular_form[:original_description]} label="Original Description" autocomplete="off" list="hint_descriptions" />
-          <datalist id="hint_descriptions">
-            <option :for={h <- @hint_descriptions} value={h.original} label={h.suggestion} />
-          </datalist>
+          <div>
+            <.input field={regular_form[:original_description]} label="Original Description" autocomplete="off" list="hint_descriptions" />
+            <datalist id="hint_descriptions">
+              <option :for={h <- @hint_descriptions} value={h.original} label={h.suggestion} />
+            </datalist>
+          </div>
         </.inputs_for>
       </div>
 
@@ -77,17 +78,17 @@
 
 
     <div :if={transaction_loaded} class="flex">
-      <.input field={@form[:value]} type="number" label="Value" autocomplete="off" step="0.01" class="flex-grow" />
+      <.input field={@form[:value]} type="number" label="Value" autocomplete="off" step="0.01" />
     </div>
 
-    <div :if={!transaction_loaded} class="flex">
-      <.input field={%{ @form[:value_raw] | errors: @form[:value].errors }} label="Value" autocomplete="off" step="0.01" class="flex-grow" />
+    <div :if={!transaction_loaded} class="flex gap-2">
+      <.input field={%{ @form[:value_raw] | errors: @form[:value].errors }} label="Value" autocomplete="off" step="0.01" />
       <div style="width: 300px">
-        <%= @form[:recurrency_description].value %>
+        <p class="text-xs text-secondary"><%= @form[:recurrency_description].value %></p>
       </div>
     </div>
 
-    <div class="flex mb-3">
+    <div class="flex justify-around ">
       <.input
         :if={!transaction_loaded && !match?("recurrency" <> _, @form.data.id)}
         field={@form[:is_recurrency]}
@@ -137,8 +138,6 @@
             />
           </div>
           <%= render_parcels(@form, recurrency_form) %>
-          
-
         </div>
 
         <div :if={recurrency_form[:type].value == :until_date} class="flex-1">
@@ -152,9 +151,9 @@
       </div>
     </.inputs_for>
 
-    <:actions>
-      <.button type="button" :if={@on_cancel} phx-click={@on_cancel}>Cancel</.button>
-      <.button phx-disable-with="Saving...">Save</.button>
-    </:actions>
-  </.simple_form>
+    <footer class="flex justify-end gap-2">
+      <button class="btn btn-secondary" type="button" :if={@on_cancel} phx-click={@on_cancel}>Cancel</button>
+      <button class="btn btn-primary" phx-disable-with="Saving...">Save</button>
+    </footer>
+  </.form>
 </div>

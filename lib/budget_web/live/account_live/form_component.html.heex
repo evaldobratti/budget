@@ -1,5 +1,5 @@
 <div>
-  <.simple_form
+  <.form
     for={@form}
     id="account-form"
     phx-target={@myself}
@@ -9,8 +9,8 @@
     <.input field={@form[:name]} autocomplete="off" label="Name" />
     <.input field={@form[:initial_balance]} autocomplete="off" type="number" label="Initial Balance" step="0.01" />
   
-    <:actions>
-      <.button phx-disable-with="Saving...">Save</.button>
-    </:actions>
-  </.simple_form>
+    <footer class="flex justify-end gap-2">
+      <button class="btn btn-primary" phx-disable-with="Saving...">Save</button>
+    </footer>
+  </.form>
 </div>
