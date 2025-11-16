@@ -56,7 +56,7 @@ defmodule BudgetWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="toast toast-bottom toast-end z-50"
       {@rest}
     >
       <div class={[
@@ -501,7 +501,7 @@ defmodule BudgetWeb.CoreComponents do
 
   def menu(assigns \\ %{}) do
     ~H"""
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 max-h-full overflow-y-auto p-px">
 
         <div class="menu rounded-box w-56 flex flex-row gap-2 items-center box">
           <.icon name="hero-currency-dollar" /> Budget

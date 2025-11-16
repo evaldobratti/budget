@@ -138,6 +138,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
           socket
           |> put_flash(:info, "Transaction updated successfully!")
           |> push_patch(to: socket.assigns.patch)
+          |> push_event("highlight-transaction", %{id: socket.assigns.transaction.id})
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -170,6 +171,7 @@ defmodule BudgetWeb.TransactionLive.FormComponent do
           )
           |> put_flash(:info, "Transaction created successfully!")
           |> push_patch(to: patch)
+          |> push_event("highlight-transaction", %{id: transaction.id})
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->

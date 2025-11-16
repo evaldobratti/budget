@@ -114,7 +114,7 @@
                   <th class="text-center">
                     Account
                   </th>
-                  <th class="text-center">
+                  <th class="text-right">
                     Value
                   </th>
                   <th></th>
@@ -125,10 +125,10 @@
                   <td>
                     {format_date(Timex.shift(Enum.at(get_dates(@url_params), 0), days: -1))}
                   </td>
+                  <td>{@balances.loading && "Reloading..."}</td>
                   <td></td>
                   <td></td>
-                  <td></td>
-                  <td class="text-right">
+                  <td class="text-right flex justify-end">
                     <div class="tooltip" data-tip="Consider previous balance">
                       <input
                         type="checkbox"
@@ -136,7 +136,9 @@
                         checked={get_consider_previous_balance(@url_params)}
                       />
                     </div>
-                    <.currency value={Enum.at(@balances, 0)} />
+                    <.async_result :let={balances} assign={@balances}>
+                      <.currency value={Enum.at(balances, 0)} />
+                    </.async_result>
                   </td>
                   <td>
                     <div class="tooltip" data-tip="Show partial balance">
@@ -148,113 +150,122 @@
                     </div>
                   </td>
                 </tr>
-                <%= for {transaction, ix} <- Enum.with_index(@transactions) do %>
-                  <tr
-                    id={"transaction-#{transaction.id}"}
-                    class={[
-                      "group list-group-item item-draggable",
-                      "hover:bg-base-200",
-                      "items-center",
-                      background_color(
-                        transaction,
-                        @is_selecting_transactions,
-                        @selected_transactions
-                      )
-                    ]}
-                  >
-                    <td>
-                      <input
-                        :if={@is_selecting_transactions}
-                        type="checkbox"
-                        phx-click="toggle-transaction-selected"
-                        phx-value-id={transaction.id}
-                        checked={to_string(transaction.id) in @selected_transactions}
-                      />
-                      {format_date(transaction.date)}
-                    </td>
-                    <td class="flex">
-                      <.link patch={~p"/transactions/#{transaction}/edit?#{@url_params}"}>
-                        {description(transaction)}
-                        <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
-                          <span>
-                            {"(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})"}
-                          </span>
-                        <% end %>
-                      </.link>
-                      <div class="ml-auto">
-                        <%= if transaction.recurrency_transaction do %>
-                          <div class="tooltip" data-tip="Recurrency">
-                            <.icon name="hero-arrow-path" />
-                          </div>
-                        <% end %>
-                      </div>
-                    </td>
-                    <td class="text-center">
-                      <% originator = Transactions.originator(transaction) %>
-
-                      <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
-                        <%= if length(transaction.originator_regular.category.path) == 0 do %>
-                          {transaction.originator_regular.category.name}
-                        <% else %>
-                          <div
-                            class="tooltip"
-                            data-tip={
-                              category_tooltip(
-                                @categories,
-                                transaction.originator_regular.category
-                              )
-                            }
-                          >
+                <.async_result :let={transactions} assign={@transactions}>
+                  <:loading>
+                    <tr>
+                      <td class="text-center" colspan="6">
+                        Loading transactions...
+                      </td>
+                    </tr>
+                  </:loading>
+                  <%= for {transaction, ix} <- Enum.with_index(transactions) do %>
+                    <tr
+                      id={"transaction-#{transaction.id}"}
+                      class={[
+                        "group list-group-item item-draggable",
+                        "hover:bg-base-200",
+                        "items-center",
+                        background_color(
+                          transaction,
+                          @is_selecting_transactions,
+                          @selected_transactions
+                        )
+                      ]}
+                    >
+                      <td>
+                        <input
+                          :if={@is_selecting_transactions}
+                          type="checkbox"
+                          phx-click="toggle-transaction-selected"
+                          phx-value-id={transaction.id}
+                          checked={to_string(transaction.id) in @selected_transactions}
+                        />
+                        {format_date(transaction.date)}
+                      </td>
+                      <td class="flex">
+                        <.link patch={~p"/transactions/#{transaction}/edit?#{@url_params}"}>
+                          {description(transaction)}
+                          <%= if transaction.recurrency_transaction && transaction.recurrency_transaction.parcel do %>
                             <span>
-                              {transaction.originator_regular.category.name}
+                              {"(#{transaction.recurrency_transaction.parcel}/#{transaction.recurrency_transaction.parcel_end})"}
                             </span>
+                          <% end %>
+                        </.link>
+                        <div class="ml-auto">
+                          <%= if transaction.recurrency_transaction do %>
+                            <div class="tooltip" data-tip="Recurrency">
+                              <.icon name="hero-arrow-path" />
+                            </div>
+                          <% end %>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <% originator = Transactions.originator(transaction) %>
+
+                        <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Regular do %>
+                          <%= if length(transaction.originator_regular.category.path) == 0 do %>
+                            {transaction.originator_regular.category.name}
+                          <% else %>
+                            <div
+                              class="tooltip"
+                              data-tip={
+                                category_tooltip(
+                                  @categories,
+                                  transaction.originator_regular.category
+                                )
+                              }
+                            >
+                              <span>
+                                {transaction.originator_regular.category.name}
+                              </span>
+                            </div>
+                          <% end %>
+                        <% end %>
+
+                        <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
+                          <div class="tooltip" data-tip="Transfer">
+                            <.icon name="hero-arrows-up-down" />
                           </div>
                         <% end %>
-                      <% end %>
+                      </td>
+                      <td class="text-center">
+                        {transaction.account.name}
+                      </td>
+                      <td class="text-right">
+                        <.currency value={transaction.value} />
+                      </td>
 
-                      <%= if originator && originator.__struct__ == Budget.Transactions.Originator.Transfer do %>
-                        <div class="tooltip" data-tip="Transfer">
-                          <.icon name="hero-arrows-up-down" />
+                      <td :if={@partial_balance} class="text-right">
+                        <.currency value={Enum.at(@balances, ix + 1)} />
+                      </td>
+
+                      <td class="flex items-center">
+                        <.link
+                          patch={~p"/transactions/#{transaction}/delete?#{@url_params}"}
+                          data-testid={"delete-#{transaction.id}"}
+                          class="flex"
+                        >
+                          <div class="tooltip" data-tip="Delete">
+                            <.icon name="hero-trash" />
+                          </div>
+                        </.link>
+                        <div class="flex">
+                          <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer size-4" />
                         </div>
-                      <% end %>
-                    </td>
-                    <td class="text-center">
-                      {transaction.account.name}
-                    </td>
-                    <td class="text-right">
-                      <.currency value={transaction.value} />
-                    </td>
+                      </td>
+                    </tr>
+                  <% end %>
 
-                    <td :if={@partial_balance} class="text-right">
-                      <.currency value={Enum.at(@balances, ix + 1)} />
-                    </td>
-
-                    <td class="flex items-center">
-                      <.link
-                        patch={~p"/transactions/#{transaction}/delete?#{@url_params}"}
-                        data-testid={"delete-#{transaction.id}"}
-                        class="flex"
-                      >
-                        <div class="tooltip" data-tip="Delete">
-                          <.icon name="hero-trash" />
-                        </div>
-                      </.link>
-                      <div class="flex">
-                        <.icon name="hero-arrows-up-down" class="sortable-handle cursor-pointer size-4" />
-                      </div>
+                  <tr
+                    :if={Enum.empty?(transactions)}
+                    id="empty-transactions"
+                    class=" text-center px-4 py-1.5 rounded-lg"
+                  >
+                    <td colspan="6">
+                      No transactions in this period.
                     </td>
                   </tr>
-                <% end %>
-
-                <tr
-                  :if={Enum.empty?(@transactions)}
-                  id="empty-transactions"
-                  class=" text-center bg-slate-100 px-4 py-1.5 rounded-lg hover:bg-slate-200"
-                >
-                  <td>
-                    No transactions in this period.
-                  </td>
-                </tr>
+                </.async_result>
 
                 <tr id="next-balance">
                   <td>
@@ -264,7 +275,9 @@
                   <td></td>
                   <td></td>
                   <td class="text-right">
-                    <.currency value={Enum.at(@balances, -1)} />
+                    <.async_result :let={balances} assign={@balances}>
+                      <.currency value={Enum.at(balances, -1)} />
+                    </.async_result>
                   </td>
                   <td></td>
                 </tr>

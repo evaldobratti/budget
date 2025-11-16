@@ -27,32 +27,36 @@ defmodule BudgetWeb.Transactions.CategoriesList do
     assigns = Map.put_new(assigns, :url_params, %{})
 
     ~H"""
-    <div class="flex flex-col overflow-y-auto">
-      <div class="flex items-center gap-2">
-        Categories
+    <details class="flex flex-col collapse">
+      <summary class="collapse-title p-0 min-h-0 ">
+        <div class="flex items-center gap-2">
+          Categories
 
-        <div class="tooltip ml-auto" data-tip="Select all">
-          <input
-            type="checkbox"
-            class="checkbox checkbox-xs"
-            phx-click="toggle-all-category"
-            phx-target={@myself}
-            checked={@all_selected}
-          />
+          <div class="tooltip ml-auto" data-tip="Select all">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-xs"
+              phx-click="toggle-all-category"
+              phx-target={@myself}
+              checked={@all_selected}
+            />
+          </div>
+          <.link class="btn btn-xs" patch={~p"/categories/new?#{@url_params}"}>
+            New
+          </.link>
         </div>
-        <.link class="btn btn-xs" patch={~p"/categories/new?#{@url_params}"}>
-          New
-        </.link>
-      </div>
-      <%= if Enum.empty?(@categories) do %>
-        <div class="flex mt-2 flex-justify-center">
-          No categories yet
+      </summary>
+      <div class="collapse-content">
+        <%= if Enum.empty?(@categories) do %>
+          <div class="flex mt-2 flex-justify-center">
+            No categories yet
+          </div>
+        <% end %>
+        <div class="max-h-full overflow-y-auto flex flex-col gap-1 mt-1">
+          {render_categories(@categories, @selected_ids, @myself)}
         </div>
-      <% end %>
-      <div class="max-h-full overflow-y-auto flex flex-col gap-1 mt-1">
-        {render_categories(@categories, @selected_ids, @myself)}
       </div>
-    </div>
+    </details>
     """
   end
 

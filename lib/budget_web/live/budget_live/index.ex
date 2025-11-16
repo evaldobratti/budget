@@ -12,6 +12,8 @@ defmodule BudgetWeb.BudgetLive.Index do
 
   @impl true
   def mount(params, _session, socket) do
+
+
     {
       :ok,
       socket
@@ -23,8 +25,21 @@ defmodule BudgetWeb.BudgetLive.Index do
       |> assign(previous_balance: true)
       |> assign(partial_balance: false)
       |> assign(url_params: params)
+      |> assign(transactions: [])
+      |> reload_categories()
+      |> reload_accounts()
       |> reload_transactions()
     }
+  end
+
+  def reload_categories(socket) do
+    socket
+    |> assign(categories: Transactions.list_categories_arranged())
+  end
+
+  def reload_accounts(socket) do
+    socket
+    |> assign(accounts: Transactions.list_accounts())
   end
 
   @impl true
@@ -106,8 +121,21 @@ defmodule BudgetWeb.BudgetLive.Index do
     end
   end
 
+  def apply_return_from(socket, "category", _params) do
+    socket
+    |> reload_categories()
+    |> reload_transactions()
+  end
+
+  def apply_return_from(socket, "account", _params) do
+    socket
+    |> reload_accounts()
+    |> reload_transactions()
+  end
+
+
   def apply_return_from(socket, from, _params)
-      when from in ["account", "delete", "category", "date", "previous-balance"] do
+      when from in ["delete", "date", "previous-balance"] do
     reload_transactions(socket)
   end
 
@@ -238,40 +266,43 @@ defmodule BudgetWeb.BudgetLive.Index do
   end
 
   defp reload_transactions(socket) do
-    [date_start, date_end] = get_dates(socket.assigns.url_params)
+    profile_id = Budget.Repo.get_profile_id()
+    url_params = socket.assigns.url_params
 
-    account_ids = UrlParams.get_accounts(socket.assigns.url_params)
-    category_ids = UrlParams.get_categories(socket.assigns.url_params)
+    socket
+    |> assign_async([:transactions, :balances], fn ->
+      Budget.Repo.put_profile_id(profile_id)
+      [date_start, date_end] = get_dates(url_params)
 
-    previous_balance =
-      if get_consider_previous_balance(socket.assigns.url_params) do
-        Transactions.balance_at(Timex.shift(date_start, days: -1),
+      account_ids = UrlParams.get_accounts(url_params)
+      category_ids = UrlParams.get_categories(url_params)
+
+      previous_balance =
+        if get_consider_previous_balance(url_params) do
+          Transactions.balance_at(Timex.shift(date_start, days: -1),
+            account_ids: account_ids,
+            category_ids: category_ids
+          )
+        else
+          Decimal.new(0)
+        end
+
+      transactions =
+        Transactions.transactions_in_period(date_start, date_end,
           account_ids: account_ids,
           category_ids: category_ids
         )
-      else
-        Decimal.new(0)
-      end
 
-    transactions =
-      Transactions.transactions_in_period(date_start, date_end,
-        account_ids: account_ids,
-        category_ids: category_ids
-      )
+      [balances, _] =
+        transactions
+        |> Enum.reduce([[previous_balance], previous_balance], fn ele, [acc, previous] ->
+          previous = Decimal.add(previous, ele.value)
 
-    [balances, _] =
-      transactions
-      |> Enum.reduce([[previous_balance], previous_balance], fn ele, [acc, previous] ->
-        previous = Decimal.add(previous, ele.value)
+          [acc ++ [previous], previous]
+        end)
 
-        [acc ++ [previous], previous]
-      end)
-
-    socket
-    |> assign(categories: Transactions.list_categories_arranged())
-    |> assign(accounts: Transactions.list_accounts())
-    |> assign(transactions: transactions)
-    |> assign(balances: balances)
+      {:ok, %{transactions: transactions, balances: balances}}
+    end)
   end
 
   def accounts_selected(accounts_ids, accounts) when is_list(accounts_ids) do
