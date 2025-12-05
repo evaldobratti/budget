@@ -26,6 +26,7 @@ defmodule BudgetWeb.BudgetLive.Index do
       |> assign(partial_balance: false)
       |> assign(url_params: params)
       |> assign(transactions: [])
+      |> assign(selected_sum: Decimal.new(0))
       |> reload_categories()
       |> reload_accounts()
       |> reload_transactions()
@@ -160,10 +161,17 @@ defmodule BudgetWeb.BudgetLive.Index do
         [to_string(id) | socket.assigns.selected_transactions]
       end
 
+    selected_sum =
+      socket.assigns.transactions.result
+      |> Enum.filter(& &1.id in selected_transactions)
+      |> Enum.map(& &1.value)
+      |> Enum.reduce(Decimal.new(0), &Decimal.add(&1, &2))
+
     {
       :noreply,
       socket
       |> assign(selected_transactions: selected_transactions)
+      |> assign(selected_sum: selected_sum)
     }
   end
 

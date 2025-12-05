@@ -88,6 +88,12 @@
                   module={BudgetWeb.Transactions.DateRangePicker}
                   dates={get_dates(@url_params)}
                 />
+                <div
+                  :if={@is_selecting_transactions}
+                  class="text-xs w-[100px] text-right"
+                >
+                  Sum: <.currency value={@selected_sum} />
+                </div>
               </div>
             </div>
 
@@ -176,6 +182,7 @@
                         <input
                           :if={@is_selecting_transactions}
                           type="checkbox"
+                          class="align-text-bottom"
                           phx-click="toggle-transaction-selected"
                           phx-value-id={transaction.id}
                           checked={to_string(transaction.id) in @selected_transactions}

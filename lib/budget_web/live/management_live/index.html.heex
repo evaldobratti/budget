@@ -1,13 +1,19 @@
-<div class="flex h-full">
-  <.menu active_tab={@active_tab} user={@user} active_profile={@active_profile}>
-  </.menu>
+<Layouts.app
+  flash={@flash}
+  active_tab={@active_tab}
+  user={@user}
+  active_profile={@active_profile}
+  url_params={@url_params}
+>
+
+  <div class="flex h-full max-h-full overflow-y-auto">
 
   <.async_result :let={averages} assign={@averages}>
     <:loading>Loading organization...</:loading>
     <:failed :let={failure}>{inspect(failure)}</:failed>
 
     <% months = available_months(averages) %>
-    <table>
+    <table id="transactions" class="table table-sm bg-white box m-px" >
       <thead>
         <td>Category</td>
         <%= for d <- months do %>
@@ -57,3 +63,4 @@
     </table>
   </.async_result>
 </div>
+</Layouts.app>

@@ -19,6 +19,15 @@ defmodule BudgetWeb.ManagementLive.Index do
     }
   end
 
+  def handle_params(params, _uri, socket) do
+    socket =
+      socket
+      |> assign(url_params: params)
+
+    {:noreply, socket}
+    
+  end
+
   def build_average() do
     categories = Transactions.list_categories_arranged()
 
